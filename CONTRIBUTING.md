@@ -72,3 +72,36 @@ translation or adding a language is a great first contribution: see
 
 Do not open a public issue for a vulnerability. Use GitHub private vulnerability
 reporting on this repository.
+
+## End-to-end tests
+
+Browser scenarios live in `apps/mailsink/tests/e2e` ([Playwright](https://playwright.dev),
+Chromium only). They run against the production build, never `vite dev`:
+
+```sh
+pnpm build
+pnpm --filter @mailsink/app exec playwright install --with-deps chromium   # once
+pnpm test:e2e
+```
+
+Each run serves `node .output/server/index.mjs` on HTTP port 3506 and SMTP port 2906, on a
+throwaway PGlite directory deleted when the server stops. A second suite,
+`tests/e2e/fallback`, builds the app again with a test-only, partially translated `de`
+locale (patched at build time, never shipped) to check the per-message English fallback of
+community locales; its build goes to `tests/e2e/fallback/.output`.
+
+Reports and traces land in `apps/mailsink/playwright-report/` and `test-results/` (CI
+uploads them when the job fails). On distributions where Playwright cannot install system
+libraries (NixOS for instance), run the suites in the official image of the same version:
+
+```sh
+docker run --rm --network host --ipc host -v "$PWD:$PWD" -w "$PWD/apps/mailsink" \
+  mcr.microsoft.com/playwright:v1.65.1-noble npm run test:e2e
+```
+
+The image has no pnpm; `npm run` only reads the script and puts the local binaries on the
+`PATH`. Rootless Docker writes the artifacts as your user; with rootful Docker, add
+`-u "$(id -u):$(id -g)"`.
+
+Select elements by role and accessible text, not by layout or CSS classes: pages are
+redesigned without breaking the scenarios.
