@@ -2,9 +2,10 @@ import { fileURLToPath } from 'node:url'
 import type { PlaywrightTestConfig } from '@playwright/test'
 
 // Shared by both Playwright configs. Ports are fixed so a run never collides with
-// `pnpm dev` (3000) or a default SMTP listener (1025).
-export const HTTP_PORT = 3506
-export const SMTP_PORT = 2906
+// `pnpm dev` (3000) or a default SMTP listener (1025); E2E_HTTP_PORT and E2E_SMTP_PORT
+// override them (parallel checkouts on one host).
+export const HTTP_PORT = Number(process.env.E2E_HTTP_PORT ?? 3506)
+export const SMTP_PORT = Number(process.env.E2E_SMTP_PORT ?? 2906)
 export const BASE_URL = `http://127.0.0.1:${HTTP_PORT}`
 
 const appRoot = fileURLToPath(new URL('../..', import.meta.url))

@@ -1,8 +1,9 @@
-import { cpSync, mkdirSync, rmSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { lingui } from '@lingui/vite-plugin'
 import { defineConfig, type Plugin, type PluginOption } from 'vite'
 import appConfig from '../../../vite.config'
+import { overrideEnCatalog } from './messages'
 
 // Test-only build of the app with a third, partially translated locale (`de`), to check
 // in a browser that a community locale falls back to English (#60). It reuses the app
@@ -13,12 +14,15 @@ const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 const appRoot = here('../../..')
 const catalogs = here('./.output/catalogs')
 
-// The shipped EN and FR catalogs plus the test locale, in one directory for Lingui.
+// The shipped EN and FR catalogs plus the test locale, in one directory for Lingui. The EN
+// copy translates the tagline differently from its msgid (see messages.ts), so the spec can
+// tell a fallback on the EN catalog from a fallback on the source text.
 rmSync(catalogs, { recursive: true, force: true })
 for (const locale of ['en', 'fr', 'de']) {
   const source = locale === 'de' ? here('./de.po') : `${appRoot}/src/locales/${locale}/messages.po`
+  const po = readFileSync(source, 'utf8')
   mkdirSync(`${catalogs}/${locale}`, { recursive: true })
-  cpSync(source, `${catalogs}/${locale}/messages.po`)
+  writeFileSync(`${catalogs}/${locale}/messages.po`, locale === 'en' ? overrideEnCatalog(po) : po)
 }
 
 // Exact source snippets to rewrite; the build fails if one is missing, so a refactor of
