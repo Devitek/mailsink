@@ -9,7 +9,17 @@ describe('readRuntimeConfig', () => {
       smtpHost: '0.0.0.0',
       smtpPort: 1025,
       workerIntervalMs: 1000,
+      maxMessageBytes: 26_214_400,
+      publicUrl: 'http://localhost:3000',
+      defaultIdleTtlSeconds: 3600,
     })
+  })
+
+  it('reads MAILSINK_MAX_MESSAGE_BYTES and rejects a non-positive value', () => {
+    expect(readRuntimeConfig({ MAILSINK_MAX_MESSAGE_BYTES: '1024' }).maxMessageBytes).toBe(1024)
+    expect(() => readRuntimeConfig({ MAILSINK_MAX_MESSAGE_BYTES: '0' })).toThrow(
+      /MAILSINK_MAX_MESSAGE_BYTES/,
+    )
   })
 
   it('reads every variable, empty values meaning unset', () => {
@@ -25,6 +35,22 @@ describe('readRuntimeConfig', () => {
       smtpHost: '0.0.0.0',
       smtpPort: 2601,
     })
+  })
+
+  it('reads the public URL and the default idle TTL', () => {
+    expect(
+      readRuntimeConfig({
+        MAILSINK_PUBLIC_URL: 'https://mail.example.com/',
+        MAILSINK_DEFAULT_IDLE_TTL: '15m',
+      }),
+    ).toMatchObject({ publicUrl: 'https://mail.example.com', defaultIdleTtlSeconds: 900 })
+    expect(readRuntimeConfig({ MAILSINK_DEFAULT_IDLE_TTL: '120' }).defaultIdleTtlSeconds).toBe(120)
+    expect(() => readRuntimeConfig({ MAILSINK_PUBLIC_URL: 'ftp://x' })).toThrow(
+      /MAILSINK_PUBLIC_URL/,
+    )
+    expect(() => readRuntimeConfig({ MAILSINK_DEFAULT_IDLE_TTL: '10' })).toThrow(
+      /MAILSINK_DEFAULT_IDLE_TTL/,
+    )
   })
 
   it('rejects an invalid port', () => {

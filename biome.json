@@ -13,7 +13,8 @@
       "!**/.nitro",
       "!**/.tanstack",
       "!**/*.md",
-      "!**/*.svg"
+      "!**/*.svg",
+      "!docs/design"
     ]
   },
   "formatter": {

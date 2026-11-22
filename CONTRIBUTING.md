@@ -26,7 +26,7 @@ pnpm dev          # http://localhost:3000, health check at /healthz
 | `pnpm lint` / `pnpm lint:fix` | Biome lint and format check (code only, Markdown is not formatted) |
 | `pnpm typecheck` | `tsc --noEmit` in every workspace package |
 | `pnpm test` | Vitest, every package and app as a project |
-| `pnpm build` / `pnpm start` | Production build (Nitro, `.output/`) and run it |
+| `pnpm build` / `pnpm start` | Build every package that has a build (the app with Nitro to `apps/mailsink/.output/`, the CLI to `packages/cli/dist/`) and run the app |
 
 `pnpm install` builds native helpers only for the packages listed under `allowBuilds` in
 `pnpm-workspace.yaml` (today `esbuild`, needed by Vite and drizzle-kit): pnpm 11 refuses
@@ -49,11 +49,14 @@ docker run -d --name mailsink-pg -e POSTGRES_USER=mailsink -e POSTGRES_PASSWORD=
 TEST_DATABASE_URL=postgres://mailsink:mailsink@localhost:5432/mailsink_test pnpm test
 ```
 
-**Restart `pnpm dev` after editing runtime code.** The runtime (database, SMTP listener,
-workers) is booted once per process and kept in a `globalThis` slot so Vite HMR does not
-start a second one. Changes to `apps/mailsink/src/runtime/*`, `packages/core`,
-`packages/db` or `packages/smtp` are therefore not picked up by the running runtime (UI
-components still hot reload).
+**Runtime code reloads by restarting the runtime.** The runtime (database, SMTP listener,
+workers) lives in a `globalThis` slot, one per process. When you edit code the Nitro plugin
+imports (`apps/mailsink/src/runtime/*`, `packages/core`, `packages/db`, `packages/smtp`),
+Vite re-evaluates the plugin and `pnpm dev` stops the running runtime, then boots a new one
+from the new code (`[mailsink] runtime code changed, restarting runtime` in the log). Edits
+less than 500 ms apart share one restart; requests arriving during the restart wait for the
+new runtime. A broken edit logs the error and leaves no runtime running: the next edit
+retries. UI components keep hot reloading without touching the runtime.
 
 Layout: `apps/mailsink` is the TanStack Start app (web UI and every HTTP surface);
 `packages/*` hold the shared code (`contracts`, `db`, `core`, `smtp`, `mcp`, `ui`, `cli`),
@@ -61,6 +64,23 @@ consumed as TypeScript sources. `apps/mailsink/src/routeTree.gen.ts` is generate
 router plugin on `dev` and `build`; commit it when routes change.
 
 Architecture lives in [docs/architecture](docs/architecture/README.md).
+
+### Docker image
+
+`docker/Dockerfile` builds from the repository root in three stages: `deps` (pnpm store,
+keyed on the lockfile), `build` (`pnpm build`, then `pnpm deploy` of the CLI with its
+external dependencies) and `runtime` (`node:24-slim`, uid 1001, Nitro `.output/` plus the
+CLI as `mailsink` on the `PATH`). `.dockerignore` keeps local `node_modules`, builds and
+data out of the context. The `docker` workflow builds the image and runs
+`docker/smoke-test.sh` on both Compose profiles; run it locally the same way:
+
+```sh
+docker build -f docker/Dockerfile -t mailsink:local .
+docker/smoke-test.sh pglite postgres
+```
+
+It publishes host ports 3000 and 1025 unless `MAILSINK_HTTP_PORT` and
+`MAILSINK_SMTP_HOST_PORT` say otherwise.
 
 ## Translations
 
@@ -72,3 +92,36 @@ translation or adding a language is a great first contribution: see
 
 Do not open a public issue for a vulnerability. Use GitHub private vulnerability
 reporting on this repository.
+
+## End-to-end tests
+
+Browser scenarios live in `apps/mailsink/tests/e2e` ([Playwright](https://playwright.dev),
+Chromium only). They run against the production build, never `vite dev`:
+
+```sh
+pnpm build
+pnpm --filter @mailsink/app exec playwright install --with-deps chromium   # once
+pnpm test:e2e
+```
+
+Each run serves `node .output/server/index.mjs` on HTTP port 3506 and SMTP port 2906, on a
+throwaway PGlite directory deleted when the server stops. A second suite,
+`tests/e2e/fallback`, builds the app again with a test-only, partially translated `de`
+locale (patched at build time, never shipped) to check the per-message English fallback of
+community locales; its build goes to `tests/e2e/fallback/.output`.
+
+Reports and traces land in `apps/mailsink/playwright-report/` and `test-results/` (CI
+uploads them when the job fails). On distributions where Playwright cannot install system
+libraries (NixOS for instance), run the suites in the official image of the same version:
+
+```sh
+docker run --rm --network host --ipc host -v "$PWD:$PWD" -w "$PWD/apps/mailsink" \
+  mcr.microsoft.com/playwright:v1.65.1-noble npm run test:e2e
+```
+
+The image has no pnpm; `npm run` only reads the script and puts the local binaries on the
+`PATH`. Rootless Docker writes the artifacts as your user; with rootful Docker, add
+`-u "$(id -u):$(id -g)"`.
+
+Select elements by role and accessible text, not by layout or CSS classes: pages are
+redesigned without breaking the scenarios.

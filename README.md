@@ -1,10 +1,13 @@
 <p align="center">
-  <img src=".github/assets/banner.svg" alt="mailsink" width="100%">
+  <img src=".github/assets/mailsink-mark.svg" alt="" width="116" height="116">
 </p>
 
-<p align="center">Self-hosted email sink for E2E tests and staging, Resend/Brevo/SMTP drop-in.</p>
+<h1 align="center">mailsink</h1>
+
+<p align="center">Every email caught. None delivered. The sandbox for your transactional email.</p>
 
 <p align="center">
+  <a href="https://github.com/Devitek/mailsink/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Devitek/mailsink/ci.yml?branch=main&style=flat-square&label=ci&labelColor=141517" alt="ci"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Devitek/mailsink?style=flat-square&labelColor=141517&color=F6F5F2" alt="license"></a>
 </p>
 
@@ -29,12 +32,39 @@ API calls and signed webhooks.
 
 ## Installation
 
-Planned for the first release: a single Docker image, with embedded PGlite storage by
-default and PostgreSQL as an option.
+Mailsink ships as a single Docker image: HTTP on port 3000 (web UI, provider APIs,
+Capture API, `/healthz`) and SMTP on port 1025. Storage is embedded PGlite by default,
+PostgreSQL as an option. No published image yet: build it from a clone.
 
 ```sh
-docker compose up
+git clone https://github.com/Devitek/mailsink.git && cd mailsink
+export MAILSINK_ADMIN_KEY=change-me   # unset, the Admin API refuses every call
+
+# Embedded PGlite, data in the `pglite-data` volume
+docker compose -f docker/docker-compose.yml --profile pglite up -d --build
+
+# Or PostgreSQL 18, data in the `postgres-data` volume
+docker compose -f docker/docker-compose.yml --profile postgres up -d --build
+
+curl http://localhost:3000/healthz   # {"status":"ok",...} once the container is healthy
 ```
+
+Host ports are set with `MAILSINK_HTTP_PORT` and `MAILSINK_SMTP_HOST_PORT`, the Postgres
+password with `POSTGRES_PASSWORD`. Migrations run at every boot; the first boot on an empty
+PGlite volume takes about 10 seconds. The `mailsink` CLI is available in the image, for
+example `docker compose -f docker/docker-compose.yml --profile postgres exec
+mailsink-postgres mailsink migrate`.
+
+Without Compose:
+
+```sh
+docker build -f docker/Dockerfile -t mailsink:local .
+docker run -d -p 3000:3000 -p 1025:1025 -v mailsink-data:/app/data \
+  -e MAILSINK_ADMIN_KEY=change-me mailsink:local
+```
+
+The container runs as an unprivileged user (uid 1001): a bind mount used as `/app/data`
+must be writable by that uid.
 
 ## Usage
 
@@ -79,6 +109,7 @@ curl "http://localhost:3000/capture/messages?to=jane@example.com&wait=true&timeo
   [Contracts](docs/architecture/03-contracts.md) ·
   [Sequence](docs/architecture/04-sequence.md) ·
   [Roadmap](docs/architecture/05-roadmap.md)
+- [Design deliveries and brand](docs/design/README.md)
 - [Translating the web UI](docs/contributing/translations.md)
 
 ## Contributing
