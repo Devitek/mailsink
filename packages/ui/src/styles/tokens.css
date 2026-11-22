@@ -1,0 +1,95 @@
+/* Mailsink design tokens, Jaune Poste. Light is the default theme.
+ * Copy of docs/design/brand-1/tokens/tokens.css (only reformatted): never edit values
+ * here, tokens.test.ts keeps both files in sync. Additions live in tokens-ext.css. */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --ms-bg: #f5f5f3; /* #f5f5f3 */
+  --ms-panel: #ffffff; /* #ffffff */
+  --ms-raised: #fafaf9; /* #fafaf9 */
+  --ms-hover: #efefec; /* #efefec */
+  --ms-border: #e5e5e1; /* #e5e5e1 */
+  --ms-border-strong: #d4d4cf; /* #d4d4cf */
+  --ms-text: #16171a; /* #16171a */
+  --ms-text-muted: #5d6067; /* #5d6067 */
+  --ms-text-faint: #989ba1; /* #989ba1 */
+  --ms-accent: oklch(0.86 0.16 92); /* #f7cd3a */
+  --ms-on-accent: #16171a; /* #16171a */
+  --ms-accent-text: oklch(0.5 0.11 80); /* #845b00 */
+  --ms-override: oklch(0.58 0.17 45); /* #c84f00 */
+  --ms-status-delivered: oklch(0.52 0.14 155);
+  --ms-status-soft-bounce: oklch(0.57 0.14 60);
+  --ms-status-hard-bounce: oklch(0.54 0.19 25);
+  --ms-status-complained: oklch(0.52 0.16 320);
+  --ms-status-deferred: oklch(0.52 0.13 250);
+  --ms-status-failed: oklch(0.5 0.2 15);
+  --ms-status-suppressed: #787b82;
+  --ms-conn-resend: #2a2c30;
+  --ms-conn-brevo: oklch(0.5 0.11 165);
+  --ms-conn-smtp: oklch(0.5 0.12 270);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ms-bg: #0b0c0e; /* #0b0c0e */
+  --ms-panel: #111214; /* #111214 */
+  --ms-raised: #16171a; /* #16171a */
+  --ms-hover: #1d1f23; /* #1d1f23 */
+  --ms-border: #222429; /* #222429 */
+  --ms-border-strong: #2d3036; /* #2d3036 */
+  --ms-text: #e7e8ea; /* #e7e8ea */
+  --ms-text-muted: #8d9199; /* #8d9199 */
+  --ms-text-faint: #5f636b; /* #5f636b */
+  --ms-accent: oklch(0.87 0.16 92); /* #fad03e */
+  --ms-on-accent: #0b0c0e; /* #0b0c0e */
+  --ms-accent-text: oklch(0.87 0.16 92); /* #fad03e */
+  --ms-override: oklch(0.74 0.17 45); /* #ff8244 */
+  --ms-status-delivered: oklch(0.76 0.15 155);
+  --ms-status-soft-bounce: oklch(0.8 0.14 70);
+  --ms-status-hard-bounce: oklch(0.7 0.18 25);
+  --ms-status-complained: oklch(0.74 0.14 320);
+  --ms-status-deferred: oklch(0.76 0.11 245);
+  --ms-status-failed: oklch(0.66 0.2 10);
+  --ms-status-suppressed: #868a92;
+  --ms-conn-resend: #d6d8dc;
+  --ms-conn-brevo: oklch(0.78 0.11 165);
+  --ms-conn-smtp: oklch(0.76 0.1 270);
+}
+
+:root {
+  --ms-font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --ms-font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  --ms-text-display: 600 48px / 1 var(--ms-font-sans); /* letter-spacing: -0.04em */
+  --ms-text-title: 600 22px / 1.25 var(--ms-font-sans); /* -0.02em */
+  --ms-text-heading: 600 15px / 1.35 var(--ms-font-sans);
+  --ms-text-body: 400 13px / 1.5 var(--ms-font-sans);
+  --ms-text-mono: 400 12.5px / 1.5 var(--ms-font-mono);
+  --ms-text-label: 500 11px / 1.4 var(--ms-font-sans); /* uppercase, 0.06em */
+
+  --ms-radius-xs: 4px;
+  --ms-radius-sm: 6px;
+  --ms-radius-md: 8px;
+  --ms-radius-lg: 10px;
+  --ms-radius-xl: 14px;
+
+  --ms-space-1: 4px;
+  --ms-space-2: 8px;
+  --ms-space-3: 12px;
+  --ms-space-4: 16px;
+  --ms-space-5: 20px;
+  --ms-space-6: 24px;
+  --ms-space-8: 32px;
+  --ms-space-12: 48px;
+
+  --ms-control-h-sm: 24px;
+  --ms-control-h-md: 30px;
+  --ms-control-h-lg: 34px;
+  --ms-header-h: 56px;
+  --ms-list-w: 400px;
+
+  --ms-dur-fast: 120ms;
+  --ms-dur-base: 200ms;
+  --ms-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ms-focus-ring: 0 0 0 3px color-mix(in oklch, var(--ms-accent-text) 25%, transparent);
+}
