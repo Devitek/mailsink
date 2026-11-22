@@ -130,6 +130,13 @@ importers:
       '@mailsink/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@mailsink/db':
+        specifier: workspace:*
+        version: link:../db
+    devDependencies:
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@electric-sql/pglite@0.5.17)(@types/pg@8.23.1)(pg@8.23.1)
 
   packages/db:
     dependencies:

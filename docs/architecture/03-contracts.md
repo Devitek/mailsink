@@ -259,6 +259,34 @@ export const ListWorkspacesResponse = Page(WorkspaceView)
 The `.env` snippet itself is built by the Admin API (server side, it knows the public base
 URLs); the contract only carries the string.
 
+Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connections/`):
+
+- Auth: the Admin key only (D41); with `MAILSINK_ADMIN_KEY` unset every call gets 401.
+- `POST` answers 201 with `CreateWorkspaceResponse`, the only place secrets ever appear.
+  Workspace, connections and keys are written in one transaction. A taken slug or SMTP
+  username (also twice in the same request) answers 409 `conflict`; nothing is written.
+- Generated values (proposal): slug `<slugified name>-<6 [a-z0-9]>`; keys
+  `msk_` / `mskw_` + 32 random bytes base64url, stored as SHA-256 with a `display_prefix`
+  of the prefix plus 8 characters (`keyPreview` = display prefix + `…`); SMTP username
+  `<slug>-<8 hex>`, password 24 random bytes base64url, stored as
+  `scrypt$16384$8$1$<salt>$<key>` (D11). Only `resend` and `brevo` connections get an
+  `msk_` key; `smtp` connections get SMTP credentials and `keyPreview: null`.
+- Credentials and snippets (proposal): Resend `baseUrl` = `MAILSINK_PUBLIC_URL`
+  (`RESEND_API_KEY`, `RESEND_BASE_URL`, read by the Resend SDK); Brevo `baseUrl` =
+  `MAILSINK_PUBLIC_URL/v3` (`BREVO_API_KEY`, `BREVO_BASE_URL`); SMTP host = hostname of
+  `MAILSINK_PUBLIC_URL`, port = the SMTP listener port (`SMTP_HOST`, `SMTP_PORT`,
+  `SMTP_USER`, `SMTP_PASS`).
+- `urls` (D35): `ui` = `<public>/w/<slug>`, `capture` = `<public>/capture`, `mcp` =
+  `<public>/mcp`.
+- Ephemeral (#19): `idleTtlSeconds` defaults to `MAILSINK_DEFAULT_IDLE_TTL` (bare seconds
+  or a duration, 60 s .. 30 d, default 3600); `last_activity_at` = creation time and
+  `expires_at` = creation + TTL. Persistent workspaces keep both TTL columns null; an
+  `idleTtlSeconds` there is refused (D34, 422 `idle_ttl_requires_ephemeral`).
+- `GET /admin/workspaces`: newest first; `nextCursor` is the id of the last workspace of
+  the page (keyset on the UUIDv7 id), a malformed cursor is a 422.
+- `GET` and `DELETE /admin/workspaces/:id` take an id or a slug; `DELETE` answers 204 and
+  cascades to every workspace-owned row; an unknown workspace is a 404.
+
 ## Native ingestion (`native.ts`)
 
 ```ts
