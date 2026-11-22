@@ -39,15 +39,11 @@ export async function createRuntime(
   if (!config.adminKey) {
     log.warn('[mailsink] MAILSINK_ADMIN_KEY is not set: the Admin API refuses every call')
   }
-  const db = createDb(config.databaseUrl)
-  if (db.driver === 'postgres') {
-    // An idle pooled client losing its connection (Postgres restart) emits `error` on the
-    // pool; unhandled, it becomes an uncaughtException. The pool reconnects on next use.
-    const pool = db.client as unknown as NodeJS.EventEmitter
-    pool.on('error', (error: Error) => {
-      log.warn(`[mailsink] database connection lost: ${error.message}`)
-    })
-  }
+  // createDb owns the pool `error` listener (an idle client losing its connection); the
+  // runtime only routes the warning to its logger.
+  const db = createDb(config.databaseUrl, {
+    onConnectionError: (error) => log.warn(`[mailsink] database connection lost: ${error.message}`),
+  })
   try {
     await migrate(db, { migrationsFolder: options.migrationsFolder })
     log.info(`[mailsink] database ready (${db.driver}, migrations applied)`)

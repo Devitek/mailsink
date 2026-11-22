@@ -5,6 +5,8 @@ import { createDb, type DbHandle, type Driver } from '../client'
 import { migrate } from '../migrate'
 
 export interface TestDb extends DbHandle {
+  /** `DATABASE_URL` of this database, for code that opens its own handle. */
+  readonly url: string
   /** Closes the handle and drops the throwaway database (Postgres). */
   dispose(): Promise<void>
 }
@@ -31,7 +33,8 @@ async function openPglite(): Promise<TestDb> {
   const handle = createDb('pglite://memory')
   // Boot the WASM instance inside the setup hook, not in the first test's time budget.
   await (handle.client as PGlite).waitReady
-  return { ...handle, dispose: () => handle.close() }
+  // A new `pglite://memory` handle is another, empty database.
+  return { ...handle, url: 'pglite://memory', dispose: () => handle.close() }
 }
 
 async function openPostgres(): Promise<TestDb> {
@@ -44,6 +47,7 @@ async function openPostgres(): Promise<TestDb> {
   const handle = createDb(url.toString(), { maxConnections: 4 })
   return {
     ...handle,
+    url: url.toString(),
     dispose: async () => {
       await handle.close()
       await admin(serverUrl, `drop database if exists ${name} with (force)`)
