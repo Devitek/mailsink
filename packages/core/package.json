@@ -12,9 +12,8 @@
   },
   "dependencies": {
     "@mailsink/contracts": "workspace:*",
-    "@mailsink/db": "workspace:*"
-  },
-  "devDependencies": {
-    "drizzle-orm": "^0.45.4"
+    "@mailsink/db": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "nodemailer": "^10.6.1"
   }
 }

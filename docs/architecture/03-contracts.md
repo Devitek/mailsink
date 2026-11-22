@@ -329,6 +329,36 @@ export const BatchResponse = z.object({              // 207 when partial, 200 wh
 Every dialect maps to one internal type, `NormalizedEmail` (`core/ingestion/normalize.ts`),
 the only input of the ingestion pipeline.
 
+Pipeline (`core/ingestion/`), shared by every dialect:
+
+1. `prepareEmail` (outside any transaction): composes the raw EML with Nodemailer
+   `MailComposer` when the dialect brought none (D9; `Message-ID: <msg_…@mailsink>`, Bcc left
+   out of the headers, file and URL access disabled), enforces `MAILSINK_MAX_MESSAGE_BYTES`
+   on it, and extracts the http(s) links (html anchors with their text, then bare urls of
+   the text part, deduplicated, at most 500).
+2. `persistEmails` (one transaction): raw EML and attachments go to the `BlobStore`
+   (database driver, deduplicated by sha256 per workspace, D8); the message, one recipient
+   row per address (D10, an address listed twice keeps its first kind, to > cc > bcc), its
+   attachments and an `accepted` event (origin `simulation`) are inserted. A recipient on
+   the workspace suppression list is stored `suppressed` with a `suppressed` event. The
+   message is `queued` and one `simulate_delivery` job `{ messageId }` is enqueued in the
+   same transaction, unless every recipient is suppressed (message `suppressed`, no job).
+
+HTTP behaviour of `POST /v1/emails` and `POST /v1/emails/batch`:
+
+- Any `msk_` connection key; the message records the connection and `source: 'native'`.
+- The request body is capped at `MAILSINK_MAX_MESSAGE_BYTES` (default 25 MB) before any
+  parsing (`defineApi` option `maxBodyBytes`): `413 payload_too_large`. A batch is capped as
+  a whole; each composed message is capped again (a batch item over the cap fails its slot).
+- Batch: the envelope is validated as a whole (`422` when it is not an array of 1 to 100),
+  then each item alone; the valid items are stored in one transaction. `200` when every item
+  is accepted, `207` otherwise (also when none is).
+- `Idempotency-Key` (at most 256 characters, else `400 validation_error`): scoped to the
+  workspace, kept 24 h, stored in the same transaction as the messages. The same key with
+  the same route and body (key order ignored) replays the stored status and body with the
+  header `Idempotent-Replayed: true`; with another body it fails with
+  `409 idempotency_mismatch`. Two concurrent requests on a new key store one message.
+
 ## Resend dialect (`resend.ts`)
 
 ```ts
