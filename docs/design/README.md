@@ -8,6 +8,7 @@ are binding for the UI issues.
 | Folder | Delivery | Issue |
 |---|---|---|
 | [`brand-1/`](brand-1/README.md) | Brand and UI kit « Jaune Poste »: logo « Le Bac », tokens, interactive prototype of the whole app | #36 |
+| [`brief-2/`](brief-2/README.md) | Admin-key sign-in screen (L1a to L1e, desktop and 390) and the header « Language and session » menu (H2a to H2d), light and dark, FR and EN copy | #63 |
 
 ## brand-1: contents
 
@@ -46,3 +47,19 @@ are binding for the UI issues.
   `[data-theme="dark"]`.
 - UI copy in the mockups is French; the source locale stays English (D18) and the mockup
   texts serve as the reference for the French catalog.
+
+## Arbitrages du brief 2 (owner, 23/11/2026)
+
+The brief archive sent to the partner is not versioned; the request is recorded in #63.
+Copy, interactions and accessibility rules of `brief-2/README.md` are binding unless changed
+below.
+
+| # | Point raised by the delivery | Decision |
+|---|---|---|
+| B2-1 | Sign-in composition: centred 420 px card (full width without border at 390), lockup, discreet baseline, instance block (URL and version), key field with Show and Paste, « Where do I find the key? » help, session-cookie reassurance line, language and theme controls top right | Accepted as delivered, FR and EN copy included |
+| B2-2 | L1b « 2 attempts left » requires the server to expose remaining attempts | **Removed**: the server does not reveal how many attempts remain. L1b keeps « Key rejected. Check that it matches `MAILSINK_ADMIN_KEY` on the server. » |
+| B2-3 | L1e « Too many attempts »: live countdown in the banner and the button, field still editable, everything re-enabled at zero without reload; duration from the server (`Retry-After`) | Accepted. The sign-in endpoint answers 429 with `Retry-After` once the limit is reached (threshold and duration server side, #37) |
+| B2-4 | Header: one compact button showing the active locale (FR / EN, mono) before the theme toggle, opening a « Language and session » menu (languages as endonyms with a check, instance reminder, sign out; with `MAILSINK_UI_AUTH=none` the sign-out line becomes a note) | Accepted |
+| B2-5 | No danger token: errors reuse `--ms-status-failed` | Add `--ms-danger: var(--ms-status-failed)` and use it for errors |
+| B2-6 | Sign-in field and button at 44 px (48 px at 390), above the control scale | Add `--ms-control-h-xl: 44px` |
+| B2-7 | Sign-in card radius 16 px, above the scale | Card uses `--ms-radius-xl` (14 px) |
