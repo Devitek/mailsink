@@ -22,6 +22,22 @@ describe('newId', () => {
     expect([...ids].sort()).toEqual([ids[1], ids[2], ids[0]])
   })
 
+  it('stays strictly increasing within the same millisecond', () => {
+    const now = 1_700_000_000_000
+    const ids = Array.from({ length: 5000 }, () => newId('rcp', now))
+    expect([...ids].sort()).toEqual(ids)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const id of ids) {
+      expect(id.slice(4)).toMatch(UUID_V7)
+      expect(Number.parseInt(id.slice(4, 17).replace('-', ''), 16)).toBe(now)
+    }
+  })
+
+  it('keeps the order of ids created back to back with the real clock', () => {
+    const ids = Array.from({ length: 2000 }, () => newId('con'))
+    expect([...ids].sort()).toEqual(ids)
+  })
+
   it('never repeats', () => {
     const ids = new Set(Array.from({ length: 1000 }, () => newId('con')))
     expect(ids.size).toBe(1000)
