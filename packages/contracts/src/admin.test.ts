@@ -86,4 +86,9 @@ describe('ListWorkspacesQuery', () => {
   it('bounds the limit', () => {
     expect(ListWorkspacesQuery.safeParse({ limit: '201' }).success).toBe(false)
   })
+  it('takes a workspace id as cursor', () => {
+    const cursor = 'ws_01a2057c-d67b-7003-bb51-5bd9e7ed4522'
+    expect(ListWorkspacesQuery.parse({ cursor }).cursor).toBe(cursor)
+    expect(ListWorkspacesQuery.safeParse({ cursor: 'staging' }).success).toBe(false)
+  })
 })
