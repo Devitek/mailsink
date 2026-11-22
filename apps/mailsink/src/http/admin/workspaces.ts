@@ -1,29 +1,17 @@
 import {
   CreateWorkspaceRequest,
   ListWorkspacesQuery,
-  WorkspaceId,
   WorkspaceRef,
 } from '@mailsink/contracts'
 import {
   createWorkspace,
   getWorkspaceDetail,
   listWorkspaceViews,
-  type PublicEndpoints,
   removeWorkspace,
 } from '@mailsink/core'
 import { z } from 'zod'
-import type { Runtime } from '../../runtime/container'
 import { defineApi } from '../handler'
-
-/** Where clients reach this instance: public URL (D35), SMTP host from its hostname. */
-export function publicEndpoints(runtime: Runtime): PublicEndpoints {
-  const { publicUrl, smtpPort } = runtime.config
-  return {
-    publicUrl,
-    smtpHost: new URL(publicUrl).hostname,
-    smtpPort: runtime.smtpPort || smtpPort,
-  }
-}
+import { publicEndpoints } from './public-endpoints'
 
 const RefParams = z.object({ id: WorkspaceRef })
 
@@ -43,7 +31,7 @@ export const postWorkspace = defineApi({
 /** `GET /admin/workspaces?includeEphemeral=&cursor=&limit=`. */
 export const listWorkspaces = defineApi({
   auth: 'admin',
-  query: ListWorkspacesQuery.extend({ cursor: WorkspaceId.optional() }),
+  query: ListWorkspacesQuery,
   handler: ({ runtime, query }) =>
     listWorkspaceViews(runtime.db.db, query, runtime.config.publicUrl),
 })

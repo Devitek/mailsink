@@ -1,5 +1,6 @@
 import {
   createJobRunner,
+  DEFAULT_JOB_SETTINGS,
   simulateDeliveryHandler,
   startRetentionScheduler,
   startWorker,
@@ -60,9 +61,14 @@ export async function createRuntime(
 
     // Job queue (D5): handlers join here (deliver_webhook with #33); kinds without a
     // handler stay in the table untouched.
+    const jobs = config.jobs ?? DEFAULT_JOB_SETTINGS
     const runJobs = createJobRunner({
       db: db.db,
       handlers: { simulate_delivery: simulateDeliveryHandler() },
+      batchSize: jobs.batchSize,
+      lockSeconds: jobs.lockSeconds,
+      maxAttempts: jobs.maxAttempts,
+      backoff: { baseSeconds: jobs.backoffBaseSeconds, maxSeconds: jobs.backoffMaxSeconds },
       log,
     })
     const worker = startWorker({
@@ -75,6 +81,7 @@ export async function createRuntime(
     const retention = startRetentionScheduler({
       db: db.db,
       intervalMs: config.retentionIntervalMs ?? 60_000,
+      failedJobRetentionSeconds: jobs.failedRetentionSeconds,
       log,
     })
 
