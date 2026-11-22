@@ -1,8 +1,8 @@
 import { insertCapturedMessage } from '@mailsink/core/capture-testing'
 import { describeDb } from '@mailsink/db/testing'
 import { afterAll, beforeAll, expect, it } from 'vitest'
-import { ADMIN_KEY, installTestRuntime, request, seedWorkspace } from '../http/test-fixtures'
-import { stopRuntime } from '../runtime/boot'
+import { stopRuntime } from '../../runtime/boot'
+import { ADMIN_KEY, installTestRuntime, request, seedWorkspace } from '../test-fixtures'
 import { getAttachment, getMessage, getRawMessage, listMessages, purgeMessages } from './api'
 
 type Seeded = Awaited<ReturnType<typeof seedWorkspace>>

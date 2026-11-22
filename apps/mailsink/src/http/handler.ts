@@ -3,7 +3,7 @@ import type { z } from 'zod'
 import type { Runtime } from '../runtime/container'
 import { whenRuntimeReady } from '../runtime/slot'
 import { type AuthFor, type AuthMode, authenticate } from './auth'
-import { limitBody } from './body-limit'
+import { type BodyCap, limitBody, resolveBodyCap } from './body-limit'
 import { type ErrorFormatter, errorResponse, REQUEST_ID_HEADER } from './errors'
 import { type ApiExtension, DEFAULT_EXTENSIONS } from './extensions'
 import { parseInput, queryObject, readJsonBody } from './validation'
@@ -27,8 +27,11 @@ export interface ApiSpec<M extends AuthMode, B, Q, P> {
   params?: P
   /** Error body shape of the dialect, native by default. */
   errorFormat?: ErrorFormatter
-  /** Body size cap in bytes (`payload_too_large`), `MAILSINK_MAX_MESSAGE_BYTES` by default. */
-  maxBodyBytes?: number
+  /**
+   * Body size cap (`payload_too_large`): bytes, or `'message'` for
+   * `MAILSINK_MAX_MESSAGE_BYTES` (ingestion). `DEFAULT_MAX_BODY_BYTES` (1 MiB) by default.
+   */
+  maxBodyBytes?: BodyCap
   /** Route-specific extensions, run after DEFAULT_EXTENSIONS. */
   extensions?: readonly ApiExtension[]
   /** A plain value is sent as JSON 200; return a Response for anything else. */
@@ -72,7 +75,10 @@ export function defineApi<
           ? await parse(
               spec.body,
               await readJsonBody(
-                await limitBody(request, spec.maxBodyBytes ?? runtime.config.maxMessageBytes),
+                await limitBody(
+                  request,
+                  resolveBodyCap(spec.maxBodyBytes, runtime.config.maxMessageBytes),
+                ),
               ),
               'body',
             )
