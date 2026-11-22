@@ -1,8 +1,8 @@
+import type { RateLimitSettings, SimulationSettingsPatch } from '@mailsink/contracts'
 import { sql } from 'drizzle-orm'
 import { check, index, integer, jsonb, pgTable, text } from 'drizzle-orm/pg-core'
 import { createdAt, tstz } from './columns'
 import { connectionKind } from './enums'
-import type { RateLimitSettings, SimulationSettings } from './json-types'
 import { workspaces } from './workspaces'
 
 export const connections = pgTable(
@@ -19,7 +19,7 @@ export const connections = pgTable(
     // Per-connection overrides of workspace defaults; null = inherit.
     retentionSeconds: integer('retention_seconds'),
     rateLimit: jsonb('rate_limit').$type<RateLimitSettings>(),
-    simulation: jsonb('simulation').$type<Partial<SimulationSettings>>(),
+    simulation: jsonb('simulation').$type<SimulationSettingsPatch>(),
     disabledAt: tstz('disabled_at'),
     createdAt: createdAt(),
     updatedAt: createdAt('updated_at'),

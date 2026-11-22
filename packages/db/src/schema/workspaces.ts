@@ -1,7 +1,16 @@
+import type { RateLimitSettings, SimulationSettings } from '@mailsink/contracts'
 import { sql } from 'drizzle-orm'
 import { boolean, index, integer, jsonb, pgTable, text } from 'drizzle-orm/pg-core'
 import { createdAt, tstz } from './columns'
-import type { RateLimitSettings, SimulationSettings } from './json-types'
+
+/** Default of `workspaces.simulation`: the defaults of the SimulationSettings contract. */
+export const DEFAULT_SIMULATION_SETTINGS: SimulationSettings = {
+  rates: { delivered: 100 },
+  rules: [],
+  latency: { minMs: 0, maxMs: 0 },
+  openRate: 0,
+  clickRate: 0,
+}
 
 export const workspaces = pgTable(
   'workspaces',
@@ -24,7 +33,7 @@ export const workspaces = pgTable(
     simulation: jsonb('simulation')
       .$type<SimulationSettings>()
       .notNull()
-      .default(sql`'{"rates":{"delivered":100}}'::jsonb`),
+      .default(DEFAULT_SIMULATION_SETTINGS),
     metadata: jsonb('metadata').$type<Record<string, string>>(), // e.g. CI run id
     timezone: text('timezone').notNull().default('UTC'), // Brevo webhook `date` (D23)
     createdVia: text('created_via', { enum: ['ui', 'admin_api'] }).notNull(),

@@ -41,19 +41,23 @@ export const webhookDeliveries = pgTable(
   ],
 )
 
-export const webhookAttempts = pgTable('webhook_attempts', {
-  id: text('id').primaryKey(),
-  deliveryId: text('delivery_id')
-    .notNull()
-    .references(() => webhookDeliveries.id, { onDelete: 'cascade' }),
-  attemptNo: integer('attempt_no').notNull(),
-  // Headers exactly as sent, signature headers included, unredacted: an `exact` replay
-  // copies them byte for byte. The UI masks Authorization values behind a reveal toggle.
-  requestHeaders: jsonb('request_headers').$type<Record<string, string>>().notNull(),
-  signedAt: integer('signed_at'), // unix ts used to sign
-  responseStatus: integer('response_status'),
-  responseBody: text('response_body'), // truncated to 4 KB
-  durationMs: integer('duration_ms').notNull(),
-  error: text('error'), // DNS, timeout, TLS…
-  createdAt: createdAt(),
-})
+export const webhookAttempts = pgTable(
+  'webhook_attempts',
+  {
+    id: text('id').primaryKey(),
+    deliveryId: text('delivery_id')
+      .notNull()
+      .references(() => webhookDeliveries.id, { onDelete: 'cascade' }),
+    attemptNo: integer('attempt_no').notNull(),
+    // Headers exactly as sent, signature headers included, unredacted: an `exact` replay
+    // copies them byte for byte. The UI masks Authorization values behind a reveal toggle.
+    requestHeaders: jsonb('request_headers').$type<Record<string, string>>().notNull(),
+    signedAt: integer('signed_at'), // unix ts used to sign
+    responseStatus: integer('response_status'),
+    responseBody: text('response_body'), // truncated to 4 KB
+    durationMs: integer('duration_ms').notNull(),
+    error: text('error'), // DNS, timeout, TLS…
+    createdAt: createdAt(),
+  },
+  (t) => [index('attempts_delivery_idx').on(t.deliveryId)],
+)
