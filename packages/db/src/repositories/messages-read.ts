@@ -4,6 +4,7 @@ import { attachments } from '../schema/attachments'
 import { blobs } from '../schema/blobs'
 import { messageEvents } from '../schema/events'
 import { messageRecipients, messages } from '../schema/messages'
+import { searchDocument } from '../search-document'
 
 export type MessageRow = typeof messages.$inferSelect
 export type RecipientRow = typeof messageRecipients.$inferSelect
@@ -23,7 +24,10 @@ export interface MessageSearch {
   connectionId?: string
   since?: Date
   until?: Date
-  /** Full text on subject, text and HTML bodies (`simple` config, websearch syntax). */
+  /**
+   * Full text on subject, text and HTML bodies (`simple` config, websearch syntax), within
+   * their first `SEARCH_DOCUMENT_MAX_CHARS` characters.
+   */
   q?: string
   /** Keyset position: rows strictly older than this (created_at, id) pair. */
   after?: { createdAt: string; id: string }
@@ -49,8 +53,7 @@ const hasAttachments = sql<boolean>`exists (select 1 from ${attachments}
 const cursorAt = sql<string>`to_char(${messages.createdAt} at time zone 'UTC',
   'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
 
-const searchDocument = sql`to_tsvector('simple', ${messages.subject} || ' ' ||
-  coalesce(${messages.text}, '') || ' ' || coalesce(${messages.html}, ''))`
+const searchable = searchDocument(messages)
 
 function conditions(s: MessageSearch): SQL[] {
   const where: SQL[] = [eq(messages.workspaceId, s.workspaceId)]
@@ -70,7 +73,7 @@ function conditions(s: MessageSearch): SQL[] {
   if (s.connectionId) where.push(eq(messages.connectionId, s.connectionId))
   if (s.since) where.push(gte(messages.createdAt, s.since))
   if (s.until) where.push(lte(messages.createdAt, s.until))
-  if (s.q?.trim()) where.push(sql`${searchDocument} @@ websearch_to_tsquery('simple', ${s.q})`)
+  if (s.q?.trim()) where.push(sql`${searchable} @@ websearch_to_tsquery('simple', ${s.q})`)
   if (s.after) {
     where.push(
       sql`(${messages.createdAt}, ${messages.id}) < (${s.after.createdAt}::timestamptz, ${s.after.id})`,
@@ -79,14 +82,19 @@ function conditions(s: MessageSearch): SQL[] {
   return where
 }
 
-/** One page of messages, newest first, plus one extra row when a next page exists. */
-export async function searchMessages(db: Executor, s: MessageSearch): Promise<MessageListRow[]> {
-  const rows = await db
+/** The page query of `searchMessages`, unexecuted (index usage tests explain it). */
+export function searchMessagesQuery(db: Executor, s: MessageSearch) {
+  return db
     .select({ message: messages, hasAttachments, cursorAt })
     .from(messages)
     .where(and(...conditions(s)))
     .orderBy(desc(messages.createdAt), desc(messages.id))
     .limit(s.limit + 1)
+}
+
+/** One page of messages, newest first, plus one extra row when a next page exists. */
+export async function searchMessages(db: Executor, s: MessageSearch): Promise<MessageListRow[]> {
+  const rows = await searchMessagesQuery(db, s)
   return rows.map((r) => ({ ...r.message, hasAttachments: r.hasAttachments, cursorAt: r.cursorAt }))
 }
 

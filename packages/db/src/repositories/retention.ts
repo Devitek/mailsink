@@ -2,9 +2,9 @@ import { type SQL, sql } from 'drizzle-orm'
 import type { Executor } from '../client'
 
 /**
- * Retention purges (#17). Every function is one idempotent `DELETE … WHERE` statement that
- * returns how many rows it removed: running it twice, or from two processes, is harmless.
- * Message children (recipients, attachments, events) go with the message by cascade.
+ * Retention purges (#17). Every statement is an idempotent `DELETE … WHERE` that returns how
+ * many rows it removed: running it twice, or from two processes, is harmless. Message
+ * children (recipients, attachments, events) go with the message by cascade.
  */
 
 async function countDeleted(db: Executor, deletion: SQL): Promise<number> {
@@ -14,39 +14,70 @@ async function countDeleted(db: Executor, deletion: SQL): Promise<number> {
   return Number(result.rows[0]?.n ?? 0)
 }
 
+const cutoff = (seconds: SQL) => sql`now() - make_interval(secs => ${seconds})`
+
 /**
- * Effective retention of a row: its connection's `retention_seconds` when set, else its
- * workspace's. Rows without a workspace (failed authentication) use `fallbackSeconds`.
+ * Rows older than their effective retention: their connection's `retention_seconds` when
+ * set, else their workspace's. Rows without a workspace (failed authentication) use
+ * `orphanSeconds` when given and are kept otherwise.
+ *
+ * Each case is a range scan per workspace or connection on the `(workspace_id, …time)`
+ * indexes. The `lateral (… offset 0)` subqueries are on purpose: flattened, the planner
+ * cannot estimate a cutoff that depends on the joined row and falls back to a full scan of
+ * the table on every pass (measured on Postgres, docs/architecture/02-database-schema.md).
  */
-const retention = (workspace: SQL, connection: SQL, fallbackSeconds = 0) =>
-  sql`make_interval(secs => coalesce(
-    (select c.retention_seconds from connections c where c.id = ${connection}),
-    (select w.retention_seconds from workspaces w where w.id = ${workspace}),
-    ${fallbackSeconds}::int))`
+async function purgeRetained(
+  db: Executor,
+  table: 'messages' | 'api_logs' | 'smtp_sessions',
+  time: 'created_at' | 'started_at',
+  orphanSeconds?: number,
+): Promise<number> {
+  const t = sql.raw(table)
+  const at = sql.raw(time)
+  const byConnection = await countDeleted(
+    db,
+    sql`delete from ${t} r using connections c cross join lateral (
+        select x.id from ${t} x
+        where x.workspace_id = c.workspace_id and x.connection_id = c.id
+          and x.${at} < ${cutoff(sql`c.retention_seconds`)} offset 0
+      ) expired
+      where c.retention_seconds is not null and r.id = expired.id`,
+  )
+  const byWorkspace = await countDeleted(
+    db,
+    sql`delete from ${t} r using workspaces w cross join lateral (
+        select x.id, x.connection_id from ${t} x
+        where x.workspace_id = w.id and x.${at} < ${cutoff(sql`w.retention_seconds`)} offset 0
+      ) expired
+      where r.id = expired.id and not exists (select 1 from connections c
+        where c.id = expired.connection_id and c.workspace_id = w.id
+          and c.retention_seconds is not null)`,
+  )
+  const orphans =
+    orphanSeconds === undefined
+      ? 0
+      : await countDeleted(
+          db,
+          sql`delete from ${t} r
+            where r.workspace_id is null and r.${at} < ${cutoff(sql`${orphanSeconds}::int`)}`,
+        )
+  return byConnection + byWorkspace + orphans
+}
 
 /** Messages older than their effective retention. */
 export function purgeExpiredMessages(db: Executor): Promise<number> {
-  return countDeleted(
-    db,
-    sql`delete from messages m
-      where m.created_at < now() - ${retention(sql`m.workspace_id`, sql`m.connection_id`)}`,
-  )
+  return purgeRetained(db, 'messages', 'created_at')
 }
 
 /** Keeps the `max_messages` newest messages of each bounded workspace, oldest go first. */
 export function enforceMaxMessages(db: Executor): Promise<number> {
   return countDeleted(
     db,
-    sql`delete from messages m using (
-        select r.id from (
-          select m2.id, w.max_messages,
-            row_number() over (partition by m2.workspace_id
-              order by m2.created_at desc, m2.id desc) as rank
-          from messages m2 join workspaces w on w.id = m2.workspace_id
-          where w.max_messages is not null
-        ) r where r.rank > r.max_messages
+    sql`delete from messages m using workspaces w cross join lateral (
+        select x.id from messages x where x.workspace_id = w.id
+        order by x.created_at desc, x.id desc offset w.max_messages
       ) excess
-      where m.id = excess.id`,
+      where w.max_messages is not null and m.id = excess.id`,
   )
 }
 
@@ -72,15 +103,15 @@ export async function purgeExpiredLogs(
   db: Executor,
   orphanRetentionSeconds: number,
 ): Promise<number> {
-  const api = await countDeleted(
-    db,
-    sql`delete from api_logs l
-      where l.created_at < now() - ${retention(sql`l.workspace_id`, sql`l.connection_id`, orphanRetentionSeconds)}`,
-  )
-  const smtp = await countDeleted(
-    db,
-    sql`delete from smtp_sessions s
-      where s.started_at < now() - ${retention(sql`s.workspace_id`, sql`s.connection_id`, orphanRetentionSeconds)}`,
-  )
+  const api = await purgeRetained(db, 'api_logs', 'created_at', orphanRetentionSeconds)
+  const smtp = await purgeRetained(db, 'smtp_sessions', 'started_at', orphanRetentionSeconds)
   return api + smtp
+}
+
+/** Jobs given up on (`failJob`) more than `graceSeconds` ago. */
+export function purgeFailedJobs(db: Executor, graceSeconds: number): Promise<number> {
+  return countDeleted(
+    db,
+    sql`delete from jobs where failed_at < ${cutoff(sql`${graceSeconds}::int`)}`,
+  )
 }
