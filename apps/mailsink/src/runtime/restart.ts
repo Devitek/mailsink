@@ -79,7 +79,12 @@ export async function whenRestartSettled(): Promise<void> {
   }
 }
 
-export type PluginStart = { restart: boolean; ready: Promise<Runtime> }
+/**
+ * `restart`: false for the first boot; `'scheduled'` when this evaluation opened a restart;
+ * `'coalesced'` when it joined one already waiting for its debounce window (Vite evaluates
+ * the plugin once per environment for one edit), so the caller logs each restart once.
+ */
+export type PluginStart = { restart: false | 'scheduled' | 'coalesced'; ready: Promise<Runtime> }
 
 /**
  * Called by nitro-plugin.ts each time it is evaluated. The first evaluation of the process
@@ -96,5 +101,6 @@ export function startRuntimeFromPlugin(
     slot.started = true
     return { restart: false, ready: bootRuntime(options) }
   }
-  return { restart: true, ready: requestRestart(options, debounceMs) }
+  const restart = slot.pendingRestart ? 'coalesced' : 'scheduled'
+  return { restart, ready: requestRestart(options, debounceMs) }
 }
