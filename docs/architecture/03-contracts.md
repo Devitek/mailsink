@@ -392,7 +392,7 @@ export const WebhookEndpointView = z.object({
 
 Changing `payloadFormat` (PATCH) keeps the canonical subscription. Events the new format
 cannot represent stay stored but are listed in `unsupportedEvents` and never emitted; the
-UI warns before saving (proposal, D22).
+UI warns before saving (D22).
 
 ### Event mapping (`webhooks/events-map.ts`)
 
@@ -419,7 +419,7 @@ Resend `email.bounced` means a *permanent* rejection and `email.delivery_delayed
 suppression event (`suppression.added` describes the list, not a send). Brevo subscription
 names (`hardBounce`, `softBounce`) differ from the payload `event` values (`hard_bounce`,
 `soft_bounce`): both directions are mapped. `email.failed` is a canonical addition for the
-simulated `failed` status (Resend parity). All four lines are proposals (D22).
+simulated `failed` status (Resend parity). Owner-approved on 22/11 (D22).
 
 Reverse mapping is many-to-one on purpose: subscribing to Resend
 `email.delivery_delayed` stores `email.deferred` + `email.soft_bounced`.
@@ -487,7 +487,7 @@ X-Mailsink-Signature: sha256=<hex hmac_sha256(secret, "<timestamp>.<body>")>
 ```
 
 The timestamp is part of the signed string so a receiver can reject stale replays
-(proposal, D24).
+(D24).
 
 #### `ResendWebhookFormatter`
 
@@ -552,8 +552,7 @@ Authorization: Basic <base64 user:pass>  # brevoAuth.type = basic
 ```
 
 `X-Sib-Signature` is not part of Brevo's public documentation, so it is not emitted;
-adding a non-standard signature would make Mailsink less faithful (proposal, D23, to
-confirm or veto).
+adding a non-standard signature would make Mailsink less faithful (D23).
 
 ### Delivery lifecycle, retries and replay (D24)
 
@@ -579,7 +578,7 @@ export const ReplayRequest = z.object({
   included. Caveat shown in the UI: Svix-based verifiers (Resend SDK) reject timestamps
   older than 5 minutes, and receivers may de-duplicate on `svix-id`; that is the point
   when testing replay protection.
-- `resign` (proposal): same body and same delivery id header, fresh timestamp and
+- `resign`: same body and same delivery id header, fresh timestamp and
   signature, as the Svix dashboard « resend » does; the receiver accepts it.
 
 `POST /_capture/webhooks/preview` takes `{ payloadFormat, event, connectionId? }` and
