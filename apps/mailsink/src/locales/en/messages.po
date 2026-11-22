@@ -11,6 +11,14 @@ msgstr ""
 msgid "Catch every email your app sends, without delivering a single one."
 msgstr "Catch every email your app sends, without delivering a single one."
 
+#: apps/mailsink/src/routes/index.tsx
+msgid "Every email caught. <0>None delivered.</0>"
+msgstr "Every email caught. <0>None delivered.</0>"
+
 #: apps/mailsink/src/i18n/locale-switcher.tsx
 msgid "Language"
 msgstr "Language"
+
+#: apps/mailsink/src/theme/theme-toggle.tsx
+msgid "Toggle light / dark"
+msgstr "Toggle light / dark"

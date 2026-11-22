@@ -1,0 +1,12 @@
+/* Global stylesheet of the app, linked from the root route. */
+@import "tailwindcss";
+
+/* Self-hosted fonts (B1-5): no request leaves the instance. */
+@import "@fontsource/geist/400.css";
+@import "@fontsource/geist/500.css";
+@import "@fontsource/geist/600.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+/* Tokens, Tailwind theme and the classes of the @mailsink/ui components. */
+@import "@mailsink/ui/styles.css";
