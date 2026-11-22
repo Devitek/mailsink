@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      tanstack:
+        patterns: ["@tanstack/*"]
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      lingui:
+        patterns: ["@lingui/*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

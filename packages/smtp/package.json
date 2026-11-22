@@ -1,0 +1,13 @@
+{
+  "name": "@mailsink/smtp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "SMTP ingestion server (smtp-server + mailparser)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
