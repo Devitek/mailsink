@@ -162,6 +162,7 @@ mailsink/
 ├── AGENTS.md  README.md  CONTRIBUTING.md  LICENSE
 ├── lingui.config.ts                       # locales [en, fr], sourceLocale en, catalogs path
 ├── biome.json  pnpm-workspace.yaml  tsconfig.base.json
+├── tsconfig.json                          # typechecks root files (lingui.config.ts, vitest.config.ts)
 ```
 
 ## Runtime topology (D3)
