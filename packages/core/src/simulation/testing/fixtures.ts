@@ -7,9 +7,11 @@ export async function insertQueuedMessage(
   db: Executor,
   workspaceId: string,
   recipients: TestRecipient[],
-  options: { job?: boolean } = {},
+  options: { job?: boolean; connectionId?: string } = {},
 ): Promise<string> {
-  const message = await createTestMessage(db, workspaceId)
+  const message = await createTestMessage(db, workspaceId, {
+    connectionId: options.connectionId ?? null,
+  })
   await createTestRecipients(db, message, recipients)
   if (options.job !== false) {
     await enqueueJobs(db, [
