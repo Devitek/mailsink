@@ -88,8 +88,13 @@ describeDb('simulateDelivery', (ctx) => {
   it('applies the outcomes of a custom planner', async () => {
     const id = await insertQueuedMessage(ctx.db, workspaceId, [{ email: 'a@example.com' }])
     await simulateDelivery(ctx.db, id, {
-      planner: async ({ recipients }) =>
-        recipients.map((r) => ({ recipientId: r.id, status: 'soft_bounce', reason: 'rule x' })),
+      planner: async ({ recipients }) => ({
+        outcomes: recipients.map((r) => ({
+          recipientId: r.id,
+          status: 'soft_bounce',
+          reason: 'rule x',
+        })),
+      }),
     })
     const { message, events } = await state(id)
     expect(message?.status).toBe('soft_bounce')
