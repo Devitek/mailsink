@@ -7,8 +7,10 @@ export default defineConfig({
   // Keep in sync with LOCALES in apps/mailsink/src/i18n/locales.ts.
   locales: ['en', 'fr'],
   sourceLocale: 'en',
-  // No fallback chain: a missing FR entry must fail `pnpm i18n:check`, not hide behind EN.
-  fallbackLocales: false,
+  // Community locales fall back to English for entries not translated yet. `pnpm i18n:check`
+  // checks EN and FR catalogs before fallbacks (`--mode catalog`), so a missing FR entry
+  // still fails CI; other locales never fail it.
+  fallbackLocales: { default: 'en' },
   catalogs: [
     {
       path: '<rootDir>/apps/mailsink/src/locales/{locale}/messages',
