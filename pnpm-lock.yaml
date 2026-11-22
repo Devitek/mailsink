@@ -114,6 +114,9 @@ importers:
       '@electric-sql/pglite':
         specifier: ^0.5.17
         version: 0.5.17
+      '@mailsink/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@electric-sql/pglite@0.5.17)(@types/pg@8.23.1)(pg@8.23.1)
