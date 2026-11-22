@@ -9,15 +9,14 @@ import {
   retryJob,
 } from '../src/repositories/jobs'
 import { jobs } from '../src/schema'
-import { describeDb } from '../src/testing'
-import { insertWorkspace } from './fixtures'
+import { createTestWorkspace, describeDb } from '../src/testing'
 
 describeDb('jobs lifecycle', (ctx) => {
   let workspaceId = ''
 
   beforeEach(async () => {
     await ctx.db.delete(jobs)
-    workspaceId = (await insertWorkspace(ctx.db)).id
+    workspaceId = (await createTestWorkspace(ctx.db)).id
   })
 
   const one = async (kind: 'simulate_delivery' | 'deliver_webhook' = 'simulate_delivery') => {

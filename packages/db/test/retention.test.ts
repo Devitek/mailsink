@@ -18,8 +18,12 @@ import {
   smtpSessions,
   workspaces,
 } from '../src/schema'
-import { describeDb } from '../src/testing'
-import { insertConnection, insertMessage, insertWorkspace } from './fixtures'
+import {
+  createTestConnection,
+  createTestMessage,
+  createTestWorkspace,
+  describeDb,
+} from '../src/testing'
 
 const HOUR = 3600
 const ago = (seconds: number) => new Date(Date.now() - seconds * 1000)
@@ -30,7 +34,7 @@ async function message(
   ageSeconds: number,
   connectionId?: string,
 ) {
-  const row = await insertMessage(db, workspaceId, connectionId)
+  const row = await createTestMessage(db, workspaceId, { connectionId })
   await db
     .update(messages)
     .set({ createdAt: ago(ageSeconds) })
@@ -59,9 +63,9 @@ describeDb('retention purges', (ctx) => {
       .sort()
 
   it('purges messages past the workspace retention or the connection override', async () => {
-    const ws = await insertWorkspace(ctx.db, { retentionSeconds: 2 * HOUR })
-    const short = await insertConnection(ctx.db, ws.id, { retentionSeconds: HOUR })
-    const inherit = await insertConnection(ctx.db, ws.id)
+    const ws = await createTestWorkspace(ctx.db, { retentionSeconds: 2 * HOUR })
+    const short = await createTestConnection(ctx.db, ws.id, { retentionSeconds: HOUR })
+    const inherit = await createTestConnection(ctx.db, ws.id)
     const keep = [
       await message(ctx.db, ws.id, HOUR),
       await message(ctx.db, ws.id, 30 * 60, short.id),
@@ -77,8 +81,8 @@ describeDb('retention purges', (ctx) => {
   })
 
   it('keeps the max_messages newest messages per bounded workspace', async () => {
-    const bounded = await insertWorkspace(ctx.db, { maxMessages: 2 })
-    const free = await insertWorkspace(ctx.db)
+    const bounded = await createTestWorkspace(ctx.db, { maxMessages: 2 })
+    const free = await createTestWorkspace(ctx.db)
     const oldest = await message(ctx.db, bounded.id, 300)
     const older = await message(ctx.db, bounded.id, 200)
     const newer = [await message(ctx.db, bounded.id, 100), await message(ctx.db, bounded.id, 50)]
@@ -92,11 +96,11 @@ describeDb('retention purges', (ctx) => {
   })
 
   it('deletes only blobs nothing references', async () => {
-    const ws = await insertWorkspace(ctx.db)
+    const ws = await createTestWorkspace(ctx.db)
     const raw = await blob(ctx.db, ws.id)
     const attached = await blob(ctx.db, ws.id)
     const orphan = await blob(ctx.db, ws.id)
-    const msg = await insertMessage(ctx.db, ws.id, undefined, raw)
+    const msg = await createTestMessage(ctx.db, ws.id, { rawBlobId: raw })
     await ctx.db.insert(attachments).values({
       id: newId('att'),
       messageId: msg.id,
@@ -115,7 +119,7 @@ describeDb('retention purges', (ctx) => {
   })
 
   it('deletes expired idempotency keys only', async () => {
-    const ws = await insertWorkspace(ctx.db)
+    const ws = await createTestWorkspace(ctx.db)
     const key = (k: string, expiresAt: Date) => ({
       workspaceId: ws.id,
       key: k,
@@ -133,8 +137,8 @@ describeDb('retention purges', (ctx) => {
   })
 
   it('purges API logs and SMTP sessions with the same retention', async () => {
-    const ws = await insertWorkspace(ctx.db, { retentionSeconds: 2 * HOUR })
-    const short = await insertConnection(ctx.db, ws.id, { retentionSeconds: HOUR })
+    const ws = await createTestWorkspace(ctx.db, { retentionSeconds: 2 * HOUR })
+    const short = await createTestConnection(ctx.db, ws.id, { retentionSeconds: HOUR })
     const log = (
       id: string,
       ageSeconds: number,

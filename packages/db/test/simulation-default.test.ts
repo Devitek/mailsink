@@ -3,8 +3,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { migrate } from '../src/migrate'
 import { DEFAULT_SIMULATION_SETTINGS, workspaces } from '../src/schema'
-import { describeDb } from '../src/testing'
-import { insertWorkspace } from './fixtures'
+import { createTestWorkspace, describeDb } from '../src/testing'
 import { migrationsUpTo } from './journal'
 
 it('stores the defaults of the SimulationSettings contract', () => {
@@ -21,9 +20,9 @@ describeDb(
       // Database as 0000 left it: its column default stored `rates` only.
       legacy = await migrationsUpTo('0000_init')
       await migrate(ctx.handle, { migrationsFolder: legacy.folder })
-      ids.untouched = (await insertWorkspace(ctx.db)).id
+      ids.untouched = (await createTestWorkspace(ctx.db)).id
       const partial = { rates: { hard_bounce: 10 }, openRate: 5 } as SimulationSettings
-      ids.custom = (await insertWorkspace(ctx.db, { simulation: partial })).id
+      ids.custom = (await createTestWorkspace(ctx.db, { simulation: partial })).id
       await migrate(ctx.handle)
     }, 60_000)
     afterAll(() => legacy?.dispose())
@@ -46,7 +45,7 @@ describeDb(
     })
 
     it('stores complete settings for a new workspace', async () => {
-      const ws = await insertWorkspace(ctx.db)
+      const ws = await createTestWorkspace(ctx.db)
       expect(ws.simulation).toEqual(DEFAULT_SIMULATION_SETTINGS)
       expect(SimulationSettings.parse(ws.simulation)).toEqual(ws.simulation)
     })

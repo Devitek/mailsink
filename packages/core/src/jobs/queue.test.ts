@@ -1,8 +1,7 @@
 import { enqueueJobs, FAILED_JOB_RUN_AT, jobs } from '@mailsink/db'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestWorkspace, describeDb } from '@mailsink/db/testing'
 import { eq, sql } from 'drizzle-orm'
 import { beforeEach, expect, it, vi } from 'vitest'
-import { insertWorkspace } from '../simulation/testing/fixtures'
 import { createJobRunner, type JobHandler, PermanentJobError } from './queue'
 
 const quiet = { warn: () => {}, error: () => {} }
@@ -12,7 +11,7 @@ describeDb('job runner', (ctx) => {
 
   beforeEach(async () => {
     await ctx.db.delete(jobs)
-    workspaceId = await insertWorkspace(ctx.db)
+    workspaceId = (await createTestWorkspace(ctx.db)).id
   })
 
   const enqueue = async (

@@ -1,15 +1,15 @@
 import { messageEvents, messageRecipients, messages } from '@mailsink/db'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestWorkspace, describeDb } from '@mailsink/db/testing'
 import { asc, eq } from 'drizzle-orm'
 import { beforeEach, expect, it } from 'vitest'
 import { simulateDelivery } from './simulate-delivery'
-import { insertQueuedMessage, insertWorkspace } from './testing/fixtures'
+import { insertQueuedMessage } from './testing/fixtures'
 
 describeDb('simulateDelivery', (ctx) => {
   let workspaceId = ''
 
   beforeEach(async () => {
-    workspaceId = await insertWorkspace(ctx.db)
+    workspaceId = (await createTestWorkspace(ctx.db)).id
   })
 
   const state = async (messageId: string) => {
