@@ -25,7 +25,7 @@ anywhere in the repository:
 | Command | What it does |
 | --- | --- |
 | `pnpm i18n:extract` | Scans `apps/mailsink/src`, adds new strings to every catalog, removes obsolete ones. |
-| `pnpm i18n:check` | Fails if a catalog is out of sync with the code or has an empty `msgstr` (what CI runs). |
+| `pnpm i18n:check` | Fails if a catalog is out of sync with the code, or if the EN or FR catalog has an empty `msgstr` (what CI runs). Other languages never fail it. |
 | `pnpm i18n:compile` | Compiles the catalogs to JS (`--strict`). Optional: the Vite plugin compiles PO files itself in `pnpm dev` and `pnpm build`. |
 
 The UI language is the one chosen in the language selector (stored in the
@@ -51,14 +51,18 @@ else English. It is resolved on the server, so the page arrives already translat
 4. Translate every entry. Plurals use ICU syntax:
    `{count, plural, one {# message} other {# messages}}`; add the categories your
    language needs (`few`, `many`…).
-5. Run `pnpm i18n:check` (fails on any missing translation), and look at the UI with
-   `pnpm dev`, switching language with the language selector.
+5. Run `pnpm i18n:check` (catalogs in sync), then
+   `pnpm exec lingui check missing --mode catalog --locale <lang>` (no empty `msgstr` left:
+   `i18n:check` only requires EN and FR to be complete), and look at the UI with `pnpm dev`,
+   switching language with the language selector.
 6. Open a pull request `feat(i18n): ajoute la langue <lang>`, linking the issue. Add a
    screenshot of a couple of screens if you can.
 
-A new language is merged when it is complete. Later UI changes add English strings;
-maintainers ping the language contributors on the pull request, and missing entries
-fall back to English until they are translated.
+A new language is merged when it is complete. Later UI changes add English strings to
+every catalog (`pnpm i18n:extract`) but only EN and FR must be filled in the same pull
+request: missing entries of other languages fall back to English (`fallbackLocales` in
+`lingui.config.ts`) until they are translated, and maintainers ping the language
+contributors on the pull request.
 
 ## Writing guidelines
 
@@ -79,4 +83,5 @@ fall back to English until they are translated.
   per request (SSR) and comes from `I18nProvider` in `apps/mailsink/src/routes/__root.tsx`.
 - API, SMTP and MCP messages are never wrapped (D19).
 - Run `pnpm i18n:extract` and fill the French entries in the same pull request. CI
-  rejects a pull request whose FR or EN catalog is incomplete.
+  rejects a pull request whose FR or EN catalog is incomplete, or whose catalogs (any
+  language) are out of sync with the code.
