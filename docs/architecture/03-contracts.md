@@ -251,7 +251,8 @@ export const CreateWorkspaceResponse = z.object({   // 201, secrets shown once
 
 export const ListWorkspacesQuery = z.object({
   includeEphemeral: QueryBool.default(false),
-  cursor: z.string().optional(), limit: PageLimit,
+  cursor: WorkspaceId.optional(),                   // nextCursor: id of the last row
+  limit: PageLimit,
 })
 export const ListWorkspacesResponse = Page(WorkspaceView)
 ```
@@ -265,17 +266,18 @@ Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connecti
 - `POST` answers 201 with `CreateWorkspaceResponse`, the only place secrets ever appear.
   Workspace, connections and keys are written in one transaction. A taken slug or SMTP
   username (also twice in the same request) answers 409 `conflict`; nothing is written.
-- Generated values (proposal): slug `<slugified name>-<6 [a-z0-9]>`; keys
+- Generated values (D50): slug `<slugified name>-<6 [a-z0-9]>`; keys
   `msk_` / `mskw_` + 32 random bytes base64url, stored as SHA-256 with a `display_prefix`
   of the prefix plus 8 characters (`keyPreview` = display prefix + `…`); SMTP username
   `<slug>-<8 hex>`, password 24 random bytes base64url, stored as
   `scrypt$16384$8$1$<salt>$<key>` (D11). Only `resend` and `brevo` connections get an
   `msk_` key; `smtp` connections get SMTP credentials and `keyPreview: null`.
-- Credentials and snippets (proposal): Resend `baseUrl` = `MAILSINK_PUBLIC_URL`
+- Credentials and snippets (D52): Resend `baseUrl` = `MAILSINK_PUBLIC_URL`
   (`RESEND_API_KEY`, `RESEND_BASE_URL`, read by the Resend SDK); Brevo `baseUrl` =
-  `MAILSINK_PUBLIC_URL/v3` (`BREVO_API_KEY`, `BREVO_BASE_URL`); SMTP host = hostname of
-  `MAILSINK_PUBLIC_URL`, port = the SMTP listener port (`SMTP_HOST`, `SMTP_PORT`,
-  `SMTP_USER`, `SMTP_PASS`).
+  `MAILSINK_PUBLIC_URL/v3` (`BREVO_API_KEY`, `BREVO_BASE_URL`); SMTP host =
+  `MAILSINK_SMTP_PUBLIC_HOST`, else the hostname of `MAILSINK_PUBLIC_URL`; port =
+  `MAILSINK_SMTP_PUBLIC_PORT`, else the port the SMTP listener is bound to (D66;
+  `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`).
 - `urls` (D35): `ui` = `<public>/w/<slug>`, `capture` = `<public>/capture`, `mcp` =
   `<public>/mcp`.
 - Ephemeral (#19): `idleTtlSeconds` defaults to `MAILSINK_DEFAULT_IDLE_TTL` (bare seconds
@@ -283,7 +285,8 @@ Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connecti
   `expires_at` = creation + TTL. Persistent workspaces keep both TTL columns null; an
   `idleTtlSeconds` there is refused (D34, 422 `idle_ttl_requires_ephemeral`).
 - `GET /admin/workspaces`: newest first; `nextCursor` is the id of the last workspace of
-  the page (keyset on the UUIDv7 id), a malformed cursor is a 422.
+  the page (keyset on the UUIDv7 id); the contract types `cursor` as a `WorkspaceId`, so a
+  malformed cursor is a 422.
 - `GET` and `DELETE /admin/workspaces/:id` take an id or a slug; `DELETE` answers 204 and
   cascades to every workspace-owned row; an unknown workspace is a 404.
 
@@ -491,7 +494,7 @@ export const PurgeQuery = z.object({ connectionId: ConnectionId.optional(),
 export const PurgeResponse = z.object({ count: z.number().int().min(0) })
 ```
 
-Capture behaviour (#15, proposition: the owner may veto each point):
+Capture behaviour (#15, owner decisions D59 to D61 of 23/11):
 - Isolation: every query is scoped to the authenticated workspace (D12, D41). A message or
   attachment of another workspace answers 404 `not_found`, exactly like a missing id; a purge
   never deletes rows of another workspace (`{ count: 0 }`).
