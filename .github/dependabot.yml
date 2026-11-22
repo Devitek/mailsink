@@ -15,3 +15,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+  # Base images of docker/Dockerfile and docker/docker-compose.yml (#18).
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker-compose
+    directory: /docker
+    schedule:
+      interval: weekly

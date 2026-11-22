@@ -1,0 +1,58 @@
+# Mailsink with Docker Compose (#18). Pick one profile:
+#   docker compose -f docker/docker-compose.yml --profile pglite up -d     # embedded PGlite
+#   docker compose -f docker/docker-compose.yml --profile postgres up -d   # PostgreSQL 18
+# Host ports: MAILSINK_HTTP_PORT (default 3000) and MAILSINK_SMTP_HOST_PORT (default 1025).
+# MAILSINK_ADMIN_KEY protects the Admin API; unset, every Admin API call is refused.
+
+x-mailsink: &mailsink
+  image: ${MAILSINK_IMAGE:-mailsink:local}
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  restart: unless-stopped
+  ports:
+    - "${MAILSINK_HTTP_PORT:-3000}:3000"
+    - "${MAILSINK_SMTP_HOST_PORT:-1025}:1025"
+
+services:
+  # Embedded PGlite: the database lives in the `pglite-data` volume, nothing else to run.
+  mailsink:
+    <<: *mailsink
+    profiles: [pglite]
+    environment:
+      DATABASE_URL: pglite:///app/data
+      MAILSINK_ADMIN_KEY: ${MAILSINK_ADMIN_KEY:-}
+    volumes:
+      - pglite-data:/app/data
+
+  # PostgreSQL: Mailsink waits for the server, then applies its migrations at boot.
+  mailsink-postgres:
+    <<: *mailsink
+    profiles: [postgres]
+    environment:
+      DATABASE_URL: postgres://mailsink:${POSTGRES_PASSWORD:-mailsink}@postgres:5432/mailsink
+      MAILSINK_ADMIN_KEY: ${MAILSINK_ADMIN_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18-alpine
+    profiles: [postgres]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mailsink
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mailsink}
+      POSTGRES_DB: mailsink
+    volumes:
+      # Postgres 18 images keep their data under /var/lib/postgresql/<major>.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mailsink -d mailsink"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pglite-data:
+  postgres-data:
