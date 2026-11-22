@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
+import { Route as AdminWorkspacesIdRouteImport } from './routes/admin.workspaces.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +24,53 @@ const HealthzRoute = HealthzRouteImport.update({
   path: '/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWorkspacesRoute = AdminWorkspacesRouteImport.update({
+  id: '/admin/workspaces',
+  path: '/admin/workspaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWorkspacesIdRoute = AdminWorkspacesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminWorkspacesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/healthz'
+  fullPaths: '/' | '/healthz' | '/admin/workspaces' | '/admin/workspaces/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/healthz'
-  id: '__root__' | '/' | '/healthz'
+  to: '/' | '/healthz' | '/admin/workspaces' | '/admin/workspaces/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/healthz'
+    | '/admin/workspaces'
+    | '/admin/workspaces/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HealthzRoute: typeof HealthzRoute
+  AdminWorkspacesRoute: typeof AdminWorkspacesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +89,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/workspaces': {
+      id: '/admin/workspaces'
+      path: '/admin/workspaces'
+      fullPath: '/admin/workspaces'
+      preLoaderRoute: typeof AdminWorkspacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/workspaces/$id': {
+      id: '/admin/workspaces/$id'
+      path: '/$id'
+      fullPath: '/admin/workspaces/$id'
+      preLoaderRoute: typeof AdminWorkspacesIdRouteImport
+      parentRoute: typeof AdminWorkspacesRoute
+    }
   }
 }
+
+interface AdminWorkspacesRouteChildren {
+  AdminWorkspacesIdRoute: typeof AdminWorkspacesIdRoute
+}
+
+const AdminWorkspacesRouteChildren: AdminWorkspacesRouteChildren = {
+  AdminWorkspacesIdRoute: AdminWorkspacesIdRoute,
+}
+
+const AdminWorkspacesRouteWithChildren = AdminWorkspacesRoute._addFileChildren(
+  AdminWorkspacesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HealthzRoute: HealthzRoute,
+  AdminWorkspacesRoute: AdminWorkspacesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

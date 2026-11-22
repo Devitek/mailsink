@@ -17,6 +17,8 @@ export function installTestRuntime(db: DbHandle, config: Partial<RuntimeConfig> 
       smtpHost: '127.0.0.1',
       smtpPort: 0,
       workerIntervalMs: 1000,
+      publicUrl: 'http://mailsink.test',
+      defaultIdleTtlSeconds: 3600,
       ...config,
     },
     db,
