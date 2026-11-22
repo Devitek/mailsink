@@ -43,6 +43,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      # Fails when FR/EN catalogs are out of sync with the code or have a missing entry.
+      - run: pnpm i18n:check
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
