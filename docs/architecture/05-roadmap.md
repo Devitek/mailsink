@@ -59,16 +59,17 @@ URL / host change.
    from the ingestion channel; X-Mailsink HMAC, Svix and Brevo auth headers; exact body
    stored once; backoff retries; attempts journal with exact headers; replay
    (`exact` / `resign`).
-7. Manual events: `POST /capture/messages/:id/events` (opened, clicked + url), auto
-   open/click rates.
+7. Manual events: `POST /capture/messages/:id/events` (opened, clicked + url, forced
+   simulated status), auto open/click rates; webhook test send.
 8. Request logging: `api_logs` (redaction, truncation), `smtp_sessions`, log query API.
 
 ## Phase 4: Web UI and MCP
 
 Goal: staging teams inspect everything in the browser; AI agents drive tests through MCP.
 
-1. Claude Design brief (design-partner-briefs) and integration of the delivery into
-   `@mailsink/ui` (shadcn/ui on Base UI, Tailwind tokens).
+1. Integration of the Claude Design delivery `docs/design/brand-1` into `@mailsink/ui`
+   (tokens, fonts, theme, logos; shadcn/ui on Base UI); brief 2 for the login screen and
+   the language switcher.
 2. App shell: admin-key login / `MAILSINK_UI_AUTH=none`, workspace picker with ephemeral
    toggle, locale switcher, direct `/w/$workspaceSlug` access.
 3. Workspace and connection management (TanStack Form, kind-conditional fields,
