@@ -46,8 +46,14 @@ export {
   type JobRunnerOptions,
   PermanentJobError,
 } from './jobs/queue'
+export { DEFAULT_JOB_SETTINGS, type JobSettings } from './jobs/settings'
 export { startWorker, type Worker, type WorkerOptions } from './jobs/worker'
-export { type RetentionReport, retentionTotal, runRetention } from './retention/run'
+export {
+  type RetentionOptions,
+  type RetentionReport,
+  retentionTotal,
+  runRetention,
+} from './retention/run'
 export { type RetentionSchedulerOptions, startRetentionScheduler } from './retention/scheduler'
 export { aggregateStatus } from './simulation/aggregate'
 export {

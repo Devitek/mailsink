@@ -1,12 +1,21 @@
-import { blobs, messages, newId, workspaces } from '@mailsink/db'
+import {
+  blobs,
+  enqueueJobs,
+  FAILED_JOB_RUN_AT,
+  failJob,
+  jobs,
+  messages,
+  newId,
+  workspaces,
+} from '@mailsink/db'
 import { createTestWorkspace, describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
-import { beforeEach, expect, it } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { insertQueuedMessage } from '../simulation/testing/fixtures'
 import { type RetentionReport, runRetention } from './run'
 import { startRetentionScheduler } from './scheduler'
 
-const quiet = { info: () => {}, error: () => {} }
+const quiet = { info: () => {}, warn: () => {}, error: () => {} }
 
 describeDb('retention pass', (ctx) => {
   let workspaceId = ''
@@ -43,6 +52,7 @@ describeDb('retention pass', (ctx) => {
       orphanBlobs: 1,
       idempotencyKeys: 0,
       logs: 0,
+      failedJobs: 0,
     })
     expect(await ctx.db.select({ id: messages.id }).from(messages)).toEqual([{ id: fresh }])
     expect(await ctx.db.select().from(blobs)).toEqual([])
@@ -65,5 +75,42 @@ describeDb('retention pass', (ctx) => {
     expect(passes[1]?.expiredMessages).toBe(0)
     await new Promise((resolve) => setTimeout(resolve, 60))
     expect(passes.length).toBe(count)
+  })
+
+  it('purges failed jobs after their grace period', async () => {
+    const ago = (s: number) => new Date(Date.now() - s * 1000)
+    const failed = (failedAt: Date) => ({
+      kind: 'simulate_delivery' as const,
+      workspaceId,
+      payload: {},
+      runAt: FAILED_JOB_RUN_AT,
+      failedAt,
+    })
+    await ctx.db.delete(jobs)
+    await enqueueJobs(ctx.db, [failed(ago(120)), failed(ago(10))])
+    const report = await runRetention(ctx.db, { failedJobRetentionSeconds: 60 })
+    expect(report.failedJobs).toBe(1)
+    expect(await ctx.db.select().from(jobs)).toHaveLength(1)
+  })
+
+  it('logs the failed jobs kept for diagnosis when their count changes', async () => {
+    await ctx.db.delete(jobs)
+    const [job] = await enqueueJobs(ctx.db, [
+      { kind: 'simulate_delivery', workspaceId, payload: {} },
+    ])
+    if (!job) throw new Error('job not enqueued')
+    await failJob(ctx.db, job.id, 'boom')
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const passes: RetentionReport[] = []
+    const scheduler = startRetentionScheduler({
+      db: ctx.db,
+      intervalMs: 20,
+      log,
+      onPass: (report) => passes.push(report),
+    })
+    await expect.poll(() => passes.length, { timeout: 5_000 }).toBeGreaterThanOrEqual(3)
+    await scheduler.stop()
+    expect(log.warn).toHaveBeenCalledTimes(1)
+    expect(log.warn.mock.calls[0]?.[0]).toMatch(/1 failed job\(s\) kept/)
   })
 })
