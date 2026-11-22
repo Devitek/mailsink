@@ -1,4 +1,5 @@
 import { Duration, IDLE_TTL_BOUNDS } from '@mailsink/contracts'
+import { DEFAULT_MAX_MESSAGE_BYTES } from '@mailsink/core'
 import { DEFAULT_DATABASE_URL, parseDatabaseUrl } from '@mailsink/db'
 import { z } from 'zod'
 
@@ -37,6 +38,11 @@ const Env = z.object({
   MAILSINK_ADMIN_KEY: z.string().optional(),
   MAILSINK_SMTP_HOST: z.string().default('0.0.0.0'),
   MAILSINK_SMTP_PORT: Port.default(1025),
+  MAILSINK_MAX_MESSAGE_BYTES: z.coerce
+    .number({ error: 'must be a positive number of bytes' })
+    .int('must be a positive number of bytes')
+    .positive('must be a positive number of bytes')
+    .default(DEFAULT_MAX_MESSAGE_BYTES),
   MAILSINK_PUBLIC_URL: PublicUrl.default('http://localhost:3000'),
   MAILSINK_DEFAULT_IDLE_TTL: IdleTtl.default(3600),
 })
@@ -48,6 +54,8 @@ export type RuntimeConfig = {
   smtpHost: string
   smtpPort: number
   workerIntervalMs: number
+  /** Ingestion cap (`MAILSINK_MAX_MESSAGE_BYTES`): request bodies and composed messages. */
+  maxMessageBytes: number
   /** Base of the links and `.env` snippets given to clients (D35), no trailing slash. */
   publicUrl: string
   /** Idle TTL of ephemeral workspaces created without `idleTtlSeconds` (#19). */
@@ -72,6 +80,7 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     smtpHost: e.MAILSINK_SMTP_HOST,
     smtpPort: e.MAILSINK_SMTP_PORT,
     workerIntervalMs: 1000,
+    maxMessageBytes: e.MAILSINK_MAX_MESSAGE_BYTES,
     publicUrl: e.MAILSINK_PUBLIC_URL,
     defaultIdleTtlSeconds: e.MAILSINK_DEFAULT_IDLE_TTL,
   }
