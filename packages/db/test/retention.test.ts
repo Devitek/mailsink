@@ -2,18 +2,21 @@ import { eq, inArray } from 'drizzle-orm'
 import { beforeEach, expect, it } from 'vitest'
 import type { Executor } from '../src/client'
 import { newId } from '../src/ids'
+import { enqueueJobs, FAILED_JOB_RUN_AT } from '../src/repositories/jobs'
 import {
   deleteExpiredIdempotencyKeys,
   deleteOrphanBlobs,
   enforceMaxMessages,
   purgeExpiredLogs,
   purgeExpiredMessages,
+  purgeFailedJobs,
 } from '../src/repositories/retention'
 import {
   apiLogs,
   attachments,
   blobs,
   idempotencyKeys,
+  jobs,
   messages,
   smtpSessions,
   workspaces,
@@ -53,6 +56,7 @@ async function blob(db: Executor, workspaceId: string) {
 describeDb('retention purges', (ctx) => {
   beforeEach(async () => {
     await ctx.db.delete(workspaces)
+    await ctx.db.delete(jobs)
     await ctx.db.delete(apiLogs)
     await ctx.db.delete(smtpSessions)
   })
@@ -179,5 +183,20 @@ describeDb('retention purges', (ctx) => {
     const sessions = await ctx.db.select({ id: smtpSessions.id }).from(smtpSessions)
     expect(sessions).toEqual([{ id: 'smtp_keep' }])
     expect(await purgeExpiredLogs(ctx.db, 4 * HOUR)).toBe(0)
+  })
+
+  it('purges failed jobs once their grace period is over', async () => {
+    const ws = await createTestWorkspace(ctx.db)
+    const job = (failedAgo: number | null) => ({
+      kind: 'simulate_delivery' as const,
+      workspaceId: ws.id,
+      payload: {},
+      ...(failedAgo === null ? {} : { runAt: FAILED_JOB_RUN_AT, failedAt: ago(failedAgo) }),
+    })
+    const [pending, recent] = await enqueueJobs(ctx.db, [job(null), job(HOUR), job(3 * HOUR)])
+    expect(await purgeFailedJobs(ctx.db, 2 * HOUR)).toBe(1)
+    const left = await ctx.db.select({ id: jobs.id }).from(jobs)
+    expect(left.map((j) => j.id).sort()).toEqual([pending?.id, recent?.id].sort())
+    expect(await purgeFailedJobs(ctx.db, 2 * HOUR)).toBe(0)
   })
 })

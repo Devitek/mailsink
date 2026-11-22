@@ -3,6 +3,7 @@ import { beforeEach, expect, it } from 'vitest'
 import {
   claimJobs,
   completeJob,
+  countFailedJobs,
   enqueueJobs,
   failJob,
   releaseJobs,
@@ -57,8 +58,18 @@ describeDb('jobs lifecycle', (ctx) => {
     const job = await one()
     await claimJobs(ctx.db)
     await failJob(ctx.db, job.id, 'gave up')
-    expect(await row(job.id)).toMatchObject({ lastError: 'gave up', lockedUntil: null })
+    const failed = await row(job.id)
+    expect(failed).toMatchObject({ lastError: 'gave up', lockedUntil: null })
+    expect(failed?.failedAt?.getTime()).toBeGreaterThan(Date.now() - 60_000)
     expect(await claimJobs(ctx.db)).toEqual([])
+  })
+
+  it('counts the failed jobs only', async () => {
+    expect(await countFailedJobs(ctx.db)).toBe(0)
+    const failed = await one()
+    await one()
+    await failJob(ctx.db, failed.id, 'gave up')
+    expect(await countFailedJobs(ctx.db)).toBe(1)
   })
 
   it('releases claimed jobs without counting the attempt', async () => {

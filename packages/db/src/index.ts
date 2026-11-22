@@ -39,6 +39,7 @@ export {
   type ClaimOptions,
   claimJobs,
   completeJob,
+  countFailedJobs,
   enqueueJobs,
   FAILED_JOB_RUN_AT,
   failJob,
@@ -93,6 +94,7 @@ export {
   enforceMaxMessages,
   purgeExpiredLogs,
   purgeExpiredMessages,
+  purgeFailedJobs,
 } from './repositories/retention'
 export {
   deleteWorkspace,

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm'
 import type { Executor } from '../client'
 import { type JobKind, jobs } from '../schema/jobs'
 
@@ -79,13 +79,20 @@ export async function retryJob(db: Executor, id: number, options: RetryOptions):
 /**
  * Gives up on a job: it stays in the table with its `last_error` for diagnosis, but its
  * `run_at` is pushed to the far future (`FAILED_JOB_RUN_AT`, a valid Date unlike `infinity`)
- * so no claim ever returns it again.
+ * so no claim ever returns it again. `failed_at` starts its grace period before the
+ * retention pass purges it (`purgeFailedJobs`).
  */
 export async function failJob(db: Executor, id: number, error: string): Promise<void> {
   await db
     .update(jobs)
-    .set({ lastError: error, lockedUntil: null, runAt: FAILED_JOB_RUN_AT })
+    .set({ lastError: error, lockedUntil: null, runAt: FAILED_JOB_RUN_AT, failedAt: sql`now()` })
     .where(eq(jobs.id, id))
+}
+
+/** Jobs given up on and still kept for diagnosis. */
+export async function countFailedJobs(db: Executor): Promise<number> {
+  const [row] = await db.select({ n: count() }).from(jobs).where(isNotNull(jobs.failedAt))
+  return row?.n ?? 0
 }
 
 /** Hands claimed but unstarted jobs back (clean stop): lease dropped, attempt not counted. */

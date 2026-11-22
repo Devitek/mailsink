@@ -1,5 +1,6 @@
 import type { Address } from '@mailsink/contracts'
 import { index, integer, jsonb, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core'
+import { searchDocument } from '../search-document'
 import { blobs } from './blobs'
 import { createdAt } from './columns'
 import { connections } from './connections'
@@ -43,10 +44,14 @@ export const messages = pgTable(
   },
   (t) => [
     index('messages_raw_blob_idx').on(t.rawBlobId), // blob GC and `set null` lookups
-    index('messages_ws_created_idx').on(t.workspaceId, t.createdAt.desc()),
+    // Capture listing keyset (created_at, id) and the per-workspace retention range scans.
+    // Ascending on purpose: scanned backward it yields `created_at desc, id desc` (NULLS
+    // FIRST), which a `desc nulls last` index cannot without an extra sort.
+    index('messages_ws_created_idx').on(t.workspaceId, t.createdAt, t.id),
     index('messages_ws_status_idx').on(t.workspaceId, t.status),
     index('messages_ws_connection_idx').on(t.workspaceId, t.connectionId, t.createdAt.desc()),
     index('messages_tags_gin').using('gin', t.tags),
+    index('messages_search_gin').using('gin', searchDocument(t)),
     uniqueIndex('messages_provider_id_uq').on(t.workspaceId, t.providerMessageId),
   ],
 )
