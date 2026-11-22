@@ -5,12 +5,17 @@
   "description": "Domain services: ingestion, simulation, webhooks, capture, jobs",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./capture-testing": "./src/capture/testing/fixtures.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@mailsink/contracts": "workspace:*"
+    "@mailsink/contracts": "workspace:*",
+    "@mailsink/db": "workspace:*"
+  },
+  "devDependencies": {
+    "drizzle-orm": "^0.45.4"
   }
 }

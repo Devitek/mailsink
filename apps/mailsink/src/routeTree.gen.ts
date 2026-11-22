@@ -11,6 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as CaptureMessagesRouteImport } from './routes/capture.messages'
+import { Route as CaptureMessagesIdRouteImport } from './routes/capture.messages.$id'
+import { Route as CaptureMessagesIdRawRouteImport } from './routes/capture.messages.$id.raw'
+import { Route as CaptureMessagesIdAttachmentsAttIdRouteImport } from './routes/capture.messages.$id.attachments.$attId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +26,84 @@ const HealthzRoute = HealthzRouteImport.update({
   path: '/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaptureMessagesRoute = CaptureMessagesRouteImport.update({
+  id: '/capture/messages',
+  path: '/capture/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureMessagesIdRoute = CaptureMessagesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CaptureMessagesRoute,
+} as any)
+const CaptureMessagesIdRawRoute = CaptureMessagesIdRawRouteImport.update({
+  id: '/raw',
+  path: '/raw',
+  getParentRoute: () => CaptureMessagesIdRoute,
+} as any)
+const CaptureMessagesIdAttachmentsAttIdRoute =
+  CaptureMessagesIdAttachmentsAttIdRouteImport.update({
+    id: '/attachments/$attId',
+    path: '/attachments/$attId',
+    getParentRoute: () => CaptureMessagesIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/healthz'
+  fullPaths:
+    | '/'
+    | '/healthz'
+    | '/capture/messages'
+    | '/capture/messages/$id'
+    | '/capture/messages/$id/raw'
+    | '/capture/messages/$id/attachments/$attId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/healthz'
-  id: '__root__' | '/' | '/healthz'
+  to:
+    | '/'
+    | '/healthz'
+    | '/capture/messages'
+    | '/capture/messages/$id'
+    | '/capture/messages/$id/raw'
+    | '/capture/messages/$id/attachments/$attId'
+  id:
+    | '__root__'
+    | '/'
+    | '/healthz'
+    | '/capture/messages'
+    | '/capture/messages/$id'
+    | '/capture/messages/$id/raw'
+    | '/capture/messages/$id/attachments/$attId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HealthzRoute: typeof HealthzRoute
+  CaptureMessagesRoute: typeof CaptureMessagesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +122,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/capture/messages': {
+      id: '/capture/messages'
+      path: '/capture/messages'
+      fullPath: '/capture/messages'
+      preLoaderRoute: typeof CaptureMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture/messages/$id': {
+      id: '/capture/messages/$id'
+      path: '/$id'
+      fullPath: '/capture/messages/$id'
+      preLoaderRoute: typeof CaptureMessagesIdRouteImport
+      parentRoute: typeof CaptureMessagesRoute
+    }
+    '/capture/messages/$id/raw': {
+      id: '/capture/messages/$id/raw'
+      path: '/raw'
+      fullPath: '/capture/messages/$id/raw'
+      preLoaderRoute: typeof CaptureMessagesIdRawRouteImport
+      parentRoute: typeof CaptureMessagesIdRoute
+    }
+    '/capture/messages/$id/attachments/$attId': {
+      id: '/capture/messages/$id/attachments/$attId'
+      path: '/attachments/$attId'
+      fullPath: '/capture/messages/$id/attachments/$attId'
+      preLoaderRoute: typeof CaptureMessagesIdAttachmentsAttIdRouteImport
+      parentRoute: typeof CaptureMessagesIdRoute
+    }
   }
 }
+
+interface CaptureMessagesIdRouteChildren {
+  CaptureMessagesIdRawRoute: typeof CaptureMessagesIdRawRoute
+  CaptureMessagesIdAttachmentsAttIdRoute: typeof CaptureMessagesIdAttachmentsAttIdRoute
+}
+
+const CaptureMessagesIdRouteChildren: CaptureMessagesIdRouteChildren = {
+  CaptureMessagesIdRawRoute: CaptureMessagesIdRawRoute,
+  CaptureMessagesIdAttachmentsAttIdRoute:
+    CaptureMessagesIdAttachmentsAttIdRoute,
+}
+
+const CaptureMessagesIdRouteWithChildren =
+  CaptureMessagesIdRoute._addFileChildren(CaptureMessagesIdRouteChildren)
+
+interface CaptureMessagesRouteChildren {
+  CaptureMessagesIdRoute: typeof CaptureMessagesIdRouteWithChildren
+}
+
+const CaptureMessagesRouteChildren: CaptureMessagesRouteChildren = {
+  CaptureMessagesIdRoute: CaptureMessagesIdRouteWithChildren,
+}
+
+const CaptureMessagesRouteWithChildren = CaptureMessagesRoute._addFileChildren(
+  CaptureMessagesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HealthzRoute: HealthzRoute,
+  CaptureMessagesRoute: CaptureMessagesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
