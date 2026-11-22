@@ -52,7 +52,17 @@ export const eventOrigin = pgEnum('event_origin', ['simulation', 'api', 'ui', 'm
 export const recipientKind = pgEnum('recipient_kind', ['to', 'cc', 'bcc'])
 export const apiKeyScope = pgEnum('api_key_scope', ['workspace', 'connection'])
 export const suppressionReason = pgEnum('suppression_reason', ['hard_bounce', 'complained', 'manual'])
-export const webhookFormat = pgEnum('webhook_format', ['provider', 'unified'])
+// Outgoing webhook dialect, decoupled from the ingestion channel (D20).
+export const payloadFormat = pgEnum('payload_format', ['unified', 'resend', 'brevo'])
+// Canonical webhook events, the only form stored (D22). Dialect names are mapped at the
+// edges (API, UI, emitted payload), see 03-contracts.md « Webhooks ».
+export const webhookEvent = pgEnum('webhook_event', [
+  'email.sent', 'email.delivered', 'email.deferred', 'email.soft_bounced',
+  'email.hard_bounced', 'email.complained', 'email.opened', 'email.clicked',
+  'email.suppressed', 'email.failed',
+])
+export const brevoAuthType = pgEnum('brevo_auth_type', ['none', 'bearer', 'basic'])
+export const replayMode = pgEnum('replay_mode', ['exact', 'resign'])
 export const webhookDeliveryStatus = pgEnum('webhook_delivery_status', [
   'pending', 'retrying', 'succeeded', 'failed',
 ])
@@ -86,6 +96,7 @@ export const workspaces = pgTable('workspaces', {
   simulation: jsonb('simulation').$type<SimulationSettings>().notNull()
     .default(sql`'{"rates":{"delivered":100}}'::jsonb`),
   metadata: jsonb('metadata').$type<Record<string, string>>(),   // e.g. CI run id
+  timezone: text('timezone').notNull().default('UTC'),           // Brevo webhook `date` (D23)
   createdVia: text('created_via', { enum: ['ui', 'admin_api'] }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -306,38 +317,63 @@ export const suppressions = pgTable('suppressions', {
 ```ts
 export const webhookEndpoints = pgTable('webhook_endpoints', {
   id: text('id').primaryKey(),                                   // whe_…
+  // Numeric id required by the Brevo payload (`id` = webhook id).
+  numericId: integer('numeric_id').generatedAlwaysAsIdentity().notNull().unique(),
   workspaceId: text('workspace_id').notNull()
     .references(() => workspaces.id, { onDelete: 'cascade' }),
-  connectionId: text('connection_id')                            // null = all connections
+  // Scope: a connection (only its emails) or null = Workspace (every connection).
+  connectionId: text('connection_id')
     .references(() => connections.id, { onDelete: 'cascade' }),
   url: text('url').notNull(),
-  secret: text('secret').notNull(),                              // whsec_… (D11)
-  events: text('events').array().notNull(),                      // email.delivered, …
-  format: webhookFormat('format').notNull().default('unified'),
+  // Default at creation: connection kind for resend/brevo, 'unified' for smtp or
+  // workspace scope. Always explicitly settable (D20).
+  payloadFormat: payloadFormat('payload_format').notNull(),
+  events: webhookEvent('events').array().notNull(),              // canonical only (D22)
+  // unified: HMAC key; resend: whsec_<base64> Svix key; brevo: bearer token or
+  // "user:password" for basic auth (D11: stored in clear because it signs/authenticates).
+  secret: text('secret'),
+  brevoAuth: brevoAuthType('brevo_auth').notNull().default('none'),
+  customHeaders: jsonb('custom_headers').$type<{ key: string; value: string }[]>()
+    .notNull().default([]),                                       // Brevo `headers` parity
   description: text('description'),
   enabled: boolean('enabled').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('webhook_endpoints_scope_idx').on(t.workspaceId, t.connectionId),
+  check('webhook_secret_required',
+    sql`${t.payloadFormat} = 'brevo' or ${t.secret} is not null`),
+])
 
 export const webhookDeliveries = pgTable('webhook_deliveries', {
-  id: text('id').primaryKey(),                                   // whd_… (= svix-id)
+  id: text('id').primaryKey(),                                   // whd_… (= svix-id,
+                                                                 // X-Mailsink-Delivery-Id)
   workspaceId: text('workspace_id').notNull()
     .references(() => workspaces.id, { onDelete: 'cascade' }),
   endpointId: text('endpoint_id').notNull()
     .references(() => webhookEndpoints.id, { onDelete: 'cascade' }),
   eventId: text('event_id').references(() => messageEvents.id, { onDelete: 'set null' }),
   messageId: text('message_id').references(() => messages.id, { onDelete: 'set null' }),
-  eventType: text('event_type').notNull(),
-  payload: jsonb('payload').notNull(),                           // frozen at creation
+  // Format snapshot: later endpoint edits never change what a delivery sends.
+  payloadFormat: payloadFormat('payload_format').notNull(),
+  canonicalEvent: webhookEvent('canonical_event').notNull(),     // email.soft_bounced
+  dialectEvent: text('dialect_event').notNull(),                 // email.delivery_delayed,
+                                                                 // soft_bounce…
+  recipient: text('recipient'),
+  // Exact serialized bytes, signed and sent as is by every attempt and replay (D24).
+  body: text('body').notNull(),
+  contentType: text('content_type').notNull().default('application/json'),
   status: webhookDeliveryStatus('status').notNull().default('pending'),
   attemptCount: integer('attempt_count').notNull().default(0),
   nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }),
   lastStatusCode: integer('last_status_code'),
   replayOf: text('replay_of'),                                   // whd_… of the original
+  replayMode: replayMode('replay_mode'),                         // null unless a replay
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('deliveries_ws_time_idx').on(t.workspaceId, t.createdAt.desc()),
   index('deliveries_message_idx').on(t.messageId),
+  index('deliveries_ws_format_idx').on(t.workspaceId, t.payloadFormat),  // log facet
 ])
 
 export const webhookAttempts = pgTable('webhook_attempts', {
@@ -345,7 +381,10 @@ export const webhookAttempts = pgTable('webhook_attempts', {
   deliveryId: text('delivery_id').notNull()
     .references(() => webhookDeliveries.id, { onDelete: 'cascade' }),
   attemptNo: integer('attempt_no').notNull(),
+  // Headers exactly as sent, signature headers included, unredacted: an `exact` replay
+  // copies them byte for byte. The UI masks Authorization values behind a reveal toggle.
   requestHeaders: jsonb('request_headers').$type<Record<string, string>>().notNull(),
+  signedAt: integer('signed_at'),                                // unix ts used to sign
   responseStatus: integer('response_status'),
   responseBody: text('response_body'),                           // truncated to 4 KB
   durationMs: integer('duration_ms').notNull(),

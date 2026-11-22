@@ -51,11 +51,12 @@ sequenceDiagram
   Q->>DB: TX: event sent + final status per recipient, aggregate message.status,<br/>hard_bounce/complained -> suppressions upsert,<br/>deferred -> new job later (then delivered or bounce),<br/>webhook_deliveries rows + deliver_webhook jobs
   Q->>B: publish message.status, message.event
 
+  Note over Q,W: fan-out at status time: endpoints whose scope matches (connection or<br/>workspace) and whose canonical events include it. Formatter chosen by the<br/>endpoint payloadFormat, never by the ingestion channel (D20). Body serialized once.
   Q->>W: claim deliver_webhook
-  W->>W: build payload (unified | provider), sign HMAC + Svix headers
+  W->>W: formatters[payloadFormat].sign(stored body, attempt timestamp)<br/>unified: X-Mailsink-* · resend: svix-* · brevo: Authorization / custom headers
   W->>C: POST endpoint URL (10 s timeout)
   alt 2xx
-    W->>DB: attempt + delivery succeeded
+    W->>DB: attempt (exact headers sent) + delivery succeeded
   else error / non-2xx
     W->>DB: attempt + retrying, job run_at = backoff(n)
   end

@@ -27,7 +27,10 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `GET /_capture/override` · `POST /_capture/override` | workspace scope | capture | Read / activate |
 | `POST /_capture/override/reset` | workspace scope | capture | Back to defaults |
 | `GET /_capture/suppressions` · `DELETE /_capture/suppressions[?email=]` | workspace scope | capture | List / reset |
-| `POST /_capture/webhooks/deliveries/:id/replay` | workspace scope | capture | Replay |
+| `GET|POST /_capture/webhooks` · `GET|PATCH|DELETE /_capture/webhooks/:id` | workspace scope | capture | Endpoint CRUD |
+| `GET /_capture/webhooks/deliveries[?endpointId=&payloadFormat=]` · `GET …/:id` | workspace scope | capture | Delivery log |
+| `POST /_capture/webhooks/deliveries/:id/replay` | workspace scope | capture | Replay (`exact` or `resign`) |
+| `POST /_capture/webhooks/preview` | workspace scope | capture | Sample payload + headers for a format |
 | `GET /_capture/stream` | workspace scope | capture | SSE |
 | `POST|GET|DELETE /mcp` | workspace scope | mcp | MCP Streamable HTTP |
 
@@ -54,9 +57,10 @@ export const Duration = z.union([
 export const DeliveryStatus = z.enum(['queued', 'sent', 'delivered', 'deferred',
   'soft_bounce', 'hard_bounce', 'complained', 'failed', 'suppressed'])
 export const SimulatedStatus = DeliveryStatus.exclude(['queued', 'sent', 'suppressed'])
-export const WebhookEvent = z.enum(['email.sent', 'email.delivered', 'email.delivery_delayed',
-  'email.bounced', 'email.complained', 'email.failed', 'email.opened', 'email.clicked',
-  'email.suppressed'])                                         // delayed/failed: Resend parity
+// Canonical webhook events (D22), see « Webhooks » for the per-format mapping.
+export const CanonicalEvent = z.enum(['email.sent', 'email.delivered', 'email.deferred',
+  'email.soft_bounced', 'email.hard_bounced', 'email.complained', 'email.opened',
+  'email.clicked', 'email.suppressed', 'email.failed'])
 ```
 
 ## Settings and override (`settings.ts`, `override.ts`)
@@ -342,36 +346,245 @@ export const StreamEvent = z.discriminatedUnion('type', [
 
 ## Webhooks (`webhook.ts`)
 
+**Strict decoupling (D20).** The ingestion channel (how an email entered: native API,
+Resend, Brevo, SMTP) never decides the webhook shape. Only the endpoint's
+`payloadFormat` does. A Brevo-ingested email can be notified in Resend format, an SMTP
+email in Brevo format, and so on.
+
+### Endpoint contract
+
 ```ts
-export const UnifiedWebhookPayload = z.object({
-  id: z.string(),                                  // whd_… (= svix-id)
-  type: WebhookEvent,
-  createdAt: z.iso.datetime(),
-  workspace: z.object({ id: z.string(), slug: z.string() }),
-  connection: z.object({ id: z.string(), kind: z.enum(['resend', 'brevo', 'smtp']) }).nullable(),
-  data: z.object({ messageId: z.string(), providerMessageId: z.string(),
-    from: z.string(), to: z.array(z.string()), recipient: z.string().nullable(),
-    subject: z.string(), tags: z.array(Tag),
-    bounce: z.object({ type: z.enum(['soft', 'hard']), message: z.string() }).optional(),
-    click: z.object({ url: z.string(), userAgent: z.string().optional() }).optional() }),
+export const PayloadFormat = z.enum(['unified', 'resend', 'brevo'])
+
+export const WebhookEndpointInput = z.object({
+  connectionId: z.string().startsWith('con_').nullable(),  // null = Workspace scope
+  url: z.url(),
+  payloadFormat: PayloadFormat.optional(),                 // default: see below
+  // Event names in the dialect of payloadFormat (or canonical names, always accepted).
+  // Normalized to canonical with toCanonical(); unknown names -> 422.
+  events: z.array(z.string()).min(1),
+  description: z.string().max(200).optional(),
+  brevoAuth: z.discriminatedUnion('type', [
+    z.object({ type: z.literal('none') }),
+    z.object({ type: z.literal('bearer'), token: z.string().min(1) }),
+    z.object({ type: z.literal('basic'), username: z.string(), password: z.string() }),
+  ]).optional(),                                           // brevo format only
+  customHeaders: z.array(z.object({ key: z.string(), value: z.string() })).max(10)
+    .optional(),
+})
+// unified / resend: secret generated server-side (whsec_<base64 24 bytes>), shown once,
+// rotatable. brevo: Brevo signs nothing; the receiver authenticates with brevoAuth.
+
+/** Creation default (D20): connection kind for resend/brevo, else unified. */
+export function defaultPayloadFormat(scope: { kind: ConnectionKind } | null): PayloadFormat {
+  return scope && scope.kind !== 'smtp' ? scope.kind : 'unified'
+}
+
+export const WebhookEndpointView = z.object({
+  id: z.string(), connectionId: z.string().nullable(), url: z.string(),
+  payloadFormat: PayloadFormat,
+  events: z.array(z.string()),            // dialect names of payloadFormat, deduplicated
+  canonicalEvents: z.array(CanonicalEvent),
+  unsupportedEvents: z.array(CanonicalEvent), // canonical events this format cannot emit
+  secretPreview: z.string().nullable(), enabled: z.boolean(),
 })
 ```
 
-`format: provider` emits the connection's provider shape: Resend
-`{ type, created_at, data: { email_id, … } }`, Brevo
-`{ event: 'delivered'|'hard_bounce'|'spam'|'click'…, email, 'message-id', ts_event, … }`.
+Changing `payloadFormat` (PATCH) keeps the canonical subscription. Events the new format
+cannot represent stay stored but are listed in `unsupportedEvents` and never emitted; the
+UI warns before saving (proposal, D22).
 
-Signature headers on every delivery:
+### Event mapping (`webhooks/events-map.ts`)
+
+Stored form is always canonical. `toCanonical(format, name)` expands one dialect name to
+one or more canonical events (subscription), `toDialect(format, canonical)` gives the
+emitted name or `null` (not emitted).
+
+| Canonical | `unified` | `resend` (`type`) | `brevo` subscription / payload `event` |
+|---|---|---|---|
+| `email.sent` | `email.sent` | `email.sent` | `request` (alias `sent`) / `request` |
+| `email.delivered` | `email.delivered` | `email.delivered` | `delivered` / `delivered` |
+| `email.deferred` | `email.deferred` | `email.delivery_delayed` | `deferred` / `deferred` |
+| `email.soft_bounced` | `email.soft_bounced` | `email.delivery_delayed` | `softBounce` / `soft_bounce` |
+| `email.hard_bounced` | `email.hard_bounced` | `email.bounced` (`bounce.type: "Permanent"`) | `hardBounce` / `hard_bounce` |
+| `email.complained` | `email.complained` | `email.complained` | `spam` / `spam` |
+| `email.opened` | `email.opened` | `email.opened` | `opened` / `opened` |
+| `email.clicked` | `email.clicked` | `email.clicked` | `click` / `click` |
+| `email.suppressed` | `email.suppressed` | not emitted | `blocked` / `blocked` |
+| `email.failed` | `email.failed` | `email.failed` | not emitted |
+
+Facts behind the non-obvious lines (checked against provider docs on 22/11/2026):
+Resend `email.bounced` means a *permanent* rejection and `email.delivery_delayed` a
+*temporary* issue, so soft bounces map to `delivery_delayed`; Resend has no per-send
+suppression event (`suppression.added` describes the list, not a send). Brevo subscription
+names (`hardBounce`, `softBounce`) differ from the payload `event` values (`hard_bounce`,
+`soft_bounce`): both directions are mapped. `email.failed` is a canonical addition for the
+simulated `failed` status (Resend parity). All four lines are proposals (D22).
+
+Reverse mapping is many-to-one on purpose: subscribing to Resend
+`email.delivery_delayed` stores `email.deferred` + `email.soft_bounced`.
+
+### Formatter strategy (`packages/core/src/webhooks/formatters/`, D21)
+
+```ts
+export interface WebhookContext {
+  delivery: { id: string; numericEndpointId: number }
+  workspace: { id: string; slug: string; timezone: string }
+  connection: { id: string; kind: ConnectionKind } | null
+  message: MessageForWebhook                         // ids, from, to, subject, tags,
+                                                     // metadata, createdAt, templateId
+  event: { canonical: CanonicalEvent; occurredAt: Date; recipient: string | null
+           detail: { reason?: string; smtpCode?: number; url?: string; userAgent?: string } }
+}
+
+export interface WebhookFormatter {
+  readonly format: PayloadFormat
+  /** Emitted name, or null when this format has no equivalent (delivery skipped). */
+  eventName(canonical: CanonicalEvent): string | null
+  /** Serialized once per delivery; the stored string is what is signed and sent. */
+  serialize(ctx: WebhookContext): string
+  /** Called per attempt; returns every header to send (content-type included). */
+  sign(input: { deliveryId: string; body: string; endpoint: EndpointSecrets
+                timestamp: number; canonical: CanonicalEvent }): Record<string, string>
+}
+
+export const formatters: Record<PayloadFormat, WebhookFormatter> = {
+  unified: unifiedFormatter, resend: resendFormatter, brevo: brevoFormatter,
+}
+```
+
+Files: `types.ts`, `events-map.ts`, `unified.ts`, `resend.ts`, `brevo.ts`, `index.ts`, one
+contract test file per formatter (Resend payloads verified with the `svix` package's
+`Webhook.verify`).
+
+#### `UnifiedWebhookFormatter`
+
+```ts
+export const UnifiedWebhookPayload = z.object({
+  id: z.string(),                                    // whd_…
+  event: CanonicalEvent,
+  occurredAt: z.iso.datetime(),
+  workspaceId: z.string(),
+  connectionId: z.string().nullable(),
+  connectionKind: z.enum(['resend', 'brevo', 'smtp']).nullable(), // null: native API
+  messageId: z.string(),                             // msg_…
+  providerMessageId: z.string(),
+  recipient: z.string().nullable(),
+  from: z.string(), to: z.array(z.string()), subject: z.string(),
+  tags: z.array(Tag),
+  metadata: z.record(z.string(), z.unknown()),
+  detail: z.object({ reason: z.string().optional(), smtpCode: z.number().optional(),
+    url: z.string().optional(), userAgent: z.string().optional() }),
+})
+```
 
 ```
-X-Mailsink-Signature: t=<unix>,v1=<hex hmac_sha256(secret, "<t>.<body>")>
+Content-Type: application/json
+X-Mailsink-Event: email.hard_bounced
+X-Mailsink-Delivery-Id: whd_…
+X-Mailsink-Timestamp: 1795430400
+X-Mailsink-Signature: sha256=<hex hmac_sha256(secret, "<timestamp>.<body>")>
+```
+
+The timestamp is part of the signed string so a receiver can reject stale replays
+(proposal, D24).
+
+#### `ResendWebhookFormatter`
+
+```ts
+export const ResendWebhookPayload = z.object({
+  type: z.enum(['email.sent', 'email.delivered', 'email.delivery_delayed',
+    'email.complained', 'email.bounced', 'email.opened', 'email.clicked', 'email.failed']),
+  created_at: z.iso.datetime(),
+  data: z.object({
+    email_id: z.string(),                            // Resend-style uuid of the message
+    from: z.string(), to: z.array(z.string()), subject: z.string(),
+    created_at: z.iso.datetime(),
+    tags: z.record(z.string(), z.string()).optional(),
+    bounce: z.object({ message: z.string(), type: z.literal('Permanent'),
+      subType: z.string() }).optional(),
+    click: z.object({ link: z.string(), ipAddress: z.string(), userAgent: z.string(),
+      timestamp: z.iso.datetime() }).optional(),
+    failed: z.object({ reason: z.string() }).optional(),
+  }),
+})
+```
+
+```
+Content-Type: application/json
 svix-id: whd_…
-svix-timestamp: <unix>
-svix-signature: v1,<base64 hmac_sha256(base64decode(secret without "whsec_"), "<id>.<t>.<body>")>
+svix-timestamp: 1795430400
+svix-signature: v1,<base64 hmac_sha256(base64decode(secret minus "whsec_"),
+                                       "<svix-id>.<svix-timestamp>.<body>")>
 ```
 
-Retry: 8 attempts, `delay = min(2^n * 5 s, 1 h) ± 20 %` jitter. A `2xx` within 10 s is a
-success. Replay creates a new delivery (`replayOf`) with the same frozen payload.
+#### `BrevoWebhookFormatter`
+
+```ts
+export const BrevoWebhookPayload = z.object({
+  event: z.enum(['request', 'delivered', 'soft_bounce', 'hard_bounce', 'spam', 'opened',
+    'click', 'deferred', 'blocked']),
+  email: z.string(),                                 // the recipient
+  id: z.number().int(),                              // webhook id = endpoint numericId
+  date: z.string(),                                  // "YYYY-MM-DD HH:mm:ss", workspace tz
+  ts: z.number().int(), ts_event: z.number().int(), ts_epoch: z.number().int(),
+  'message-id': z.string(),                          // "<…@smtp-relay.mailin.fr>"
+  subject: z.string(),
+  tag: z.string().optional(),                        // first tag
+  tags: z.array(z.string()).optional(),
+  template_id: z.number().int().optional(),
+  'X-Mailin-custom': z.string().optional(),
+  link: z.string().optional(),                       // click
+  reason: z.string().optional(),                     // bounces, deferred, blocked
+  source: z.enum(['API', 'SMTP']).optional(),
+})
+```
+
+Brevo does not sign webhooks. Its documented receiver-side protections are the webhook
+`auth` (bearer token, or basic auth credentials) and custom `headers`, which Mailsink
+emulates:
+
+```
+Content-Type: application/json
+Authorization: Bearer <token>            # brevoAuth.type = bearer
+Authorization: Basic <base64 user:pass>  # brevoAuth.type = basic
+<custom header>: <value>                 # customHeaders
+```
+
+`X-Sib-Signature` is not part of Brevo's public documentation, so it is not emitted;
+adding a non-standard signature would make Mailsink less faithful (proposal, D23, to
+confirm or veto).
+
+### Delivery lifecycle, retries and replay (D24)
+
+1. A message event fans out to every enabled endpoint whose scope matches
+   (`connectionId = message.connectionId` or `null`) and whose canonical subscription
+   contains the event, and whose formatter emits it.
+2. The formatter serializes **once**; `webhook_deliveries` stores `payloadFormat`,
+   `canonicalEvent`, `dialectEvent` and the exact `body` string.
+3. Each attempt signs the stored body with the attempt timestamp (Svix behaviour: same
+   `svix-id`, fresh `svix-timestamp`), and stores the exact headers sent in
+   `webhook_attempts`. Retry: 8 attempts, `delay = min(2^n * 5 s, 1 h) ± 20 %`. A `2xx`
+   within 10 s is a success.
+4. Replay creates a new delivery (`replayOf`) with the **same body bytes**:
+
+```ts
+export const ReplayRequest = z.object({
+  mode: z.enum(['exact', 'resign']).default('exact'),
+  attemptId: z.string().optional(),   // exact: headers of this attempt (default: last)
+})
+```
+
+- `exact` (owner request, default): body and headers byte for byte, signature
+  included. Caveat shown in the UI: Svix-based verifiers (Resend SDK) reject timestamps
+  older than 5 minutes, and receivers may de-duplicate on `svix-id`; that is the point
+  when testing replay protection.
+- `resign` (proposal): same body and same delivery id header, fresh timestamp and
+  signature, as the Svix dashboard « resend » does; the receiver accepts it.
+
+`POST /_capture/webhooks/preview` takes `{ payloadFormat, event, connectionId? }` and
+returns `{ body, headers }` built by the real formatter from a sample message, with the
+endpoint secret masked. The UI form uses it for the live preview.
 
 ## Errors and rate limit headers
 
