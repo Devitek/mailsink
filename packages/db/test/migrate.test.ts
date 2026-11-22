@@ -3,6 +3,7 @@ import { expect, it } from 'vitest'
 import type { Database } from '../src/client'
 import { migrate } from '../src/migrate'
 import { describeDb } from '../src/testing'
+import { journalEntries } from './journal'
 
 const TABLES = [
   'api_keys',
@@ -51,7 +52,7 @@ describeDb(
       const applied = await ctx.db.execute<{ n: number }>(
         sql`select count(*)::int as n from drizzle.__drizzle_migrations`,
       )
-      expect(applied.rows[0]?.n).toBe(1)
+      expect(applied.rows[0]?.n).toBe((await journalEntries()).length)
     })
   },
   { migrate: false },

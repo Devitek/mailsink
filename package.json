@@ -8,16 +8,16 @@
   },
   "scripts": {
     "dev": "pnpm --filter @mailsink/app dev",
-    "build": "pnpm --filter @mailsink/app build",
+    "build": "pnpm -r build",
     "start": "pnpm --filter @mailsink/app start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "typecheck": "pnpm -r --parallel typecheck",
+    "typecheck": "tsc -p . && pnpm -r --parallel typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "i18n:extract": "lingui extract --clean",
     "i18n:compile": "lingui compile --strict",
-    "i18n:check": "lingui check sync --clean && lingui check missing --mode catalog"
+    "i18n:check": "lingui check sync --clean && lingui check missing --mode catalog --locale en,fr"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.8",
