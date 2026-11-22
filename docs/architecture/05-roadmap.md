@@ -7,11 +7,11 @@ Phase 4; earlier phases only ship a functional shell.
 ## Phase 1: Core DB and ingestion
 
 Goal: a single Docker container that accepts `POST /v1/emails`, stores it, and lets a test
-read it back with `GET /_capture/messages`.
+read it back with `GET /capture/messages`.
 
 1. Monorepo scaffold: pnpm workspaces, TypeScript strict, Biome, Vitest, CI, Dependabot.
 2. Spike: TanStack Start runtime boot (custom server entry starting SMTP + workers in dev
-   and in the Nitro build) and literal `/_admin` / `/_capture` server routes (D3, D15).
+   and in the Nitro build, clean shutdown) (D3).
 3. Lingui setup: FR + EN catalogs, locale detection, CI check, translation guide (D17-D19).
 4. `@mailsink/db`: schema (doc 02), migrations, `node-postgres` + PGlite drivers,
    test harness running every DB test on both drivers.
@@ -33,12 +33,12 @@ Goal: parallel CI workers each get an isolated, self-destroying workspace with c
 2. Activity tracking (throttled touch on every surface) + ephemeral GC scheduler.
 3. Settings resolver (4 layers) and simulation engine: weighted rates, deterministic
    recipient rules, latency, deferred re-queue.
-4. Override API: `GET/POST /_capture/override`, `/reset`, optional TTL, history.
+4. Override API: `GET/POST /capture/override`, `/reset`, optional TTL, history.
 5. Suppression list: auto-add on `hard_bounce`/`complained`, `suppressed` at ingestion,
    list/reset API.
 6. Rate limiting: token bucket, workspace/connection/override layers, headers, `429`.
 7. Chaos: request-level error rate (HTTP codes).
-8. Event bus + `GET /_capture/stream` (SSE, `Last-Event-ID`) + `wait=true` long-poll.
+8. Event bus + `GET /capture/stream` (SSE, `Last-Event-ID`) + `wait=true` long-poll.
 9. E2E recipe docs: Playwright fixture creating one workspace per worker.
 
 ## Phase 3: Provider dialects and webhooks
@@ -59,7 +59,7 @@ URL / host change.
    from the ingestion channel; X-Mailsink HMAC, Svix and Brevo auth headers; exact body
    stored once; backoff retries; attempts journal with exact headers; replay
    (`exact` / `resign`).
-7. Manual events: `POST /_capture/messages/:id/events` (opened, clicked + url), auto
+7. Manual events: `POST /capture/messages/:id/events` (opened, clicked + url), auto
    open/click rates.
 8. Request logging: `api_logs` (redaction, truncation), `smtp_sessions`, log query API.
 
