@@ -110,12 +110,14 @@ mailsink/
 │   ├── db/                                # Drizzle (doc 02)
 │   │   ├── drizzle.config.ts
 │   │   ├── migrations/                    # drizzle-kit output (0000_init.sql…)
-│   │   ├── test/                          # every DB test runs on PGlite and Postgres
+│   │   ├── test/                          # every DB test runs on PGlite and Postgres:
+│   │   │                                  # cascade, constraints, indexes, jobs, journal, migrate…
 │   │   └── src/
 │   │       ├── schema/  enums.ts workspaces.ts connections.ts keys.ts overrides.ts
 │   │       │            messages.ts attachments.ts blobs.ts events.ts suppressions.ts
 │   │       │            webhooks.ts webhook-deliveries.ts logs.ts templates.ts
-│   │       │            idempotency.ts jobs.ts columns.ts json-types.ts index.ts
+│   │       │            idempotency.ts jobs.ts columns.ts index.ts
+│   │       │            json-types.ts            # TranscriptLine only; JSON columns use contracts types
 │   │       ├── url.ts                   # DATABASE_URL parsing
 │   │       ├── client.ts                # createDb(url): node-postgres | PGlite
 │   │       ├── migrate.ts               # migrate(handle), advisory-locked on Postgres
@@ -160,6 +162,7 @@ mailsink/
 ├── AGENTS.md  README.md  CONTRIBUTING.md  LICENSE
 ├── lingui.config.ts                       # locales [en, fr], sourceLocale en, catalogs path
 ├── biome.json  pnpm-workspace.yaml  tsconfig.base.json
+├── tsconfig.json                          # typechecks root files (lingui.config.ts, vitest.config.ts)
 ```
 
 ## Runtime topology (D3)
