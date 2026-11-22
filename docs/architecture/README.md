@@ -48,3 +48,5 @@ Decisions marked *owner* were taken or approved by the product owner. Decisions 
 | D23 | Brevo webhooks are not signed (as Brevo): bearer token, basic auth and custom headers only; no `X-Sib-Signature`. Brevo `date` uses the workspace `timezone` (default UTC); `id` is a numeric endpoint id. | owner |
 | D24 | Body serialized once and stored; every attempt re-signs it with its own timestamp (Svix behaviour). Replay keeps the body bytes; mode `exact` (owner request, default) also copies the headers and signature, mode `resign` refreshes timestamp and signature. Unified signature covers `"<timestamp>.<body>"`. | owner |
 | D25 | Identifiers stay prefixed text (`con_…`, UUIDv7 body) rather than raw `uuid`, including `connectionId` on endpoints. | owner |
+| D26 | Blob references use `on delete cascade` (`attachments.blob_id`) and `on delete set null` (`messages.raw_blob_id`) instead of `no action`, which makes the single-statement workspace cascade fail (doc 02, « blobs »). | proposal |
+| D27 | `newId(prefix)` lives in `packages/db/src/ids.ts` (lowest package that needs ids: fixtures, repositories); `core` reuses it instead of owning `core/ids.ts`. | proposal |
