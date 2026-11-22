@@ -9,7 +9,7 @@ import {
   readRawMessage,
 } from '@mailsink/core'
 import { z } from 'zod'
-import { defineApi } from '../http/handler'
+import { defineApi } from '../handler'
 import { binaryResponse, contentDisposition, safeContentType } from './download'
 
 const MessageParams = z.object({ id: MessageId })
