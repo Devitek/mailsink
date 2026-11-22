@@ -698,9 +698,29 @@ Native/capture/admin error body (`errors.ts`, `ApiErrorBody`):
 `{ error: { code, message, details? }, requestId }`, `message` in English (D19).
 Codes (`ErrorCode`): `unauthorized`, `forbidden`, `validation_error`, `not_found`,
 `conflict`, `idempotency_mismatch`, `rate_limited`, `payload_too_large`, `chaos_injected`,
-`wait_timeout`, `internal_error` (unexpected 500). For `validation_error`, `details` holds
-the Zod issues (with `params.code` on custom refinements). Resend/Brevo dialects map these
-to their own body shape (`http/errors.ts`).
+`wait_timeout`, `internal_error` (unexpected 500). Resend/Brevo dialects map these to their
+own body shape (`http/errors.ts`).
+
+HTTP status per code (D40, `core/errors.ts`; a call site may override it, e.g. 400 for an
+unreadable body or a malformed auth header):
+
+| Code | Status | Code | Status |
+|---|---|---|---|
+| `unauthorized` | 401 (+ `WWW-Authenticate: Bearer`) | `rate_limited` | 429 |
+| `forbidden` | 403 | `payload_too_large` | 413 |
+| `validation_error` | 422 | `chaos_injected` | 500 |
+| `not_found` | 404 | `wait_timeout` | 408 |
+| `conflict`, `idempotency_mismatch` | 409 | `internal_error` | 500 |
+
+`details` of a `validation_error` (`http/validation.ts`):
+
+```ts
+type ValidationDetails = {
+  in: 'params' | 'query' | 'body'
+  issues: { path: (string | number)[]; code: string; message: string
+            params?: { code: string } }[]   // params.code: stable code of a contracts refinement
+}
+```
 
 Every ingestion response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
 `X-RateLimit-Reset` (seconds), plus `Retry-After` on `429`. The Resend dialect also emits
