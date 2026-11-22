@@ -513,8 +513,8 @@ Periodic tasks (retention, ephemeral GC, override expiry, idempotency cleanup) a
 in-process schedulers, not rows: they are idempotent `DELETE … WHERE` statements.
 
 The `jobs` table only holds pending, leased or failed work: a job done is deleted, a job
-given up on keeps its `last_error` with `run_at = 9999-12-31` (D43). The retention pass
-(`repositories/retention.ts`, D45) deletes, in order: expired messages (cascading to
+given up on keeps its `last_error` with `run_at = 9999-12-31` (D47). The retention pass
+(`repositories/retention.ts`, D49) deletes, in order: expired messages (cascading to
 recipients, attachments, events), messages over `max_messages` (oldest first), orphan blobs,
 expired idempotency keys, then expired `api_logs` and `smtp_sessions`.
 

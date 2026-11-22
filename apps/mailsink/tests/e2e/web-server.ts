@@ -1,0 +1,44 @@
+import { fileURLToPath } from 'node:url'
+import type { PlaywrightTestConfig } from '@playwright/test'
+
+// Shared by both Playwright configs. Ports are fixed so a run never collides with
+// `pnpm dev` (3000) or a default SMTP listener (1025).
+export const HTTP_PORT = 3506
+export const SMTP_PORT = 2906
+export const BASE_URL = `http://127.0.0.1:${HTTP_PORT}`
+
+const appRoot = fileURLToPath(new URL('../..', import.meta.url))
+const ci = Boolean(process.env.CI)
+
+type WebServer = NonNullable<PlaywrightTestConfig['webServer']>
+
+/** Runs `node <entry>` through tests/e2e/serve.ts, preceded by an optional build. */
+export function webServer({ entry, build }: { entry: string; build?: string }): WebServer {
+  const serve = `node tests/e2e/serve.ts ${entry}`
+  return {
+    command: build ? `${build} && ${serve}` : serve,
+    cwd: appRoot,
+    url: `${BASE_URL}/healthz`,
+    env: { PORT: String(HTTP_PORT), MAILSINK_SMTP_PORT: String(SMTP_PORT) },
+    reuseExistingServer: false,
+    timeout: 180_000,
+    stdout: 'pipe',
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
+  }
+}
+
+/** Options common to both configs; `name` separates their reports and artifacts. */
+export function baseConfig(name: string): PlaywrightTestConfig {
+  return {
+    forbidOnly: ci,
+    retries: ci ? 1 : 0,
+    fullyParallel: true,
+    outputDir: `${appRoot}/test-results/${name}`,
+    reporter: [
+      [ci ? 'github' : 'list'],
+      ['html', { outputFolder: `${appRoot}/playwright-report/${name}`, open: 'never' }],
+    ],
+    use: { baseURL: BASE_URL, trace: 'retain-on-failure' },
+    projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
+  }
+}

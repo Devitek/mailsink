@@ -1,11 +1,11 @@
-import { and, eq, isNull, or } from 'drizzle-orm'
+import { and, desc, eq, isNull } from 'drizzle-orm'
 import type { Executor } from '../client'
 import { connections } from '../schema/connections'
 import { apiKeys } from '../schema/keys'
 import { workspaces } from '../schema/workspaces'
+import type { Connection } from './connections'
+import type { Workspace } from './workspaces'
 
-export type Workspace = typeof workspaces.$inferSelect
-export type Connection = typeof connections.$inferSelect
 export type ApiKey = typeof apiKeys.$inferSelect
 
 export interface ActiveApiKey {
@@ -30,18 +30,32 @@ export async function findActiveApiKeyByHash(
   return row
 }
 
-/**
- * Workspace named by `X-Mailsink-Workspace` (id or slug) when the Admin key acts on it (D12).
- * Lives here until the workspaces repository lands with the Admin API (#13).
- */
-export async function findWorkspaceByRef(
+export type NewApiKey = typeof apiKeys.$inferInsert
+
+export async function insertApiKeys(db: Executor, rows: NewApiKey[]): Promise<ApiKey[]> {
+  if (rows.length === 0) return []
+  return db.insert(apiKeys).values(rows).returning()
+}
+
+/** `display_prefix` of the newest active connection key, per connection of a workspace. */
+export async function activeKeyPrefixes(
   db: Executor,
-  ref: string,
-): Promise<Workspace | undefined> {
-  const [row] = await db
-    .select()
-    .from(workspaces)
-    .where(or(eq(workspaces.id, ref), eq(workspaces.slug, ref)))
-    .limit(1)
-  return row
+  workspaceId: string,
+): Promise<Map<string, string>> {
+  const rows = await db
+    .select({ connectionId: apiKeys.connectionId, displayPrefix: apiKeys.displayPrefix })
+    .from(apiKeys)
+    .where(
+      and(
+        eq(apiKeys.workspaceId, workspaceId),
+        eq(apiKeys.scope, 'connection'),
+        isNull(apiKeys.revokedAt),
+      ),
+    )
+    .orderBy(desc(apiKeys.createdAt), desc(apiKeys.id))
+  const out = new Map<string, string>()
+  for (const row of rows) {
+    if (row.connectionId && !out.has(row.connectionId)) out.set(row.connectionId, row.displayPrefix)
+  }
+  return out
 }

@@ -22,6 +22,9 @@ describe('createRuntime background processing', () => {
         smtpPort: 0,
         workerIntervalMs: 10,
         retentionIntervalMs: 3_600_000,
+        maxMessageBytes: 26_214_400,
+        publicUrl: 'http://localhost:3000',
+        defaultIdleTtlSeconds: 3600,
       },
       silent,
     )
