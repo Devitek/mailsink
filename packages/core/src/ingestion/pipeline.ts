@@ -10,9 +10,11 @@ import {
 } from '@mailsink/db'
 import { createDbBlobStore } from '../blobs/db-store'
 import type { BlobStore } from '../blobs/store'
+import type { StreamFrame } from '../events/bus'
 import { attachmentContentType } from './compose-eml'
 import type { IngestTarget, NormalizedEmail } from './normalize'
 import type { PreparedEmail } from './prepare'
+import { ingestionFrames } from './stream-frames'
 
 export type IngestedStatus = 'queued' | 'suppressed'
 
@@ -42,6 +44,11 @@ export interface PersistOptions {
   idempotencyKey?: string
   /** Defaults to the database store bound to the transaction. */
   blobs?: BlobStore
+  /**
+   * Receives the `message.created` and ingestion event frames, for the caller to publish
+   * once the transaction has committed (D6).
+   */
+  frames?: StreamFrame[]
 }
 
 /**
@@ -101,6 +108,12 @@ export async function persistEmails(
         data: type === 'suppressed' ? { reason: 'on the suppression list' } : null,
         occurredAt: createdAt,
       }) satisfies NewMessageEvent
+    const events = [
+      event('accepted', null),
+      ...recipients
+        .filter((r) => r.status === 'suppressed')
+        .map((r) => event('suppressed', r.email)),
+    ]
     const providerMessageId = email.providerMessageId ?? id
     await insertMessageGraph(tx, {
       message: {
@@ -128,13 +141,20 @@ export async function persistEmails(
       },
       recipients,
       attachments: attachmentRows,
-      events: [
-        event('accepted', null),
-        ...recipients
-          .filter((r) => r.status === 'suppressed')
-          .map((r) => event('suppressed', r.email)),
-      ],
+      events,
     })
+    options.frames?.push(
+      ...ingestionFrames({
+        id,
+        target,
+        email,
+        recipients,
+        attachmentRows,
+        status,
+        createdAt,
+        events,
+      }),
+    )
     if (status === 'queued') jobs.push({ messageId: id })
     results.push({ id, providerMessageId, status })
   }

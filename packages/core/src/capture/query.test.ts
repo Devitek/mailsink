@@ -39,12 +39,9 @@ describe('capture query', () => {
     })
   })
 
-  it('refuses wait=true until long polling lands (#26)', () => {
-    expect(() => toMessageSearch('ws_1', parse({ wait: 'true' }))).toThrow(
-      expect.objectContaining({
-        status: 422,
-        details: { in: 'query', issues: [expect.objectContaining({ path: ['wait'] })] },
-      }),
+  it('accepts wait=true: waiting is not a filter (wait.ts)', () => {
+    expect(toMessageSearch('ws_1', parse({ wait: 'true', timeout: '100' }))).toEqual(
+      toMessageSearch('ws_1', parse({})),
     )
   })
 })
