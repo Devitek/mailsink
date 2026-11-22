@@ -8,6 +8,7 @@ type Env = Record<string, string | undefined>
  * srvx (Nitro's Node server) traps SIGTERM/SIGINT itself, drains HTTP for up to
  * `SERVER_SHUTDOWN_TIMEOUT` seconds (default 5) then fires Nitro's `close` hook, which stops
  * the runtime (nitro-plugin.ts). It skips that when `CI` or `TEST` is set.
+ * shutdown.srvx.test.ts runs the srvx Nitro ships and fails if this mirror drifts.
  */
 export function srvxDrainsHttp(env: Env = process.env): boolean {
   return !(env.CI || env.TEST)

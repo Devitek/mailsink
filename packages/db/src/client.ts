@@ -36,6 +36,15 @@ export interface DbHandle {
 export interface CreateDbOptions {
   /** Pool size for Postgres (default 10). PGlite always has a single connection. */
   maxConnections?: number
+  /**
+   * Postgres only: an idle pooled client lost its connection (server restart, network).
+   * The pool replaces it on next use. Default: a console warning.
+   */
+  onConnectionError?: (error: Error) => void
+}
+
+function warnConnectionLost(error: Error): void {
+  console.warn(`[mailsink] database connection lost: ${error.message}`)
 }
 
 /** Opens the database named by `DATABASE_URL` (default `pglite://./data`). */
@@ -46,6 +55,8 @@ export function createDb(url: string = DEFAULT_DATABASE_URL, options: CreateDbOp
       connectionString: target.connectionString,
       max: options.maxConnections ?? 10,
     })
+    // Unhandled, an idle client error on the pool becomes an uncaughtException.
+    pool.on('error', options.onConnectionError ?? warnConnectionLost)
     const db = drizzlePostgres({ client: pool, schema })
     return handle(db, 'postgres', pool, () => pool.end())
   }
