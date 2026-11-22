@@ -1,0 +1,13 @@
+{
+  "name": "@mailsink/cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "mailsink command line: migrate, mcp (stdio proxy)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
