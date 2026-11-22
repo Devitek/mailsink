@@ -41,7 +41,7 @@ docker compose up
 **Provision an ephemeral workspace for a CI run**
 
 ```sh
-curl -X POST http://localhost:3000/_admin/workspaces \
+curl -X POST http://localhost:3000/admin/workspaces \
   -H "Authorization: Bearer $MAILSINK_ADMIN_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name":"ci-run-42","ephemeral":true,"connections":[{"kind":"resend","name":"app"}]}'
@@ -57,7 +57,7 @@ const resend = new Resend(process.env.RESEND_API_KEY) // msk_… from the respon
 **Wait for the email in a test**
 
 ```sh
-curl "http://localhost:3000/_capture/messages?to=jane@example.com&wait=true&timeout=5000" \
+curl "http://localhost:3000/capture/messages?to=jane@example.com&wait=true&timeout=5000" \
   -H "Authorization: Bearer $MAILSINK_KEY"
 ```
 

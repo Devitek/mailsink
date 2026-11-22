@@ -67,7 +67,7 @@ sequenceDiagram
   U->>U: wait=true and MCP wait_for_email resolve on match
 
   opt Manual event (E2E test, UI link click, MCP trigger_email_event)
-    U->>R: POST /_capture/messages/:id/events {type: clicked, url}
+    U->>R: POST /capture/messages/:id/events {type: clicked, url}
     R->>DB: event clicked + webhook deliveries + jobs
     R->>B: publish message.event
   end

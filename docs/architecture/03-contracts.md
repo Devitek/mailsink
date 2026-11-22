@@ -10,28 +10,28 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 
 | Route | Auth | Dialect | Purpose |
 |---|---|---|---|
-| `POST /_admin/workspaces` | Admin key | admin | Create workspace (+ connections) |
-| `GET /_admin/workspaces?includeEphemeral=` | Admin key | admin | List |
-| `GET /_admin/workspaces/:id` | Admin key | admin | Detail |
-| `DELETE /_admin/workspaces/:id` | Admin key | admin | Immediate hard delete |
+| `POST /admin/workspaces` | Admin key | admin | Create workspace (+ connections) |
+| `GET /admin/workspaces?includeEphemeral=` | Admin key | admin | List |
+| `GET /admin/workspaces/:id` | Admin key | admin | Detail |
+| `DELETE /admin/workspaces/:id` | Admin key | admin | Immediate hard delete |
 | `POST /v1/emails` · `POST /v1/emails/batch` | `Bearer msk_` (any kind) | native | Native ingestion |
 | `POST /emails` · `POST /emails/batch` · `GET /emails/:id` | `Bearer msk_` (resend) | resend | Resend drop-in |
 | `POST /v3/smtp/email` | `api-key: msk_` (brevo) | brevo | Brevo drop-in |
 | SMTP `:1025` | `AUTH PLAIN/LOGIN` (smtp) | smtp | Nodemailer / any client |
-| `GET /_capture/messages` | workspace scope (D12) | capture | Search, `wait=true` |
-| `GET /_capture/messages/:id` | workspace scope | capture | Full detail |
-| `GET /_capture/messages/:id/raw` | workspace scope | capture | `message/rfc822` |
-| `GET /_capture/messages/:id/attachments/:attId` | workspace scope | capture | Binary |
-| `POST /_capture/messages/:id/events` | workspace scope | capture | Force opened/clicked |
-| `DELETE /_capture/messages` | workspace scope | capture | Purge messages and logs |
-| `GET /_capture/override` · `POST /_capture/override` | workspace scope | capture | Read / activate |
-| `POST /_capture/override/reset` | workspace scope | capture | Back to defaults |
-| `GET /_capture/suppressions` · `DELETE /_capture/suppressions[?email=]` | workspace scope | capture | List / reset |
-| `GET|POST /_capture/webhooks` · `GET|PATCH|DELETE /_capture/webhooks/:id` | workspace scope | capture | Endpoint CRUD |
-| `GET /_capture/webhooks/deliveries[?endpointId=&payloadFormat=]` · `GET …/:id` | workspace scope | capture | Delivery log |
-| `POST /_capture/webhooks/deliveries/:id/replay` | workspace scope | capture | Replay (`exact` or `resign`) |
-| `POST /_capture/webhooks/preview` | workspace scope | capture | Sample payload + headers for a format |
-| `GET /_capture/stream` | workspace scope | capture | SSE |
+| `GET /capture/messages` | workspace scope (D12) | capture | Search, `wait=true` |
+| `GET /capture/messages/:id` | workspace scope | capture | Full detail |
+| `GET /capture/messages/:id/raw` | workspace scope | capture | `message/rfc822` |
+| `GET /capture/messages/:id/attachments/:attId` | workspace scope | capture | Binary |
+| `POST /capture/messages/:id/events` | workspace scope | capture | Force opened/clicked |
+| `DELETE /capture/messages` | workspace scope | capture | Purge messages and logs |
+| `GET /capture/override` · `POST /capture/override` | workspace scope | capture | Read / activate |
+| `POST /capture/override/reset` | workspace scope | capture | Back to defaults |
+| `GET /capture/suppressions` · `DELETE /capture/suppressions[?email=]` | workspace scope | capture | List / reset |
+| `GET|POST /capture/webhooks` · `GET|PATCH|DELETE /capture/webhooks/:id` | workspace scope | capture | Endpoint CRUD |
+| `GET /capture/webhooks/deliveries[?endpointId=&payloadFormat=]` · `GET …/:id` | workspace scope | capture | Delivery log |
+| `POST /capture/webhooks/deliveries/:id/replay` | workspace scope | capture | Replay (`exact` or `resign`) |
+| `POST /capture/webhooks/preview` | workspace scope | capture | Sample payload + headers for a format |
+| `GET /capture/stream` | workspace scope | capture | SSE |
 | `POST|GET|DELETE /mcp` | workspace scope | mcp | MCP Streamable HTTP |
 
 Workspace scope = `Authorization: Bearer msk_…|mskw_…`, or Admin key +
@@ -325,7 +325,7 @@ export const PurgeQuery = z.object({ connectionId: z.string().optional(),
   before: z.iso.datetime().optional(), includeLogs: z.stringbool().default(true) })
 ```
 
-## Stream (`GET /_capture/stream`)
+## Stream (`GET /capture/stream`)
 
 `text/event-stream`, heartbeat comment every 15 s, `id:` = event id, `Last-Event-ID`
 replays from `message_events` (bounded to 500). Query: `connectionId?`, `types?`.
@@ -581,7 +581,7 @@ export const ReplayRequest = z.object({
 - `resign`: same body and same delivery id header, fresh timestamp and
   signature, as the Svix dashboard « resend » does; the receiver accepts it.
 
-`POST /_capture/webhooks/preview` takes `{ payloadFormat, event, connectionId? }` and
+`POST /capture/webhooks/preview` takes `{ payloadFormat, event, connectionId? }` and
 returns `{ body, headers }` built by the real formatter from a sample message, with the
 endpoint secret masked. The UI form uses it for the live preview.
 

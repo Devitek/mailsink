@@ -35,28 +35,28 @@ mailsink/
 │       │   │   ├── w.$workspaceSlug.connections.tsx
 │       │   │   ├── w.$workspaceSlug.webhooks.tsx
 │       │   │   ├── w.$workspaceSlug.settings.tsx     # defaults, retention, rate limit
-│       │   │   ├── [_]admin.workspaces.ts            # POST, GET  (D15)
-│       │   │   ├── [_]admin.workspaces.$id.ts        # GET, DELETE
+│       │   │   ├── admin.workspaces.ts               # POST, GET
+│       │   │   ├── admin.workspaces.$id.ts           # GET, DELETE
 │       │   │   ├── v1.emails.ts                      # native single send
 │       │   │   ├── v1.emails.batch.ts
 │       │   │   ├── emails.ts                         # Resend dialect
 │       │   │   ├── emails.batch.ts
 │       │   │   ├── emails.$id.ts                     # Resend GET /emails/:id
 │       │   │   ├── v3.smtp.email.ts                  # Brevo dialect
-│       │   │   ├── [_]capture.messages.ts            # GET (wait=true), DELETE
-│       │   │   ├── [_]capture.messages.$id.ts
-│       │   │   ├── [_]capture.messages.$id.events.ts
-│       │   │   ├── [_]capture.messages.$id.attachments.$attId.ts
-│       │   │   ├── [_]capture.messages.$id.raw.ts    # message/rfc822 download
-│       │   │   ├── [_]capture.override.ts            # GET current, POST activate
-│       │   │   ├── [_]capture.override.reset.ts
-│       │   │   ├── [_]capture.suppressions.ts        # GET, DELETE (reset)
-│       │   │   ├── [_]capture.webhooks.ts                # GET, POST endpoints
-│       │   │   ├── [_]capture.webhooks.$id.ts            # GET, PATCH, DELETE
-│       │   │   ├── [_]capture.webhooks.preview.ts        # sample body + headers
-│       │   │   ├── [_]capture.webhooks.deliveries.ts     # delivery log
-│       │   │   ├── [_]capture.webhooks.deliveries.$id.replay.ts
-│       │   │   ├── [_]capture.stream.ts              # SSE
+│       │   │   ├── capture.messages.ts               # GET (wait=true), DELETE
+│       │   │   ├── capture.messages.$id.ts
+│       │   │   ├── capture.messages.$id.events.ts
+│       │   │   ├── capture.messages.$id.attachments.$attId.ts
+│       │   │   ├── capture.messages.$id.raw.ts       # message/rfc822 download
+│       │   │   ├── capture.override.ts               # GET current, POST activate
+│       │   │   ├── capture.override.reset.ts
+│       │   │   ├── capture.suppressions.ts           # GET, DELETE (reset)
+│       │   │   ├── capture.webhooks.ts                   # GET, POST endpoints
+│       │   │   ├── capture.webhooks.$id.ts               # GET, PATCH, DELETE
+│       │   │   ├── capture.webhooks.preview.ts           # sample body + headers
+│       │   │   ├── capture.webhooks.deliveries.ts        # delivery log
+│       │   │   ├── capture.webhooks.deliveries.$id.replay.ts
+│       │   │   ├── capture.stream.ts                 # SSE
 │       │   │   ├── mcp.ts                            # Streamable HTTP (stateless)
 │       │   │   └── healthz.ts
 │       │   ├── server-fns/                # createServerFn wrappers for the UI, by feature
@@ -143,7 +143,7 @@ mailsink/
 node .output/server/index.mjs
  ├─ HTTP :3000 (Nitro/srvx) ── TanStack Start handler
  │     ├─ SSR UI + server functions
- │     └─ server routes: /_admin, /v1, /emails, /v3, /_capture, /mcp, /healthz
+ │     └─ server routes: /admin, /v1, /emails, /v3, /capture, /mcp, /healthz
  ├─ SMTP :1025 (smtp-server)            ─┐
  ├─ job worker (simulate, webhook)       ├─ started by runtime/boot.ts, share container
  └─ schedulers (retention, ephemeral GC)─┘
