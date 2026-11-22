@@ -1,0 +1,21 @@
+/* Tokens added on top of the brand delivery (tokens.css stays a verbatim copy).
+ * Brief 2 (docs/design/README.md): B2-5 danger alias, B2-6 sign-in control height.
+ * Integration tokens (proposition, #36): values the prototype writes inline, named here so
+ * components never hard-code a colour. */
+:root {
+  --ms-danger: var(--ms-status-failed);
+  --ms-control-h-xl: 44px;
+
+  /* Queued and sent have no colour in the delivery: neutral until the owner decides. */
+  --ms-status-queued: var(--ms-text-muted);
+  --ms-status-sent: var(--ms-text-muted);
+
+  /* Switch thumb: white with a shadow so it stays visible on the yellow (IMPLEMENTATION 6). */
+  --ms-switch-thumb: #ffffff;
+  --ms-shadow-thumb: 0 1px 2px rgb(0 0 0 / 0.35);
+
+  /* Floating surfaces: sheet backdrop and shadows, from the prototype drawers and menus. */
+  --ms-overlay: rgb(0 0 0 / 0.4);
+  --ms-shadow-sheet: -20px 0 50px rgb(0 0 0 / 0.3);
+  --ms-shadow-popover: 0 16px 40px rgb(0 0 0 / 0.35);
+}
