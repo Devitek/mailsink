@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="dark"]{--bg:#0b0c0e;--p:#111214;--r:#16171a;--h:#1d1f23;--bd:#222429;--bd2:#2d3036;--tx:#e7e8ea;--mu:#8d9199;--fa:#5f636b;--ac:oklch(0.87 0.16 92);--acf:oklch(0.87 0.16 92);--on:#0b0c0e;--s-failed:oklch(0.66 0.20 10);color-scheme:dark}
+[data-theme="light"]{--bg:#f5f5f3;--p:#ffffff;--r:#fafaf9;--h:#efefec;--bd:#e5e5e1;--bd2:#d4d4cf;--tx:#16171a;--mu:#5d6067;--fa:#989ba1;--ac:oklch(0.50 0.11 80);--acf:oklch(0.86 0.16 92);--on:#16171a;--s-failed:oklch(0.50 0.20 15);color-scheme:light}
+body{margin:0}
+*{box-sizing:border-box}
+button,input{font:inherit;color:inherit}
+a{color:var(--ac);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes mskspin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" lang="{{ lang }}" style="position:absolute;inset:0;background:var(--bg);color:var(--tx);font-family:Geist,ui-sans-serif,system-ui,sans-serif;font-size:13px;line-height:1.5;display:flex;flex-direction:column;overflow:auto;-webkit-font-smoothing:antialiased">
+
+  <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:{{ topPad }};flex:none">
+    <div role="group" aria-label="{{ T.lang }}" style="display:flex;padding:3px;gap:2px;border-radius:9px;background:var(--r);border:1px solid var(--bd)">
+      <sc-for list="{{ langs }}" as="l" hint-placeholder-count="2">
+        <button lang="{{ l.code }}" aria-pressed="{{ l.on }}" onClick="{{ l.pick }}" style="height:{{ segH }};padding:0 12px;border:0;border-radius:6px;background:{{ l.bg }};color:{{ l.c }};box-shadow:{{ l.sh }};font-size:13px;font-weight:500;cursor:pointer">{{ l.name }}</button>
+      </sc-for>
+    </div>
+    <button onClick="{{ toggleTheme }}" title="{{ T.themeT }}" aria-label="{{ T.themeT }}" style="width:{{ ctlS }};height:{{ ctlS }};border-radius:9px;border:1px solid var(--bd);background:var(--r);cursor:pointer;display:grid;place-items:center;flex:none" style-hover="background:var(--h)"><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid var(--tx);background:linear-gradient(90deg,var(--tx) 50%,transparent 50%)"></span></button>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:{{ vAlign }};gap:20px;padding:{{ outerPad }}">
+    <div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:22px;padding:{{ cardPad }};background:{{ cardBg }};border:{{ cardBd }};border-radius:16px;box-shadow:{{ cardSh }}">
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg width="32" height="32" viewBox="0 0 64 64" style="flex:none"><rect width="64" height="64" rx="15" fill="var(--acf)"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="var(--on)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="var(--on)" stroke-width="6" stroke-linecap="round"></path></svg>
+          <span style="font-size:22px;font-weight:600;letter-spacing:-.04em">mailsink</span>
+        </div>
+        <span style="font-size:13px;color:var(--mu)">{{ T.baseline }}</span>
+      </div>
+
+      <sc-if value="{{ showExpired }}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="display:flex;gap:10px;padding:12px 14px;border-radius:10px;background:var(--r);border:1px solid var(--bd2)">
+          <span style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--mu);display:grid;place-items:center;font:600 10px/1 'JetBrains Mono',monospace;color:var(--mu);flex:none;margin-top:1px">i</span>
+          <div style="font-size:13px;text-wrap:pretty">{{ T.expired }} <span style="font:12.5px 'JetBrains Mono',monospace;word-break:break-all">{{ returnPath }}</span>.</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showLocked }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="display:flex;gap:10px;padding:12px 14px;border-radius:10px;background:color-mix(in oklch,var(--s-failed) 8%,var(--p));border:1px solid color-mix(in oklch,var(--s-failed) 30%,transparent)">
+          <span style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--s-failed);display:grid;place-items:center;font:600 10px/1 'JetBrains Mono',monospace;color:var(--s-failed);flex:none;margin-top:1px">!</span>
+          <div style="font-size:13px;text-wrap:pretty"><span style="font-weight:600">{{ T.lockedA }}</span> {{ T.lockedB }} <span style="font:600 12.5px 'JetBrains Mono',monospace">{{ lockTxt }}</span>.</div>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h1 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.25">{{ T.title }}</h1>
+        <p style="margin:0;font-size:13.5px;color:var(--mu);text-wrap:pretty">{{ T.sub }}</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:2px;padding:10px 14px;border-radius:10px;background:var(--r);border:1px solid var(--bd)">
+        <span style="font:12.5px 'JetBrains Mono',monospace;word-break:break-all"><span style="color:var(--fa)">https://</span>mailsink.staging.acme.test</span>
+        <span style="font:11.5px 'JetBrains Mono',monospace;color:var(--fa)">mailsink 0.1.0</span>
+      </div>
+
+      <form onSubmit="{{ submit }}" style="display:flex;flex-direction:column;gap:8px;margin:0">
+        <label for="msk-admin-key" style="font-size:13px;font-weight:500">{{ T.keyLabel }}</label>
+        <div style="display:flex;align-items:stretch;height:{{ ctlH }};border-radius:10px;border:1px solid {{ fieldBd }};box-shadow:{{ fieldSh }};background:var(--p);overflow:hidden;opacity:{{ fieldOp }}">
+          <input id="msk-admin-key" ref="{{ inRef }}" type="{{ inType }}" value="{{ value }}" onChange="{{ onChange }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" disabled="{{ busy }}" autocomplete="current-password" spellcheck="false" aria-invalid="{{ isError }}" aria-describedby="msk-key-msg" placeholder="msk_admin_…" style="flex:1;min-width:0;border:0;outline:none;background:transparent;padding:0 14px;font:13.5px 'JetBrains Mono',monospace;letter-spacing:{{ inLs }}">
+          <button type="button" onClick="{{ toggleReveal }}" aria-pressed="{{ reveal }}" style="min-width:{{ sideW }};padding:0 12px;border:0;border-left:1px solid var(--bd);background:transparent;color:var(--mu);font-size:12.5px;font-weight:500;cursor:pointer" style-hover="color:var(--tx);background:var(--h)">{{ revealL }}</button>
+          <button type="button" onClick="{{ paste }}" style="min-width:{{ sideW }};padding:0 12px;border:0;border-left:1px solid var(--bd);background:transparent;color:var(--mu);font-size:12.5px;font-weight:500;cursor:pointer" style-hover="color:var(--tx);background:var(--h)">{{ T.paste }}</button>
+        </div>
+        <div id="msk-key-msg" aria-live="polite">
+          <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12.5px;color:var(--s-failed);text-wrap:pretty"><span style="font-weight:600">{{ T.errA }}</span> {{ T.errB }} <span style="font-family:'JetBrains Mono',monospace">MAILSINK_ADMIN_KEY</span> {{ T.errC }} <span style="color:var(--mu)">{{ T.left }}</span></div>
+          </sc-if>
+        </div>
+        <button type="submit" disabled="{{ btnDisabled }}" style="height:{{ ctlH }};margin-top:6px;border-radius:10px;border:1px solid {{ btnBd }};background:{{ btnBg }};color:{{ btnC }};font-size:14px;font-weight:600;cursor:{{ btnCur }};display:flex;align-items:center;justify-content:center;gap:10px">
+          <sc-if value="{{ checking }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:mskspin .7s linear infinite"></span></sc-if>
+          <span>{{ btnLabel }}</span>
+        </button>
+      </form>
+
+      <div style="font-size:12.5px;color:var(--mu);text-wrap:pretty;border-top:1px solid var(--bd);padding-top:16px"><span style="color:var(--tx);font-weight:500">{{ T.helpA }}</span> {{ T.helpB }} <span style="font-family:'JetBrains Mono',monospace;color:var(--tx)">MAILSINK_ADMIN_KEY</span>{{ T.helpC }}</div>
+    </div>
+    <div style="max-width:420px;font-size:12px;color:var(--fa);text-align:center;text-wrap:pretty">{{ T.foot }}</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;initialState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;empty&quot;,&quot;error&quot;,&quot;checking&quot;,&quot;expired&quot;,&quot;locked&quot;],&quot;default&quot;:&quot;empty&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;fr&quot;,&quot;en&quot;],&quot;default&quot;:&quot;fr&quot;,&quot;tsType&quot;:&quot;'fr'|'en'&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;},&quot;device&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;desktop&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;desktop&quot;,&quot;tsType&quot;:&quot;'desktop'|'mobile'&quot;},&quot;showFocus&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;live&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;autoFocus&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;returnPath&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;/messages/msg_01JDA7K3QX9R&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onSuccess&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onLang&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(l: string) =&gt; void&quot;},&quot;onTheme&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(t: string) =&gt; void&quot;}}">
+const VALID='msk_admin_4f8a2c91d7e34b6a9f0e', WRONG='msk_admin_4f8a2c91d7e34b6a9f0x';
+const I18N={
+  fr:{lang:'Langue',themeT:'Basculer clair / sombre',baseline:'Tout arrive. Rien ne part.',title:"Connexion à l'instance",sub:"Saisissez la clé d'administration que l'opérateur de cette instance vous a transmise.",keyLabel:"Clé d'administration",show:'Afficher',hide:'Masquer',paste:'Coller',submit:'Se connecter',checking:'Vérification…',retryIn:'Réessayer dans',errA:'Clé refusée.',errB:"Vérifiez qu'elle correspond à",errC:'sur le serveur.',left:'2 essais restants avant une pause.',expired:'Votre session a expiré. Reconnectez-vous pour revenir à',lockedA:'Trop de tentatives.',lockedB:"Pour protéger l'instance, les essais sont suspendus pendant",helpA:'Où trouver la clé ?',helpB:'Elle est définie au déploiement dans la variable',helpC:". Demandez-la à l'opérateur de l'instance : il n'y a ni compte ni mot de passe oublié.",foot:"La clé n'est jamais stockée dans le navigateur : elle est échangée contre un cookie de session."},
+  en:{lang:'Language',themeT:'Toggle light / dark',baseline:'Every email caught. None delivered.',title:'Sign in to this instance',sub:'Enter the admin key the operator of this instance gave you.',keyLabel:'Admin key',show:'Show',hide:'Hide',paste:'Paste',submit:'Sign in',checking:'Checking…',retryIn:'Try again in',errA:'Key rejected.',errB:'Check that it matches',errC:'on the server.',left:'2 attempts left before a pause.',expired:'Your session has expired. Sign in again to return to',lockedA:'Too many attempts.',lockedB:'To protect this instance, sign-in is paused for',helpA:'Where do I find the key?',helpB:'It is set at deployment in the',helpC:' variable. Ask the instance operator: there are no accounts and no password reset.',foot:'The key is never stored in your browser: it is exchanged for a session cookie.'}
+};
+class Component extends DCLogic {
+  inRef = React.createRef();
+  state = this.initState(this.props||{});
+  initState(p){
+    const st=p.initialState||'empty';
+    return {value:st==='error'?WRONG:st==='checking'?VALID:'',reveal:false,phase:st==='error'?'error':st==='checking'?'checking':st==='locked'?'locked':'idle',banner:st==='expired',attempts:st==='error'?1:st==='locked'?3:0,lockLeft:42,focused:false,lang:p.lang||'fr',theme:p.theme||'light'};
+  }
+  componentDidMount(){
+    const init=this.initState(this.props||{});
+    this.setState(init);
+    if(this.props.autoFocus!==false&&this.inRef.current&&init.phase!=='checking')this.inRef.current.focus();
+    if(init.phase==='locked'&&this.props.live!==false)this.startLock();
+  }
+  componentDidUpdate(pp){
+    if(pp.lang!==this.props.lang&&this.props.lang)this.setState({lang:this.props.lang});
+    if(pp.theme!==this.props.theme&&this.props.theme)this.setState({theme:this.props.theme});
+  }
+  componentWillUnmount(){clearInterval(this._lk);clearTimeout(this._ck);}
+  startLock(){clearInterval(this._lk);this._lk=setInterval(()=>this.setState(s=>s.lockLeft<=1?(clearInterval(this._lk),{phase:'idle',lockLeft:42,attempts:0}):{lockLeft:s.lockLeft-1}),1000);}
+  submit=(e)=>{
+    e&&e.preventDefault();const s=this.state;
+    if(!s.value||s.phase==='checking'||s.phase==='locked')return;
+    this.setState({phase:'checking'});
+    this._ck=setTimeout(()=>{
+      if(this.state.value.trim()===VALID){this.setState({phase:'idle',banner:false,attempts:0});this.props.onSuccess&&this.props.onSuccess();return;}
+      const a=this.state.attempts+1;
+      if(a>=3){this.setState({phase:'locked',attempts:a,lockLeft:42,value:''});this.startLock();}
+      else{this.setState({phase:'error',attempts:a},()=>{const i=this.inRef.current;if(i){i.focus();i.select();}});}
+    },850);
+  };
+  renderVals(){
+    const s=this.state,T=I18N[s.lang]||I18N.fr,mob=this.props.device==='mobile';
+    const checking=s.phase==='checking',locked=s.phase==='locked',err=s.phase==='error';
+    const focus=(s.focused||this.props.showFocus)&&!checking;
+    const pad=n=>String(n).padStart(2,'0');
+    const disabled=!s.value||locked||checking;
+    const setLang=l=>{this.setState({lang:l});this.props.onLang&&this.props.onLang(l);};
+    return {
+      T,theme:s.theme,lang:s.lang,value:s.value,reveal:s.reveal,
+      langs:[['en','English'],['fr','Français']].map(([code,name])=>{const on=s.lang===code;return {code,name,on,bg:on?'var(--p)':'transparent',c:on?'var(--tx)':'var(--mu)',sh:on?'0 0 0 1px var(--bd2)':'none',pick:()=>setLang(code)};}),
+      toggleTheme:()=>{const t=s.theme==='dark'?'light':'dark';this.setState({theme:t});this.props.onTheme&&this.props.onTheme(t);},
+      topPad:mob?'12px 16px':'20px 24px',segH:mob?'40px':'30px',ctlS:mob?'48px':'38px',ctlH:mob?'48px':'44px',sideW:mob?'56px':'0px',
+      vAlign:mob?'flex-start':'center',outerPad:mob?'8px 20px 28px':'24px 24px 64px',
+      cardPad:mob?'8px 0 0':'32px',cardBg:mob?'transparent':'var(--p)',cardBd:mob?'0':'1px solid var(--bd)',cardSh:mob?'none':'0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.06)',
+      showExpired:s.banner&&!locked,showLocked:locked,lockTxt:'0:'+pad(s.lockLeft),returnPath:this.props.returnPath||'/messages/msg_01JDA7K3QX9R',
+      inRef:this.inRef,inType:s.reveal?'text':'password',inLs:s.reveal||!s.value?'0':'.12em',busy:checking,isError:err,
+      fieldBd:err?'var(--s-failed)':focus?'var(--ac)':'var(--bd2)',
+      fieldSh:err?'0 0 0 3px color-mix(in oklch,var(--s-failed) 16%,transparent)':focus?'0 0 0 3px color-mix(in oklch,var(--ac) 22%,transparent)':'none',
+      fieldOp:checking?.6:1,
+      onChange:e=>this.setState({value:e.target.value,phase:s.phase==='error'?'idle':s.phase}),
+      onFocus:()=>this.setState({focused:true}),onBlur:()=>this.setState({focused:false}),
+      toggleReveal:()=>this.setState({reveal:!s.reveal}),revealL:s.reveal?T.hide:T.show,
+      paste:()=>{const set=v=>this.setState({value:v||VALID,phase:s.phase==='error'?'idle':s.phase});try{navigator.clipboard.readText().then(t=>set((t||'').trim().startsWith('msk_')?t.trim():VALID)).catch(()=>set(VALID));}catch(e){set(VALID);}},
+      submit:this.submit,checking,
+      btnDisabled:disabled,btnBg:disabled&&!checking?'var(--h)':'var(--acf)',btnC:disabled&&!checking?'var(--fa)':'var(--on)',btnBd:disabled&&!checking?'var(--bd)':'transparent',btnCur:disabled?'default':'pointer',
+      btnLabel:checking?T.checking:locked?`${T.retryIn} 0:${pad(s.lockLeft)}`:T.submit
+    };
+  }
+}
+</script>
+</body>
+</html>

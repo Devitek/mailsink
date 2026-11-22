@@ -11,8 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as CaptureMessagesRouteImport } from './routes/capture.messages'
+import { Route as V1EmailsRouteImport } from './routes/v1.emails'
+import { Route as AdminWorkspacesIdRouteImport } from './routes/admin.workspaces.$id'
 import { Route as CaptureMessagesIdRouteImport } from './routes/capture.messages.$id'
+import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
 import { Route as CaptureMessagesIdRawRouteImport } from './routes/capture.messages.$id.raw'
 import { Route as CaptureMessagesIdAttachmentsAttIdRouteImport } from './routes/capture.messages.$id.attachments.$attId'
 
@@ -26,15 +30,35 @@ const HealthzRoute = HealthzRouteImport.update({
   path: '/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWorkspacesRoute = AdminWorkspacesRouteImport.update({
+  id: '/admin/workspaces',
+  path: '/admin/workspaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CaptureMessagesRoute = CaptureMessagesRouteImport.update({
   id: '/capture/messages',
   path: '/capture/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V1EmailsRoute = V1EmailsRouteImport.update({
+  id: '/v1/emails',
+  path: '/v1/emails',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWorkspacesIdRoute = AdminWorkspacesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminWorkspacesRoute,
+} as any)
 const CaptureMessagesIdRoute = CaptureMessagesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => CaptureMessagesRoute,
+} as any)
+const V1EmailsBatchRoute = V1EmailsBatchRouteImport.update({
+  id: '/batch',
+  path: '/batch',
+  getParentRoute: () => V1EmailsRoute,
 } as any)
 const CaptureMessagesIdRawRoute = CaptureMessagesIdRawRouteImport.update({
   id: '/raw',
@@ -51,16 +75,24 @@ const CaptureMessagesIdAttachmentsAttIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/v1/emails': typeof V1EmailsRouteWithChildren
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/v1/emails': typeof V1EmailsRouteWithChildren
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
@@ -68,8 +100,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/v1/emails': typeof V1EmailsRouteWithChildren
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
@@ -78,24 +114,36 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/healthz'
+    | '/admin/workspaces'
     | '/capture/messages'
+    | '/v1/emails'
+    | '/admin/workspaces/$id'
     | '/capture/messages/$id'
+    | '/v1/emails/batch'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/healthz'
+    | '/admin/workspaces'
     | '/capture/messages'
+    | '/v1/emails'
+    | '/admin/workspaces/$id'
     | '/capture/messages/$id'
+    | '/v1/emails/batch'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
   id:
     | '__root__'
     | '/'
     | '/healthz'
+    | '/admin/workspaces'
     | '/capture/messages'
+    | '/v1/emails'
+    | '/admin/workspaces/$id'
     | '/capture/messages/$id'
+    | '/v1/emails/batch'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
   fileRoutesById: FileRoutesById
@@ -103,7 +151,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HealthzRoute: typeof HealthzRoute
+  AdminWorkspacesRoute: typeof AdminWorkspacesRouteWithChildren
   CaptureMessagesRoute: typeof CaptureMessagesRouteWithChildren
+  V1EmailsRoute: typeof V1EmailsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -122,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/workspaces': {
+      id: '/admin/workspaces'
+      path: '/admin/workspaces'
+      fullPath: '/admin/workspaces'
+      preLoaderRoute: typeof AdminWorkspacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/capture/messages': {
       id: '/capture/messages'
       path: '/capture/messages'
@@ -129,12 +186,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaptureMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/emails': {
+      id: '/v1/emails'
+      path: '/v1/emails'
+      fullPath: '/v1/emails'
+      preLoaderRoute: typeof V1EmailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/workspaces/$id': {
+      id: '/admin/workspaces/$id'
+      path: '/$id'
+      fullPath: '/admin/workspaces/$id'
+      preLoaderRoute: typeof AdminWorkspacesIdRouteImport
+      parentRoute: typeof AdminWorkspacesRoute
+    }
     '/capture/messages/$id': {
       id: '/capture/messages/$id'
       path: '/$id'
       fullPath: '/capture/messages/$id'
       preLoaderRoute: typeof CaptureMessagesIdRouteImport
       parentRoute: typeof CaptureMessagesRoute
+    }
+    '/v1/emails/batch': {
+      id: '/v1/emails/batch'
+      path: '/batch'
+      fullPath: '/v1/emails/batch'
+      preLoaderRoute: typeof V1EmailsBatchRouteImport
+      parentRoute: typeof V1EmailsRoute
     }
     '/capture/messages/$id/raw': {
       id: '/capture/messages/$id/raw'
@@ -152,6 +230,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminWorkspacesRouteChildren {
+  AdminWorkspacesIdRoute: typeof AdminWorkspacesIdRoute
+}
+
+const AdminWorkspacesRouteChildren: AdminWorkspacesRouteChildren = {
+  AdminWorkspacesIdRoute: AdminWorkspacesIdRoute,
+}
+
+const AdminWorkspacesRouteWithChildren = AdminWorkspacesRoute._addFileChildren(
+  AdminWorkspacesRouteChildren,
+)
 
 interface CaptureMessagesIdRouteChildren {
   CaptureMessagesIdRawRoute: typeof CaptureMessagesIdRawRoute
@@ -179,10 +269,24 @@ const CaptureMessagesRouteWithChildren = CaptureMessagesRoute._addFileChildren(
   CaptureMessagesRouteChildren,
 )
 
+interface V1EmailsRouteChildren {
+  V1EmailsBatchRoute: typeof V1EmailsBatchRoute
+}
+
+const V1EmailsRouteChildren: V1EmailsRouteChildren = {
+  V1EmailsBatchRoute: V1EmailsBatchRoute,
+}
+
+const V1EmailsRouteWithChildren = V1EmailsRoute._addFileChildren(
+  V1EmailsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HealthzRoute: HealthzRoute,
+  AdminWorkspacesRoute: AdminWorkspacesRouteWithChildren,
   CaptureMessagesRoute: CaptureMessagesRouteWithChildren,
+  V1EmailsRoute: V1EmailsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

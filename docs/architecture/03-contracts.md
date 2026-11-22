@@ -22,7 +22,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `GET /capture/messages/:id` | workspace scope | capture | Full detail |
 | `GET /capture/messages/:id/raw` | workspace scope | capture | `message/rfc822` |
 | `GET /capture/messages/:id/attachments/:attId` | workspace scope | capture | Binary |
-| `POST /capture/messages/:id/events` | workspace scope | capture | Force opened/clicked |
+| `POST /capture/messages/:id/events` | workspace scope | capture | Force opened/clicked or a simulated status |
 | `DELETE /capture/messages` | workspace scope | capture | Purge messages and logs |
 | `GET /capture/override` · `POST /capture/override` | workspace scope | capture | Read / activate |
 | `POST /capture/override/reset` | workspace scope | capture | Back to defaults |
@@ -31,6 +31,8 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `GET /capture/webhooks/deliveries[?endpointId=&payloadFormat=]` · `GET …/:id` | workspace scope | capture | Delivery log |
 | `POST /capture/webhooks/deliveries/:id/replay` | workspace scope | capture | Replay (`exact` or `resign`) |
 | `POST /capture/webhooks/preview` | workspace scope | capture | Sample payload + headers for a format |
+| `POST /capture/webhooks/:id/test` | workspace scope | capture | Send a signed sample event to one endpoint (logged as a delivery) |
+| `POST /capture/demo` | workspace scope | capture | Seed the workspace with demo messages through the ingestion pipeline (#62) |
 | `GET /capture/stream` | workspace scope | capture | SSE |
 | `POST|GET|DELETE /mcp` | workspace scope | mcp | MCP Streamable HTTP |
 
@@ -257,6 +259,34 @@ export const ListWorkspacesResponse = Page(WorkspaceView)
 The `.env` snippet itself is built by the Admin API (server side, it knows the public base
 URLs); the contract only carries the string.
 
+Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connections/`):
+
+- Auth: the Admin key only (D41); with `MAILSINK_ADMIN_KEY` unset every call gets 401.
+- `POST` answers 201 with `CreateWorkspaceResponse`, the only place secrets ever appear.
+  Workspace, connections and keys are written in one transaction. A taken slug or SMTP
+  username (also twice in the same request) answers 409 `conflict`; nothing is written.
+- Generated values (proposal): slug `<slugified name>-<6 [a-z0-9]>`; keys
+  `msk_` / `mskw_` + 32 random bytes base64url, stored as SHA-256 with a `display_prefix`
+  of the prefix plus 8 characters (`keyPreview` = display prefix + `…`); SMTP username
+  `<slug>-<8 hex>`, password 24 random bytes base64url, stored as
+  `scrypt$16384$8$1$<salt>$<key>` (D11). Only `resend` and `brevo` connections get an
+  `msk_` key; `smtp` connections get SMTP credentials and `keyPreview: null`.
+- Credentials and snippets (proposal): Resend `baseUrl` = `MAILSINK_PUBLIC_URL`
+  (`RESEND_API_KEY`, `RESEND_BASE_URL`, read by the Resend SDK); Brevo `baseUrl` =
+  `MAILSINK_PUBLIC_URL/v3` (`BREVO_API_KEY`, `BREVO_BASE_URL`); SMTP host = hostname of
+  `MAILSINK_PUBLIC_URL`, port = the SMTP listener port (`SMTP_HOST`, `SMTP_PORT`,
+  `SMTP_USER`, `SMTP_PASS`).
+- `urls` (D35): `ui` = `<public>/w/<slug>`, `capture` = `<public>/capture`, `mcp` =
+  `<public>/mcp`.
+- Ephemeral (#19): `idleTtlSeconds` defaults to `MAILSINK_DEFAULT_IDLE_TTL` (bare seconds
+  or a duration, 60 s .. 30 d, default 3600); `last_activity_at` = creation time and
+  `expires_at` = creation + TTL. Persistent workspaces keep both TTL columns null; an
+  `idleTtlSeconds` there is refused (D34, 422 `idle_ttl_requires_ephemeral`).
+- `GET /admin/workspaces`: newest first; `nextCursor` is the id of the last workspace of
+  the page (keyset on the UUIDv7 id), a malformed cursor is a 422.
+- `GET` and `DELETE /admin/workspaces/:id` take an id or a slug; `DELETE` answers 204 and
+  cascades to every workspace-owned row; an unknown workspace is a 404.
+
 ## Native ingestion (`native.ts`)
 
 ```ts
@@ -298,6 +328,36 @@ export const BatchResponse = z.object({              // 207 when partial, 200 wh
 
 Every dialect maps to one internal type, `NormalizedEmail` (`core/ingestion/normalize.ts`),
 the only input of the ingestion pipeline.
+
+Pipeline (`core/ingestion/`), shared by every dialect:
+
+1. `prepareEmail` (outside any transaction): composes the raw EML with Nodemailer
+   `MailComposer` when the dialect brought none (D9; `Message-ID: <msg_…@mailsink>`, Bcc left
+   out of the headers, file and URL access disabled), enforces `MAILSINK_MAX_MESSAGE_BYTES`
+   on it, and extracts the http(s) links (html anchors with their text, then bare urls of
+   the text part, deduplicated, at most 500).
+2. `persistEmails` (one transaction): raw EML and attachments go to the `BlobStore`
+   (database driver, deduplicated by sha256 per workspace, D8); the message, one recipient
+   row per address (D10, an address listed twice keeps its first kind, to > cc > bcc), its
+   attachments and an `accepted` event (origin `simulation`) are inserted. A recipient on
+   the workspace suppression list is stored `suppressed` with a `suppressed` event. The
+   message is `queued` and one `simulate_delivery` job `{ messageId }` is enqueued in the
+   same transaction, unless every recipient is suppressed (message `suppressed`, no job).
+
+HTTP behaviour of `POST /v1/emails` and `POST /v1/emails/batch`:
+
+- Any `msk_` connection key; the message records the connection and `source: 'native'`.
+- The request body is capped at `MAILSINK_MAX_MESSAGE_BYTES` (default 25 MB) before any
+  parsing (`defineApi` option `maxBodyBytes`): `413 payload_too_large`. A batch is capped as
+  a whole; each composed message is capped again (a batch item over the cap fails its slot).
+- Batch: the envelope is validated as a whole (`422` when it is not an array of 1 to 100),
+  then each item alone; the valid items are stored in one transaction. `200` when every item
+  is accepted, `207` otherwise (also when none is).
+- `Idempotency-Key` (at most 256 characters, else `400 validation_error`): scoped to the
+  workspace, kept 24 h, stored in the same transaction as the messages. The same key with
+  the same route and body (key order ignored) replays the stored status and body with the
+  header `Idempotent-Replayed: true`; with another body it fails with
+  `409 idempotency_mismatch`. Two concurrent requests on a new key store one message.
 
 ## Resend dialect (`resend.ts`)
 
@@ -418,7 +478,13 @@ export const TriggerEventRequest = z.discriminatedUnion('type', [
     userAgent: z.string().optional() }),
   z.object({ type: z.literal('clicked'), url: z.url(), recipient: z.email().optional(),
     userAgent: z.string().optional() }),
-])   // 202 { event, webhookDeliveries: [{ id, endpointId }] }
+  // Forced simulated status (owner arbitration 22/11, design brand-1, implemented in #34):
+  // updates the recipient status (all recipients when omitted), the message aggregate,
+  // the suppression list (hard_bounce, complained) and fans out webhooks like a drawn status.
+  z.object({ type: z.literal('status'),
+    status: z.enum(['delivered', 'deferred', 'soft_bounce', 'hard_bounce', 'complained', 'failed']),
+    recipient: z.email().optional(), reason: z.string().max(500).optional() }),
+])   // 202 { events, webhookDeliveries: [{ id, endpointId }] }
 
 export const PurgeQuery = z.object({ connectionId: ConnectionId.optional(),
   before: IsoDateTime.optional(), includeLogs: QueryBool.default(true) })
@@ -715,9 +781,29 @@ Native/capture/admin error body (`errors.ts`, `ApiErrorBody`):
 `{ error: { code, message, details? }, requestId }`, `message` in English (D19).
 Codes (`ErrorCode`): `unauthorized`, `forbidden`, `validation_error`, `not_found`,
 `conflict`, `idempotency_mismatch`, `rate_limited`, `payload_too_large`, `chaos_injected`,
-`wait_timeout`, `internal_error` (unexpected 500). For `validation_error`, `details` holds
-the Zod issues (with `params.code` on custom refinements). Resend/Brevo dialects map these
-to their own body shape (`http/errors.ts`).
+`wait_timeout`, `internal_error` (unexpected 500). Resend/Brevo dialects map these to their
+own body shape (`http/errors.ts`).
+
+HTTP status per code (D40, `core/errors.ts`; a call site may override it, e.g. 400 for an
+unreadable body or a malformed auth header):
+
+| Code | Status | Code | Status |
+|---|---|---|---|
+| `unauthorized` | 401 (+ `WWW-Authenticate: Bearer`) | `rate_limited` | 429 |
+| `forbidden` | 403 | `payload_too_large` | 413 |
+| `validation_error` | 422 | `chaos_injected` | 500 |
+| `not_found` | 404 | `wait_timeout` | 408 |
+| `conflict`, `idempotency_mismatch` | 409 | `internal_error` | 500 |
+
+`details` of a `validation_error` (`http/validation.ts`):
+
+```ts
+type ValidationDetails = {
+  in: 'params' | 'query' | 'body'
+  issues: { path: (string | number)[]; code: string; message: string
+            params?: { code: string } }[]   // params.code: stable code of a contracts refinement
+}
+```
 
 Every ingestion response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
 `X-RateLimit-Reset` (seconds), plus `Retry-After` on `429`. The Resend dialect also emits
