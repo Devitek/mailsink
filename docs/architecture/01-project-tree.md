@@ -96,17 +96,22 @@ mailsink/
 │   │       └── search-params.ts         # UI search params (filters, tabs)
 │   ├── db/                                # Drizzle (doc 02)
 │   │   ├── drizzle.config.ts
-│   │   ├── migrations/
+│   │   ├── migrations/                    # drizzle-kit output (0000_init.sql…)
+│   │   ├── test/                          # every DB test runs on PGlite and Postgres
 │   │   └── src/
 │   │       ├── schema/  enums.ts workspaces.ts connections.ts keys.ts overrides.ts
 │   │       │            messages.ts attachments.ts blobs.ts events.ts suppressions.ts
-│   │       │            webhooks.ts logs.ts templates.ts idempotency.ts jobs.ts index.ts
+│   │       │            webhooks.ts webhook-deliveries.ts logs.ts templates.ts
+│   │       │            idempotency.ts jobs.ts columns.ts json-types.ts index.ts
+│   │       ├── url.ts                   # DATABASE_URL parsing
 │   │       ├── client.ts                # createDb(url): node-postgres | PGlite
-│   │       ├── migrate.ts
+│   │       ├── migrate.ts               # migrate(handle), advisory-locked on Postgres
+│   │       ├── ids.ts                   # newId(prefix): prefixed UUIDv7 (D25, D27)
+│   │       ├── testing/                 # describeDb() harness (@mailsink/db/testing)
 │   │       └── repositories/            # one file per aggregate, typed queries only
 │   ├── core/                              # domain services, no HTTP, no React
 │   │   └── src/
-│   │       ├── ids.ts  clock.ts  errors.ts  crypto.ts (keys, scrypt, hmac)
+│   │       ├── clock.ts  errors.ts  crypto.ts (keys, scrypt, hmac)   # ids: db (D27)
 │   │       ├── workspaces/   provision.ts activity.ts expiry.ts
 │   │       ├── connections/  credentials.ts resolve.ts
 │   │       ├── ingestion/    pipeline.ts normalize.ts compose-eml.ts links.ts idempotency.ts
@@ -128,6 +133,7 @@ mailsink/
 │   │   └── src/ server.ts tools/{list,get,wait,trigger,override,purge,logs}.ts
 │   ├── ui/                                # shadcn/ui on Base UI + tokens (Claude Design later)
 │   └── cli/                               # `mailsink` bin: migrate, mcp (stdio proxy, D14)
+│                                          # built by tsdown into dist/bin.mjs (+ migrations)
 ├── docker/
 │   ├── Dockerfile                         # multi-stage: deps -> build -> node:24-slim runtime
 │   └── docker-compose.yml                 # mailsink + postgres (PGlite profile without pg)

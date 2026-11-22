@@ -1,2 +1,11 @@
-// Public entry point. Implemented by its roadmap issue (see docs/architecture/05-roadmap.md).
-export {}
+// Public entry point of @mailsink/contracts (docs/architecture/03-contracts.md).
+export * from './address'
+export * from './admin'
+export * from './capture'
+export * from './common'
+export * from './errors'
+export * from './ids'
+export * from './native'
+export * from './override'
+export * from './settings'
+export * from './status'

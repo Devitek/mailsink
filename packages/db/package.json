@@ -5,9 +5,21 @@
   "description": "Drizzle schema, migrations and Postgres / PGlite drivers",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit -p .",
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.17",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.11"
   }
 }
