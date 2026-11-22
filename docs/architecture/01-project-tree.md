@@ -141,7 +141,9 @@ mailsink/
 │       │   │       types.ts events-map.ts unified.ts resend.ts brevo.ts index.ts
 │   │       ├── capture/      query.ts wait.ts purge.ts
 │   │       ├── blobs/        store.ts db-store.ts
-│   │       └── jobs/         queue.ts worker.ts handlers/{simulate,webhook,retention,expiry}.ts
+│   │       ├── simulation/   simulate-delivery.ts planner.ts aggregate.ts
+│   │       ├── retention/    run.ts scheduler.ts
+│   │       └── jobs/         queue.ts worker.ts backoff.ts handlers/{simulate,webhook,expiry}.ts
 │   ├── smtp/                              # smtp-server + mailparser adapter
 │   │   └── src/ server.ts auth.ts transcript.ts on-data.ts
 │   ├── mcp/                               # McpServer factory + tools, transport-agnostic
@@ -179,8 +181,8 @@ Boot order: config, database and migrations, SMTP listener, worker; any failure 
 
 ## Configuration (env, validated by Zod at boot)
 
-`src/runtime/config.ts` validates `DATABASE_URL`, `MAILSINK_ADMIN_KEY`, `MAILSINK_SMTP_HOST`
-and `MAILSINK_SMTP_PORT` today; the other variables join the schema with their feature. An
+`src/runtime/config.ts` validates `DATABASE_URL`, `MAILSINK_ADMIN_KEY`, `MAILSINK_SMTP_HOST`,
+`MAILSINK_SMTP_PORT` and `MAILSINK_RETENTION_INTERVAL_SECONDS` today; the other variables join the schema with their feature. An
 invalid value stops the boot with exit code 1 (D28). Empty values count as unset.
 
 | Variable | Default | Purpose |
@@ -189,6 +191,7 @@ invalid value stops the boot with exit code 1 (D28). Empty values count as unset
 | `MAILSINK_ADMIN_KEY` | unset: Admin key disabled, warning at boot (D41) | Admin API and UI login |
 | `PORT` / `MAILSINK_SMTP_PORT` | `3000` / `1025` | Listeners (`PORT` is read by Nitro) |
 | `MAILSINK_SMTP_HOST` | `0.0.0.0` | SMTP bind address |
+| `MAILSINK_RETENTION_INTERVAL_SECONDS` | `60` | Period of the retention pass (1 to 86400, D45) |
 | `MAILSINK_SMTP_TLS_CERT` / `_KEY` | unset | Optional STARTTLS |
 | `MAILSINK_UI_AUTH` | `admin-key` | `none` for local/CI |
 | `MAILSINK_SESSION_SECRET` | derived from admin key | Cookie signing |
