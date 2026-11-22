@@ -470,7 +470,8 @@ export const MessageDetail = MessageSummary.extend({
   events: z.array(MessageEventView),
   rawUrl: z.string(), simulation: z.record(z.string(), z.unknown()).nullable(),
 })
-// Phase 3 (webhook delivery issue) adds `webhookDeliveries: z.array(WebhookDeliveryView)`.
+// Phase 3 (webhook delivery issue #33) adds `webhookDeliveries: z.array(WebhookDeliveryView)`.
+// Until then the detail already carries `webhookDeliveries: []` (always empty).
 
 export const TriggerEventRequest = z.discriminatedUnion('type', [
   z.object({ type: z.literal('opened'), recipient: z.email().optional(),
@@ -489,6 +490,30 @@ export const PurgeQuery = z.object({ connectionId: ConnectionId.optional(),
   before: IsoDateTime.optional(), includeLogs: QueryBool.default(true) })
 export const PurgeResponse = z.object({ count: z.number().int().min(0) })
 ```
+
+Capture behaviour (#15, proposition: the owner may veto each point):
+- Isolation: every query is scoped to the authenticated workspace (D12, D41). A message or
+  attachment of another workspace answers 404 `not_found`, exactly like a missing id; a purge
+  never deletes rows of another workspace (`{ count: 0 }`).
+- `wait=true` is refused with 422 `validation_error` (issue `params.code: wait_not_supported`,
+  path `wait`) until long polling lands (#26), rather than answering without waiting.
+- Filters: `to`, `from` and `subject` are case-insensitive substrings (`to` matches any
+  recipient email or name, `to`, `cc` or `bcc`); `tag=name` matches any value, `name:value`
+  splits on the first colon; `since` and `until` are inclusive; `q` is Postgres full text
+  (`simple` config, `websearch_to_tsquery` syntax) on subject, text and HTML bodies.
+- Pagination: newest first, keyset on `(created_at, id)`. `nextCursor` is opaque
+  (base64url); a cursor the server did not produce answers 422 (`invalid_cursor`).
+- `hasAttachments` counts `disposition = attachment` parts only (inline `cid:` images do not).
+- `GET …/raw` answers `message/rfc822` with `Content-Disposition: attachment;
+  filename="<id>.eml"`, 404 when no raw source was kept. `GET …/attachments/:attId` answers
+  the stored content type (`application/octet-stream` when malformed) and the stored
+  disposition with an RFC 6266 filename. Both downloads carry `X-Content-Type-Options:
+  nosniff`, `Content-Security-Policy: sandbox; default-src 'none'` and `Cache-Control:
+  private, no-store`: captured content is untrusted and served from the app origin.
+- `DELETE /capture/messages` deletes messages (recipients, attachments and events cascade)
+  in one transaction. With `includeLogs=true` (default) it also deletes the API logs and
+  SMTP sessions in the same scope (`connectionId`, `before`) and the webhook deliveries of
+  the purged messages. Orphan blobs are left to the retention job.
 
 ## Stream (`GET /capture/stream`)
 

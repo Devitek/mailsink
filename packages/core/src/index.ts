@@ -1,5 +1,6 @@
 export { createDbBlobStore } from './blobs/db-store'
 export type { BlobRef, BlobStore } from './blobs/store'
+export * from './capture'
 export {
   type GeneratedKey,
   generateKey,
