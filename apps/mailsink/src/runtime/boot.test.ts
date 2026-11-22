@@ -1,10 +1,24 @@
+import { once } from 'node:events'
+import { mkdtempSync } from 'node:fs'
+import { type AddressInfo, createServer } from 'node:net'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { PGlite } from '@electric-sql/pglite'
+import { workspaces } from '@mailsink/db'
 import { createTransport } from 'nodemailer'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { bootRuntime, stopRuntime } from './boot'
 import { createRuntime, type Runtime } from './container'
 
-const silent = { info: vi.fn(), error: vi.fn() }
-const fake = (smtpPort = 1): Runtime => ({ smtpPort, stop: vi.fn(async () => {}) })
+const silent = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+const base = {
+  databaseUrl: 'pglite://memory',
+  adminKey: 'admin',
+  smtpHost: '127.0.0.1',
+  smtpPort: 0,
+  workerIntervalMs: 10,
+}
+const fake = (smtpPort = 1) => ({ smtpPort, stop: vi.fn(async () => {}) }) as unknown as Runtime
 
 describe('bootRuntime / stopRuntime', () => {
   afterEach(async () => {
@@ -49,13 +63,16 @@ describe('bootRuntime / stopRuntime', () => {
     await expect(stopRuntime()).resolves.toBeUndefined()
   })
 
-  it('boots a real SMTP listener that accepts mail and stops cleanly', async () => {
-    const config = { smtpHost: '127.0.0.1', smtpPort: 0, workerIntervalMs: 10 }
+  it('boots a migrated database and a real SMTP listener, then stops cleanly', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'mailsink-boot-'))
+    const config = { ...base, databaseUrl: `pglite://${dir}` }
     const runtime = await bootRuntime({
       start: () => createRuntime(config, silent),
       log: silent,
       shutdownHooks: false,
     })
+    // Fresh data dir: the boot applied the migrations.
+    expect(await runtime.db.db.select().from(workspaces)).toEqual([])
 
     const transport = createTransport({
       host: '127.0.0.1',
@@ -70,5 +87,21 @@ describe('bootRuntime / stopRuntime', () => {
     const after = createTransport({ host: '127.0.0.1', port: runtime.smtpPort, ignoreTLS: true })
     await expect(after.verify()).rejects.toThrow()
     after.close()
-  })
+    await expect(runtime.db.db.select().from(workspaces)).rejects.toThrow()
+  }, 30_000)
+
+  it('fails to start when the SMTP port is taken, closing the database again', async () => {
+    const blocker = createServer().listen(0, '127.0.0.1')
+    await once(blocker, 'listening')
+    const { port } = blocker.address() as AddressInfo
+    const close = vi.spyOn(PGlite.prototype, 'close')
+    try {
+      const config = { ...base, databaseUrl: 'pglite://memory', smtpPort: port }
+      await expect(createRuntime(config, silent)).rejects.toThrow(/EADDRINUSE/)
+      expect(close).toHaveBeenCalled()
+    } finally {
+      close.mockRestore()
+      blocker.close()
+    }
+  }, 30_000)
 })

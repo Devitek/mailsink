@@ -9,6 +9,7 @@ export {
 } from './client'
 export { type IdPrefix, newId } from './ids'
 export { MIGRATIONS_FOLDER, type MigrateOptions, migrate } from './migrate'
+export * from './repositories/api-keys'
 export * from './repositories/jobs'
 export * as schema from './schema'
 export * from './schema'
