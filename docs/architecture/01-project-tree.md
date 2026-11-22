@@ -9,13 +9,17 @@ mailsink/
 ├── apps/
 │   └── mailsink/                         # TanStack Start app: UI + every HTTP surface (D1)
 │       ├── vite.config.ts                # tanstackStart() + nitro() + react + tailwind
+│       ├── nitro.config.ts               # registers runtime/nitro-plugin.ts (D3)
 │       ├── src/
-│       │   ├── server.ts                 # custom server entry: boot runtime, request id (D3)
+│       │   ├── server.ts                 # custom server entry: waits for runtime, request id (D3)
 │       │   ├── router.tsx                # router + QueryClient (SSR dehydrate/hydrate)
 │       │   ├── runtime/
-│       │   │   ├── boot.ts               # idempotent start (globalThis guard for HMR)
+│       │   │   ├── nitro-plugin.ts       # boots at process start, stops on Nitro `close` (D3)
+│       │   │   ├── boot.ts               # idempotent start/stop
+│       │   │   ├── slot.ts               # globalThis slot (HMR, two bundles), whenRuntimeReady()
+│       │   │   ├── config.ts             # runtime env (until the Zod config lands)
 │       │   │   ├── container.ts          # builds db, services, bus, stores once
-│       │   │   └── shutdown.ts           # SIGTERM: stop SMTP, drain workers, close db
+│       │   │   └── shutdown.ts           # SIGTERM/SIGINT: stop SMTP, drain workers, close db
 │       │   ├── http/                     # thin adapters shared by server routes
 │       │   │   ├── handler.ts            # defineApi(): parse -> auth -> rate limit -> log
 │       │   │   ├── auth.ts               # admin key, msk_/mskw_ keys, Brevo api-key header
@@ -151,8 +155,8 @@ node .output/server/index.mjs
  │     ├─ SSR UI + server functions
  │     └─ server routes: /admin, /v1, /emails, /v3, /capture, /mcp, /healthz
  ├─ SMTP :1025 (smtp-server)            ─┐
- ├─ job worker (simulate, webhook)       ├─ started by runtime/boot.ts, share container
- └─ schedulers (retention, ephemeral GC)─┘
+ ├─ job worker (simulate, webhook)       ├─ started by runtime/nitro-plugin.ts at process
+ └─ schedulers (retention, ephemeral GC)─┘  start (boot.ts), share container
 ```
 
 ## Configuration (env, validated by Zod at boot)
@@ -161,7 +165,8 @@ node .output/server/index.mjs
 |---|---|---|
 | `DATABASE_URL` | `pglite://./data` | `postgres://…` or `pglite://<dir>` / `pglite://memory` |
 | `MAILSINK_ADMIN_KEY` | required outside local mode | Admin API and UI login |
-| `MAILSINK_HTTP_PORT` / `MAILSINK_SMTP_PORT` | `3000` / `1025` | Listeners |
+| `PORT` / `MAILSINK_SMTP_PORT` | `3000` / `1025` | Listeners (`PORT` is read by Nitro) |
+| `MAILSINK_SMTP_HOST` | `0.0.0.0` | SMTP bind address |
 | `MAILSINK_SMTP_TLS_CERT` / `_KEY` | unset | Optional STARTTLS |
 | `MAILSINK_UI_AUTH` | `admin-key` | `none` for local/CI |
 | `MAILSINK_SESSION_SECRET` | derived from admin key | Cookie signing |
