@@ -41,10 +41,12 @@ mailsink/
 │       │   │   ├── admin/                # workspaces.ts (Admin API), public-endpoints.ts (URLs
 │       │   │   │                         # and SMTP host/port written in credentials)
 │       │   │   ├── native/               # emails.ts: POST /v1/emails, /v1/emails/batch
-│       │   │   ├── capture/              # api.ts (list, detail, purge), download.ts (raw EML,
-│       │   │   │                         # attachments, D60)
+│       │   │   ├── activity.ts           # afterAuth extension: workspace activity touch (#20)
+│       │   │   ├── capture/              # api.ts (list, wait=true, detail, purge), download.ts
+│       │   │   │                         # (raw EML, attachments, D60), stream.ts (GET
+│       │   │   │                         # /capture/stream), stream-sse.ts (ReadableStream SSE:
+│       │   │   │                         # heartbeat, Last-Event-ID replay, filters)
 │       │   │   ├── rate-limit-headers.ts
-│       │   │   ├── sse.ts                # ReadableStream SSE helper (heartbeat, Last-Event-ID)
 │       │   │   └── request-log.ts        # api_logs writer (redaction, truncation)
 │       │   ├── routes/
 │       │   │   ├── __root.tsx
@@ -148,13 +150,13 @@ mailsink/
 │   │       ├── workspaces/   provision.ts queries.ts views.ts slug.ts activity.ts expiry.ts
 │   │       ├── connections/  credentials.ts snippets.ts resolve.ts
 │   │       ├── ingestion/    pipeline.ts prepare.ts normalize.ts native.ts compose-eml.ts
-│   │       │                 links.ts idempotency.ts testing/fixtures.ts
+│   │       │                 links.ts idempotency.ts stream-frames.ts testing/fixtures.ts
 │   │       ├── dialects/     resend.ts brevo.ts native.ts smtp.ts  # to/from NormalizedEmail
 │   │       ├── templates/    render.ts                             # Brevo {{ params.x }}
 │   │       ├── simulation/   settings-resolver.ts rules.ts draw.ts latency.ts chaos.ts
 │   │       ├── rate-limit/   token-bucket.ts
 │   │       ├── suppression/  service.ts
-│       │   ├── events/       bus.ts record.ts
+│       │   ├── events/       bus.ts frames.ts filter.ts replay.ts  # D6, D80 to D84
 │       │   ├── webhooks/     endpoints.ts fanout.ts dispatcher.ts backoff.ts replay.ts
 │       │   │   └── formatters/            # Strategy, one per payloadFormat (D20, D21)
 │       │   │       types.ts events-map.ts unified.ts resend.ts brevo.ts index.ts
@@ -164,7 +166,7 @@ mailsink/
 │   │       ├── simulation/   simulate-delivery.ts planner.ts aggregate.ts testing/fixtures.ts
 │   │       ├── retention/    run.ts scheduler.ts (also purges and reports failed jobs, D65)
 │   │       └── jobs/         queue.ts worker.ts backoff.ts settings.ts (DEFAULT_JOB_SETTINGS)
-│   │                         handlers/{simulate,webhook,expiry}.ts
+│   │                         handlers/{simulate,simulate-publish,webhook,expiry}.ts
 │   ├── smtp/                              # smtp-server + mailparser adapter
 │   │   └── src/ server.ts auth.ts transcript.ts on-data.ts
 │   ├── mcp/                               # McpServer factory + tools, transport-agnostic
