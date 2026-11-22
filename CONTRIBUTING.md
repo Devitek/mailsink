@@ -26,7 +26,7 @@ pnpm dev          # http://localhost:3000, health check at /healthz
 | `pnpm lint` / `pnpm lint:fix` | Biome lint and format check (code only, Markdown is not formatted) |
 | `pnpm typecheck` | `tsc --noEmit` in every workspace package |
 | `pnpm test` | Vitest, every package and app as a project |
-| `pnpm build` / `pnpm start` | Production build (Nitro, `.output/`) and run it |
+| `pnpm build` / `pnpm start` | Build every package that has a build (the app with Nitro to `apps/mailsink/.output/`, the CLI to `packages/cli/dist/`) and run the app |
 
 `pnpm install` builds native helpers only for the packages listed under `allowBuilds` in
 `pnpm-workspace.yaml` (today `esbuild`, needed by Vite and drizzle-kit): pnpm 11 refuses
