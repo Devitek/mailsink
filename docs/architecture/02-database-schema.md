@@ -7,8 +7,11 @@ deletion, so deleting an expired ephemeral workspace is a single `DELETE`.
 
 The snippets below are the design; the source of truth is `packages/db/src/schema/` and its
 generated migrations. JSON column shapes (`RateLimitSettings`, `SimulationSettings`,
-`OverrideConfig`…) are plain types in `schema/json-types.ts` until `@mailsink/contracts`
-exports them.
+`SimulationSettingsPatch`, `OverrideConfig`, `Address`) are the types inferred from the Zod
+schemas of `@mailsink/contracts` (type-only imports: db has no runtime dependency on Zod).
+They are the parsed outputs, so code writes values that went through the contract (defaults
+applied). `schema/json-types.ts` only keeps the shapes the contracts do not describe (SMTP
+transcript lines).
 
 ## Drivers, migrations and tests
 
@@ -19,7 +22,10 @@ exports them.
 - `drizzle-kit generate` (`pnpm --filter @mailsink/db db:generate`) writes numbered SQL
   migrations into `packages/db/migrations/`. `migrate(handle)` applies them, idempotently;
   on Postgres it holds a session advisory lock so the boot and `mailsink migrate` never
-  race. The built CLI ships a copy of the folder in `dist/migrations`.
+  race. The built CLI ships a copy of the folder in `dist/migrations`. A generated migration
+  may get hand-written data statements appended (backfills); each journal `when` must be
+  strictly greater than the previous one, or the migrator skips the migration (checked by
+  `test/journal.test.ts`).
 - `describeDb()` from `@mailsink/db/testing` declares each suite twice: `[pglite]` on a
   fresh in-memory instance, `[postgres]` on a throwaway database created on
   `TEST_DATABASE_URL` (skipped when unset). Every suite owns its database, so test files
@@ -118,7 +124,7 @@ export const workspaces = pgTable('workspaces', {
   maxMessages: integer('max_messages'),                          // null = unbounded
   rateLimit: jsonb('rate_limit').$type<RateLimitSettings>(),     // null = unlimited
   simulation: jsonb('simulation').$type<SimulationSettings>().notNull()
-    .default(sql`'{"rates":{"delivered":100}}'::jsonb`),
+    .default(DEFAULT_SIMULATION_SETTINGS),                       // complete, see below
   metadata: jsonb('metadata').$type<Record<string, string>>(),   // e.g. CI run id
   timezone: text('timezone').notNull().default('UTC'),           // Brevo webhook `date` (D23)
   createdVia: text('created_via', { enum: ['ui', 'admin_api'] }).notNull(),
@@ -130,9 +136,19 @@ export const workspaces = pgTable('workspaces', {
 ])
 ```
 
+`DEFAULT_SIMULATION_SETTINGS` (exported by `schema/workspaces.ts`) is
+`SimulationSettings.parse({})`: `{ rates: { delivered: 100 }, rules: [], latency: { minMs: 0,
+maxMs: 0 }, openRate: 0, clickRate: 0 }`, so a stored row always has every key the contract
+type promises (a test compares both). Migration 0000 stored `{"rates":{"delivered":100}}`
+only; 0001 completes such rows with `defaults || simulation` (shallow merge, stored keys
+win). Connection settings and overrides stay partial by design (`SimulationSettingsPatch`,
+`OverrideConfig`): the resolver below fills absent keys.
+
 ## `schema/connections.ts` and `schema/keys.ts`
 
 ```ts
+import type { RateLimitSettings, SimulationSettingsPatch } from '@mailsink/contracts'
+
 export const connections = pgTable('connections', {
   id: text('id').primaryKey(),                                   // con_…
   workspaceId: text('workspace_id').notNull()
@@ -144,7 +160,7 @@ export const connections = pgTable('connections', {
   // Per-connection overrides of workspace defaults; null = inherit.
   retentionSeconds: integer('retention_seconds'),
   rateLimit: jsonb('rate_limit').$type<RateLimitSettings>(),
-  simulation: jsonb('simulation').$type<Partial<SimulationSettings>>(),
+  simulation: jsonb('simulation').$type<SimulationSettingsPatch>(), // absent keys inherit
   disabledAt: timestamp('disabled_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -212,7 +228,7 @@ export const templates = pgTable('templates', {
   subject: text('subject').notNull(),                            // may contain {{ params.x }}
   html: text('html'),
   text: text('text'),
-  sender: jsonb('sender').$type<{ email: string; name?: string }>(),
+  sender: jsonb('sender').$type<Address>(),                      // contracts Address
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex('templates_external_uq').on(t.workspaceId, t.externalId)])
@@ -243,7 +259,7 @@ whole `DELETE FROM workspaces` fails. The orphan-only blob GC never triggers the
 ## `schema/messages.ts`
 
 ```ts
-type Address = { email: string; name?: string }
+import type { Address } from '@mailsink/contracts'               // { email, name? }
 
 export const messages = pgTable('messages', {
   id: text('id').primaryKey(),                                   // msg_…
@@ -274,6 +290,7 @@ export const messages = pgTable('messages', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   statusUpdatedAt: timestamp('status_updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
+  index('messages_raw_blob_idx').on(t.rawBlobId),                // blob GC, set null lookups
   index('messages_ws_created_idx').on(t.workspaceId, t.createdAt.desc()),
   index('messages_ws_status_idx').on(t.workspaceId, t.status),
   index('messages_ws_connection_idx').on(t.workspaceId, t.connectionId, t.createdAt.desc()),
@@ -308,7 +325,10 @@ export const attachments = pgTable('attachments', {
   sizeBytes: integer('size_bytes').notNull(),
   blobId: text('blob_id').notNull()
     .references(() => blobs.id, { onDelete: 'cascade' }),        // D26
-})
+}, (t) => [
+  index('attachments_message_idx').on(t.messageId),
+  index('attachments_blob_idx').on(t.blobId),
+])
 ```
 
 ## `schema/events.ts` and `schema/suppressions.ts`
@@ -420,7 +440,7 @@ export const webhookAttempts = pgTable('webhook_attempts', {
   durationMs: integer('duration_ms').notNull(),
   error: text('error'),                                          // DNS, timeout, TLS…
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+}, (t) => [index('attempts_delivery_idx').on(t.deliveryId)])
 ```
 
 ## `schema/logs.ts`
@@ -454,7 +474,7 @@ export const smtpSessions = pgTable('smtp_sessions', {
   authUser: text('auth_user'),
   secure: boolean('secure').notNull().default(false),
   transcript: jsonb('transcript')                                // capped, AUTH redacted
-    .$type<{ at: number; dir: 'C' | 'S'; line: string }[]>().notNull(),
+    .$type<TranscriptLine[]>().notNull(),                        // { at, dir: 'C' | 'S', line }
   messageIds: text('message_ids').array(),
   outcome: smtpOutcome('outcome').notNull(),
   error: text('error'),

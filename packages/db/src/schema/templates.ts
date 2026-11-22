@@ -1,6 +1,6 @@
+import type { Address } from '@mailsink/contracts'
 import { integer, jsonb, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core'
 import { createdAt } from './columns'
-import type { Address } from './json-types'
 import { workspaces } from './workspaces'
 
 // Brevo `templateId` support.

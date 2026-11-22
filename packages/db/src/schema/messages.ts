@@ -1,9 +1,9 @@
+import type { Address } from '@mailsink/contracts'
 import { index, integer, jsonb, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core'
 import { blobs } from './blobs'
 import { createdAt } from './columns'
 import { connections } from './connections'
 import { deliveryStatus, messageSource, recipientKind } from './enums'
-import type { Address } from './json-types'
 import { workspaces } from './workspaces'
 
 export const messages = pgTable(
@@ -42,6 +42,7 @@ export const messages = pgTable(
     statusUpdatedAt: createdAt('status_updated_at'),
   },
   (t) => [
+    index('messages_raw_blob_idx').on(t.rawBlobId), // blob GC and `set null` lookups
     index('messages_ws_created_idx').on(t.workspaceId, t.createdAt.desc()),
     index('messages_ws_status_idx').on(t.workspaceId, t.status),
     index('messages_ws_connection_idx').on(t.workspaceId, t.connectionId, t.createdAt.desc()),
