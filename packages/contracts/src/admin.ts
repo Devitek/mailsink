@@ -120,7 +120,8 @@ export const CreateWorkspaceResponse = z.object({
 
 export const ListWorkspacesQuery = z.object({
   includeEphemeral: QueryBool.default(false),
-  cursor: z.string().optional(),
+  /** Keyset cursor: the `nextCursor` of the previous page, the id of its last workspace. */
+  cursor: WorkspaceId.optional(),
   limit: PageLimit,
 })
 

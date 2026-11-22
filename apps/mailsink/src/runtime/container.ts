@@ -1,5 +1,6 @@
 import {
   createJobRunner,
+  DEFAULT_JOB_SETTINGS,
   simulateDeliveryHandler,
   startRetentionScheduler,
   startWorker,
@@ -39,15 +40,11 @@ export async function createRuntime(
   if (!config.adminKey) {
     log.warn('[mailsink] MAILSINK_ADMIN_KEY is not set: the Admin API refuses every call')
   }
-  const db = createDb(config.databaseUrl)
-  if (db.driver === 'postgres') {
-    // An idle pooled client losing its connection (Postgres restart) emits `error` on the
-    // pool; unhandled, it becomes an uncaughtException. The pool reconnects on next use.
-    const pool = db.client as unknown as NodeJS.EventEmitter
-    pool.on('error', (error: Error) => {
-      log.warn(`[mailsink] database connection lost: ${error.message}`)
-    })
-  }
+  // createDb owns the pool `error` listener (an idle client losing its connection); the
+  // runtime only routes the warning to its logger.
+  const db = createDb(config.databaseUrl, {
+    onConnectionError: (error) => log.warn(`[mailsink] database connection lost: ${error.message}`),
+  })
   try {
     await migrate(db, { migrationsFolder: options.migrationsFolder })
     log.info(`[mailsink] database ready (${db.driver}, migrations applied)`)
@@ -64,9 +61,14 @@ export async function createRuntime(
 
     // Job queue (D5): handlers join here (deliver_webhook with #33); kinds without a
     // handler stay in the table untouched.
+    const jobs = config.jobs ?? DEFAULT_JOB_SETTINGS
     const runJobs = createJobRunner({
       db: db.db,
       handlers: { simulate_delivery: simulateDeliveryHandler() },
+      batchSize: jobs.batchSize,
+      lockSeconds: jobs.lockSeconds,
+      maxAttempts: jobs.maxAttempts,
+      backoff: { baseSeconds: jobs.backoffBaseSeconds, maxSeconds: jobs.backoffMaxSeconds },
       log,
     })
     const worker = startWorker({
@@ -79,6 +81,7 @@ export async function createRuntime(
     const retention = startRetentionScheduler({
       db: db.db,
       intervalMs: config.retentionIntervalMs ?? 60_000,
+      failedJobRetentionSeconds: jobs.failedRetentionSeconds,
       log,
     })
 

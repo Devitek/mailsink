@@ -2,8 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
 import { newId } from '../src/ids'
 import { apiKeys, overrides, webhookEndpoints } from '../src/schema'
-import { describeDb } from '../src/testing'
-import { insertConnection, insertWorkspace, pgCode } from './fixtures'
+import { createTestConnection, createTestWorkspace, describeDb, pgCode } from '../src/testing'
 
 const UNIQUE_VIOLATION = '23505'
 const CHECK_VIOLATION = '23514'
@@ -20,9 +19,9 @@ describeDb('constraints', (ctx) => {
       })
 
     it('allows one active override per scope (workspace and each connection)', async () => {
-      const ws = await insertWorkspace(ctx.db)
-      const a = await insertConnection(ctx.db, ws.id)
-      const b = await insertConnection(ctx.db, ws.id)
+      const ws = await createTestWorkspace(ctx.db)
+      const a = await createTestConnection(ctx.db, ws.id)
+      const b = await createTestConnection(ctx.db, ws.id)
       await activate(ws.id)
       await activate(ws.id, a.id)
       await activate(ws.id, b.id)
@@ -31,7 +30,7 @@ describeDb('constraints', (ctx) => {
     })
 
     it('keeps reset overrides as history and allows a new active one', async () => {
-      const ws = await insertWorkspace(ctx.db)
+      const ws = await createTestWorkspace(ctx.db)
       await activate(ws.id)
       await ctx.db
         .update(overrides)
@@ -45,7 +44,7 @@ describeDb('constraints', (ctx) => {
 
   describe('webhook_secret_required', () => {
     const endpoint = async (payloadFormat: 'unified' | 'resend' | 'brevo', secret?: string) => {
-      const ws = await insertWorkspace(ctx.db)
+      const ws = await createTestWorkspace(ctx.db)
       const [row] = await ctx.db
         .insert(webhookEndpoints)
         .values({
@@ -75,18 +74,18 @@ describeDb('constraints', (ctx) => {
 
   describe('credential checks', () => {
     it('requires an smtp username exactly for smtp connections', async () => {
-      const ws = await insertWorkspace(ctx.db)
-      await insertConnection(ctx.db, ws.id, { kind: 'smtp', smtpUsername: newId('u') })
-      await expect(insertConnection(ctx.db, ws.id, { kind: 'smtp' })).rejects.toSatisfy(
+      const ws = await createTestWorkspace(ctx.db)
+      await createTestConnection(ctx.db, ws.id, { kind: 'smtp', smtpUsername: newId('u') })
+      await expect(createTestConnection(ctx.db, ws.id, { kind: 'smtp' })).rejects.toSatisfy(
         (e) => pgCode(e) === CHECK_VIOLATION,
       )
       await expect(
-        insertConnection(ctx.db, ws.id, { kind: 'brevo', smtpUsername: newId('u') }),
+        createTestConnection(ctx.db, ws.id, { kind: 'brevo', smtpUsername: newId('u') }),
       ).rejects.toSatisfy((e) => pgCode(e) === CHECK_VIOLATION)
     })
 
     it('ties the api key scope to the presence of a connection', async () => {
-      const ws = await insertWorkspace(ctx.db)
+      const ws = await createTestWorkspace(ctx.db)
       const key = (scope: 'workspace' | 'connection', connectionId?: string) =>
         ctx.db.insert(apiKeys).values({
           id: newId('key'),

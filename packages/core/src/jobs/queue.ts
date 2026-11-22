@@ -9,6 +9,7 @@ import {
   retryJob,
 } from '@mailsink/db'
 import { type BackoffOptions, backoffSeconds } from './backoff'
+import { DEFAULT_JOB_SETTINGS } from './settings'
 
 export interface JobContext {
   db: Database
@@ -31,9 +32,9 @@ export interface JobRunnerOptions {
   db: Database
   /** Only kinds with a handler are claimed; the others wait for theirs. */
   handlers: JobHandlers
+  /** Defaults: DEFAULT_JOB_SETTINGS. */
   batchSize?: number
   lockSeconds?: number
-  /** Attempts before a job is given up on (default 5). */
   maxAttempts?: number
   backoff?: BackoffOptions
   log?: Pick<Console, 'warn' | 'error'>
@@ -43,7 +44,13 @@ export interface JobRunnerOptions {
 export type JobRunner = (signal?: AbortSignal) => Promise<number>
 
 export function createJobRunner(options: JobRunnerOptions): JobRunner {
-  const { db, handlers, batchSize = 20, lockSeconds = 30, maxAttempts = 5 } = options
+  const {
+    db,
+    handlers,
+    batchSize = DEFAULT_JOB_SETTINGS.batchSize,
+    lockSeconds = DEFAULT_JOB_SETTINGS.lockSeconds,
+    maxAttempts = DEFAULT_JOB_SETTINGS.maxAttempts,
+  } = options
   const log = options.log ?? console
   const kinds = Object.keys(handlers) as JobKind[]
 

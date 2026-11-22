@@ -1,7 +1,8 @@
 // Test-only helpers for the HTTP layer (imported by *.test.ts files only).
 import { randomBytes } from 'node:crypto'
 import { hashApiKey } from '@mailsink/core'
-import { apiKeys, connections, type Database, type DbHandle, newId, workspaces } from '@mailsink/db'
+import { apiKeys, type Database, type DbHandle, newId } from '@mailsink/db'
+import { createTestWorkspaceWithConnection } from '@mailsink/db/testing'
 import { bootRuntime } from '../runtime/boot'
 import type { RuntimeConfig } from '../runtime/config'
 import type { Runtime } from '../runtime/container'
@@ -34,23 +35,10 @@ const token = (prefix: string) => `${prefix}${randomBytes(18).toString('base64ur
 
 /** A workspace with one connection, its `msk_` key and a `mskw_` workspace key. */
 export async function seedWorkspace(db: Database, options: { disabled?: boolean } = {}) {
-  const suffix = randomBytes(4).toString('hex')
-  const [workspace] = await db
-    .insert(workspaces)
-    .values({ id: newId('ws'), slug: `team-${suffix}`, name: 'Team', createdVia: 'admin_api' })
-    .returning()
-  if (!workspace) throw new Error('workspace not inserted')
-  const [connection] = await db
-    .insert(connections)
-    .values({
-      id: newId('con'),
-      workspaceId: workspace.id,
-      name: 'Resend',
-      kind: 'resend',
-      disabledAt: options.disabled ? new Date() : null,
-    })
-    .returning()
-  if (!connection) throw new Error('connection not inserted')
+  const { workspace, connection } = await createTestWorkspaceWithConnection(db, {
+    workspace: { name: 'Team' },
+    connection: { disabledAt: options.disabled ? new Date() : null },
+  })
   const connectionKey = token('msk_')
   const workspaceKey = token('mskw_')
   const revokedKey = token('msk_')

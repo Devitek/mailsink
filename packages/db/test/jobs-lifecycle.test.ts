@@ -3,21 +3,21 @@ import { beforeEach, expect, it } from 'vitest'
 import {
   claimJobs,
   completeJob,
+  countFailedJobs,
   enqueueJobs,
   failJob,
   releaseJobs,
   retryJob,
 } from '../src/repositories/jobs'
 import { jobs } from '../src/schema'
-import { describeDb } from '../src/testing'
-import { insertWorkspace } from './fixtures'
+import { createTestWorkspace, describeDb } from '../src/testing'
 
 describeDb('jobs lifecycle', (ctx) => {
   let workspaceId = ''
 
   beforeEach(async () => {
     await ctx.db.delete(jobs)
-    workspaceId = (await insertWorkspace(ctx.db)).id
+    workspaceId = (await createTestWorkspace(ctx.db)).id
   })
 
   const one = async (kind: 'simulate_delivery' | 'deliver_webhook' = 'simulate_delivery') => {
@@ -58,8 +58,18 @@ describeDb('jobs lifecycle', (ctx) => {
     const job = await one()
     await claimJobs(ctx.db)
     await failJob(ctx.db, job.id, 'gave up')
-    expect(await row(job.id)).toMatchObject({ lastError: 'gave up', lockedUntil: null })
+    const failed = await row(job.id)
+    expect(failed).toMatchObject({ lastError: 'gave up', lockedUntil: null })
+    expect(failed?.failedAt?.getTime()).toBeGreaterThan(Date.now() - 60_000)
     expect(await claimJobs(ctx.db)).toEqual([])
+  })
+
+  it('counts the failed jobs only', async () => {
+    expect(await countFailedJobs(ctx.db)).toBe(0)
+    const failed = await one()
+    await one()
+    await failJob(ctx.db, failed.id, 'gave up')
+    expect(await countFailedJobs(ctx.db)).toBe(1)
   })
 
   it('releases claimed jobs without counting the attempt', async () => {
