@@ -18,6 +18,8 @@ const base = {
   smtpPort: 0,
   workerIntervalMs: 10,
   maxMessageBytes: 26_214_400,
+  publicUrl: 'http://localhost:3000',
+  defaultIdleTtlSeconds: 3600,
 }
 const fake = (smtpPort = 1) => ({ smtpPort, stop: vi.fn(async () => {}) }) as unknown as Runtime
 

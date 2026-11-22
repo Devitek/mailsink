@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="dark"]{--bg:#0b0c0e;--p:#111214;--r:#16171a;--h:#1d1f23;--bd:#222429;--bd2:#2d3036;--tx:#e7e8ea;--mu:#8d9199;--fa:#5f636b;--ac:oklch(0.87 0.16 92);--acf:oklch(0.87 0.16 92);--on:#0b0c0e;--am:oklch(0.74 0.17 45);--s-delivered:oklch(0.76 0.15 155);--s-soft_bounce:oklch(0.80 0.14 70);--s-hard_bounce:oklch(0.70 0.18 25);--s-complained:oklch(0.74 0.14 320);--s-deferred:oklch(0.76 0.11 245);--s-failed:oklch(0.66 0.20 10);--s-suppressed:#868a92;--c-resend:#d6d8dc;--c-brevo:oklch(0.78 0.11 165);--c-smtp:oklch(0.76 0.10 270);color-scheme:dark}
+[data-theme="light"]{--bg:#f5f5f3;--p:#ffffff;--r:#fafaf9;--h:#efefec;--bd:#e5e5e1;--bd2:#d4d4cf;--tx:#16171a;--mu:#5d6067;--fa:#989ba1;--ac:oklch(0.50 0.11 80);--acf:oklch(0.86 0.16 92);--on:#16171a;--am:oklch(0.58 0.17 45);--s-delivered:oklch(0.52 0.14 155);--s-soft_bounce:oklch(0.57 0.14 60);--s-hard_bounce:oklch(0.54 0.19 25);--s-complained:oklch(0.52 0.16 320);--s-deferred:oklch(0.52 0.13 250);--s-failed:oklch(0.50 0.20 15);--s-suppressed:#787b82;--c-resend:#2a2c30;--c-brevo:oklch(0.50 0.11 165);--c-smtp:oklch(0.50 0.12 270);color-scheme:light}
+body{margin:0;background:#0b0c0e}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--ac);text-decoration:none}a:hover{text-decoration:underline}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:10px;border:3px solid transparent;background-clip:padding-box}::-webkit-scrollbar-track{background:transparent}
+@keyframes mskpulse{0%{box-shadow:0 0 0 0 color-mix(in oklch,var(--s-delivered) 70%,transparent)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes mskin{from{transform:translateX(28px);opacity:0}to{transform:none;opacity:1}}
+@keyframes mskpop{from{transform:translateY(6px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+@keyframes mskfade{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--tx);font-family:Geist,ui-sans-serif,system-ui,sans-serif;font-size:13px;line-height:1.5;overflow:hidden;position:relative;-webkit-font-smoothing:antialiased">
+
+<header style="height:56px;flex:none;display:flex;align-items:center;gap:13px;padding:0 16px;border-bottom:1px solid var(--bd);background:var(--p);position:relative;z-index:30">
+  <div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px;letter-spacing:-.01em;flex:none">
+    <svg width="20" height="20" viewBox="0 0 64 64" style="flex:none"><rect width="64" height="64" rx="15" fill="var(--acf)"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="var(--on)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="var(--on)" stroke-width="6.5" stroke-linecap="round"></path></svg>
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{ true }}"><span style="letter-spacing:-.04em">mailsink</span></sc-if>
+  </div>
+  <span style="color:var(--fa)">/</span>
+  <div style="position:relative;min-width:0;flex:0 1 auto">
+    <button onClick="{{ toggleWs }}" style="height:30px;display:flex;align-items:center;gap:10px;padding:0 11px 0 14px;border-radius:7px;border:1px solid var(--bd);background:var(--r);cursor:pointer;max-width:100%" style-hover="background:var(--h)">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ wsSlug }}</span>
+      <sc-if value="{{ isEph }}" hint-placeholder-val="{{ false }}"><span style="height:19px;display:inline-flex;align-items:center;gap:6px;padding:0 9px;border-radius:5px;font:500 10.5px 'JetBrains Mono',monospace;color:var(--s-deferred);background:color-mix(in oklch,var(--s-deferred) 15%,transparent);white-space:nowrap">Éphémère · {{ wsTtlShort }}</span></sc-if>
+      <span style="color:var(--fa);font-size:10px">▼</span>
+    </button>
+    <sc-if value="{{ wsOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ toggleWs }}" style="position:fixed;inset:0;z-index:39"></div>
+      <div style="position:absolute;top:38px;left:0;width:340px;max-width:calc(100vw - 24px);background:var(--p);border:1px solid var(--bd2);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.35);z-index:40;overflow:hidden;animation:mskpop .14s ease-out">
+        <div style="padding:14px 16px 8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500">Workspaces persistants</div>
+        <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:1px">
+          <sc-for list="{{ wsPersist }}" as="w" hint-placeholder-count="3">
+            <button onClick="{{ w.pick }}" style="display:flex;align-items:center;gap:13px;padding:9px 11px;border:0;border-radius:6px;background:{{ w.bg }};cursor:pointer;text-align:left" style-hover="background:var(--h)">
+              <span style="width:14px;color:var(--ac);font-size:12px">{{ w.check }}</span>
+              <span style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12.5px">{{ w.slug }}</span>
+              <span style="font-size:11.5px;color:var(--fa)">{{ w.n }} msg</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="border-top:1px solid var(--bd);padding:14px 16px;display:flex;align-items:center;gap:13px">
+          <button onClick="{{ toggleEph }}" role="switch" style="width:32px;height:18px;border-radius:10px;border:0;background:{{ ephSwBg }};position:relative;cursor:pointer;flex:none;padding:0"><span style="position:absolute;top:2px;left:{{ ephSwX }};width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:left .15s"></span></button>
+          <div style="flex:1;min-width:0"><div style="font-size:12.5px">Afficher les workspaces éphémères</div><div style="font-size:11.5px;color:var(--fa)">{{ ephCount }} créés via API Admin (CI / E2E)</div></div>
+        </div>
+        <sc-if value="{{ showEph }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:0 8px 8px;display:flex;flex-direction:column;gap:1px">
+            <sc-for list="{{ wsEph }}" as="w" hint-placeholder-count="2">
+              <button onClick="{{ w.pick }}" style="display:flex;align-items:center;gap:13px;padding:9px 11px;border:0;border-radius:6px;background:{{ w.bg }};cursor:pointer;text-align:left" style-hover="background:var(--h)">
+                <span style="width:14px;color:var(--ac);font-size:12px">{{ w.check }}</span>
+                <span style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--mu)">{{ w.slug }}</span>
+                <span style="height:18px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;font:500 10.5px 'JetBrains Mono',monospace;color:var(--s-deferred);background:color-mix(in oklch,var(--s-deferred) 14%,transparent)">{{ w.ttlShort }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div style="border-top:1px solid var(--bd);padding:8px">
+          <button onClick="{{ openCreate }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:11px;border:0;border-radius:6px;background:transparent;cursor:pointer;color:var(--mu);text-align:left" style-hover="background:var(--h);color:var(--tx)"><span style="width:14px;text-align:center">+</span>Nouveau workspace</button>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  <nav style="display:flex;align-items:stretch;gap:2px;height:100%;margin-left:6px;flex:none;scrollbar-width:none">
+    <sc-for list="{{ nav }}" as="n" hint-placeholder-count="3">
+      <button onClick="{{ n.on }}" style="border:0;background:transparent;padding:0 14px;cursor:pointer;color:{{ n.c }};font-weight:500;border-bottom:2px solid {{ n.bd }};display:flex;align-items:center;gap:8px;white-space:nowrap" style-hover="color:var(--tx)">{{ n.l }}<sc-if value="{{ n.hasN }}"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:var(--fa)">{{ n.n }}</span></sc-if></button>
+    </sc-for>
+  </nav>
+  <div style="flex:1"></div>
+  <sc-if value="{{ ovActive }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;height:28px;border-radius:7px;background:color-mix(in oklch,var(--am) 14%,transparent);border:1px solid color-mix(in oklch,var(--am) 35%,transparent);color:var(--am);flex:none">
+      <button onClick="{{ openOv }}" title="Ouvrir le panneau d'override" style="height:100%;display:flex;align-items:center;gap:9px;padding:0 12px;border:0;background:transparent;color:inherit;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:var(--am)"></span>{{ ovLabel }}<sc-if value="{{ wide }}"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;opacity:.8">· {{ ovSummary }}</span></sc-if></button>
+      <button onClick="{{ quickReset }}" title="Réinitialiser l'override" style="height:100%;width:26px;border:0;border-left:1px solid color-mix(in oklch,var(--am) 30%,transparent);background:transparent;color:inherit;cursor:pointer;font-size:13px">×</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ ovInactive }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ openOv }}" style="height:28px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:transparent;color:var(--mu);cursor:pointer;font-size:12px;white-space:nowrap" style-hover="color:var(--tx);background:var(--h)">Override…</button>
+  </sc-if>
+  <div title="Flux temps réel (Server-Sent Events) connecté" style="display:flex;align-items:center;gap:9px;font:500 11.5px 'JetBrains Mono',monospace;color:var(--mu);flex:none">
+    <span style="width:7px;height:7px;border-radius:50%;background:var(--s-delivered);animation:mskpulse 2s infinite"></span>
+    <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}"><span>SSE Live</span></sc-if>
+  </div>
+  <button onClick="{{ toggleTheme }}" title="Basculer clair / sombre" style="width:30px;height:30px;border-radius:7px;border:1px solid var(--bd);background:var(--r);cursor:pointer;display:grid;place-items:center;flex:none" style-hover="background:var(--h)"><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid var(--tx);background:linear-gradient(90deg,var(--tx) 50%,transparent 50%)"></span></button>
+</header>
+
+<sc-if value="{{ isEph }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:none;display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:12px 19px;border-bottom:1px solid var(--bd);background:color-mix(in oklch,var(--s-deferred) 7%,var(--p))">
+    <span style="height:20px;display:inline-flex;align-items:center;padding:0 11px;border-radius:5px;font:600 11px 'JetBrains Mono',monospace;color:var(--s-deferred);background:color-mix(in oklch,var(--s-deferred) 16%,transparent)">ephemeral: true</span>
+    <div style="font-size:12.5px;min-width:0;flex:1 1 320px"><span style="font-weight:500">Workspace éphémère</span> <span style="color:var(--mu)">créé via <span style="font-family:'JetBrains Mono',monospace">POST /admin/workspaces</span> par {{ wsCreator }} · masqué par défaut de la liste principale · purge automatique après inactivité.</span></div>
+    <div style="display:flex;align-items:center;gap:13px;flex:none">
+      <span style="font-size:11.5px;color:var(--mu)">Purge dans</span>
+      <span style="font:600 13px 'JetBrains Mono',monospace;color:var(--s-deferred);min-width:62px">{{ wsTtl }}</span>
+      <div style="width:120px;height:4px;border-radius:2px;background:var(--bd2);overflow:hidden"><div style="height:100%;width:{{ wsTtlPct }};background:var(--s-deferred)"></div></div>
+      <span style="font:11px 'JetBrains Mono',monospace;color:var(--fa)">TTL 1h</span>
+    </div>
+  </div>
+</sc-if>
+
+<main style="flex:1;min-height:0;display:flex;position:relative">
+
+<sc-if value="{{ vMessages }}" hint-placeholder-val="{{ true }}">
+  <sc-if value="{{ showList }}" hint-placeholder-val="{{ true }}">
+  <section style="width:{{ listW }};flex:none;display:flex;flex-direction:column;border-right:1px solid var(--bd);background:var(--p);min-height:0">
+    <div style="padding:14px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--bd)">
+      <div style="position:relative">
+        <input value="{{ q }}" onChange="{{ onQ }}" placeholder="Rechercher destinataire, sujet, tag…" style="width:100%;height:32px;padding:0 14px 0 41px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font-size:12.5px" style-focus="border-color:var(--ac)">
+        <span style="position:absolute;left:10px;top:9px;width:11px;height:11px;border:1.5px solid var(--fa);border-radius:50%"></span>
+      </div>
+      <div style="display:flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)">
+        <sc-for list="{{ connChips }}" as="o" hint-placeholder-count="4">
+          <button onClick="{{ o.on }}" style="flex:1;height:24px;border:0;border-radius:5px;font-size:12px;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }};display:flex;align-items:center;justify-content:center;gap:6px">{{ o.l }}<span style="font:10.5px 'JetBrains Mono',monospace;color:var(--fa)">{{ o.n }}</span></button>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        <sc-for list="{{ statusChips }}" as="o" hint-placeholder-count="6">
+          <button onClick="{{ o.on }}" style="height:22px;display:inline-flex;align-items:center;gap:6px;padding:0 9px;border-radius:5px;border:1px solid {{ o.bd }};background:{{ o.bg }};cursor:pointer;font:500 10.5px 'JetBrains Mono',monospace;color:{{ o.tc }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ o.c }}"></span>{{ o.k }}<span style="color:var(--fa)">{{ o.n }}</span></button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto">
+      <sc-for list="{{ msgList }}" as="m" hint-placeholder-count="6">
+        <button onClick="{{ m.open }}" style="width:100%;display:flex;gap:13px;padding:15px 16px 15px 14px;border:0;border-bottom:1px solid var(--bd);border-left:2px solid {{ m.bl }};background:{{ m.bg }};cursor:pointer;text-align:left" style-hover="background:var(--h)">
+          <span style="width:8px;height:8px;border-radius:50%;background:{{ m.sColor }};margin-top:5px;flex:none"></span>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+            <div style="display:flex;align-items:baseline;gap:10px"><span style="flex:1;min-width:0;font-size:12.5px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.to }}</span><span style="font:11px 'JetBrains Mono',monospace;color:var(--fa);flex:none">{{ m.time }}</span></div>
+            <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.subject }}</div>
+            <div style="font-size:12px;color:var(--fa);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.preview }}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+              <span style="height:18px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;font:500 10.5px 'JetBrains Mono',monospace;color:{{ m.sColor }};background:{{ m.sBg }}">{{ m.status }}</span>
+              <span style="height:18px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;font-size:10.5px;font-weight:500;color:{{ m.cc }};border:1px solid var(--bd2)">{{ m.connLabel }}</span>
+              <span style="font-size:11px;color:var(--fa);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.fromShort }}</span>
+            </div>
+          </div>
+        </button>
+      </sc-for>
+      <sc-if value="{{ listEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:38px 22px;text-align:center;color:var(--fa);font-size:12.5px">Aucun message ne correspond.</div>
+      </sc-if>
+    </div>
+  </section>
+  </sc-if>
+
+  <sc-if value="{{ showInsp }}" hint-placeholder-val="{{ true }}">
+  <section style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+    <sc-if value="{{ hasCur }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:19px 24px 0;border-bottom:1px solid var(--bd);background:var(--p)">
+        <sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}"><button onClick="{{ back }}" style="border:0;background:transparent;color:var(--mu);cursor:pointer;padding:0 0 14px;font-size:12.5px">← Boîte de réception</button></sc-if>
+        <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+          <div style="flex:1 1 320px;min-width:0">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <span style="height:20px;display:inline-flex;align-items:center;gap:6px;padding:0 9px;border-radius:5px;font:500 11px 'JetBrains Mono',monospace;color:{{ C.sColor }};background:{{ C.sBg }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ C.sColor }}"></span>{{ C.status }}</span>
+              <span style="font:11.5px 'JetBrains Mono',monospace;color:var(--fa)">{{ C.id }}</span>
+            </div>
+            <h1 style="margin:0;font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.3;text-wrap:pretty">{{ C.subject }}</h1>
+          </div>
+          <div style="display:flex;gap:8px;flex:none">
+            <button onClick="{{ purge }}" style="height:30px;padding:0 15px;border-radius:7px;border:1px solid {{ purgeBd }};background:{{ purgeBg }};color:{{ purgeC }};cursor:pointer;font-size:12.5px;font-weight:500">{{ purgeLabel }}</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:5px 26px;margin:13px 0;font-size:12.5px">
+          <div style="display:flex;gap:10px;min-width:0"><span style="color:var(--fa);width:52px;flex:none">De</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ C.from }}</span></div>
+          <div style="display:flex;gap:10px;min-width:0"><span style="color:var(--fa);width:52px;flex:none">À</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ C.to }}</span></div>
+          <div style="display:flex;gap:10px;min-width:0;align-items:center"><span style="color:var(--fa);width:52px;flex:none">Source</span><span style="color:{{ C.cc }};font-weight:500">{{ C.connLabel }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mu)">{{ C.cname }}</span></div>
+          <div style="display:flex;gap:10px;min-width:0;align-items:center"><span style="color:var(--fa);width:52px;flex:none">Reçu</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px">22 nov. 2026 · {{ C.ts }}</span></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:13px">
+          <sc-for list="{{ C.tagList }}" as="t" hint-placeholder-count="3"><span style="height:20px;display:inline-flex;align-items:center;border-radius:5px;border:1px solid var(--bd2);font:11px 'JetBrains Mono',monospace;overflow:hidden"><span style="padding:0 8px;color:var(--fa);background:var(--r);height:100%;display:flex;align-items:center">{{ t.k }}</span><span style="padding:0 8px">{{ t.v }}</span></span></sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 11px;margin-bottom:13px;border-radius:8px;border:1px dashed var(--bd2);background:var(--bg);position:relative">
+          <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-right:4px">Simuler</span>
+          <button onClick="{{ simOpened }}" style="height:26px;padding:0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font:500 11.5px 'JetBrains Mono',monospace" style-hover="background:var(--h)">Opened</button>
+          <div style="position:relative">
+            <button onClick="{{ toggleSim }}" style="height:26px;padding:0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font:500 11.5px 'JetBrains Mono',monospace;display:flex;align-items:center;gap:8px" style-hover="background:var(--h)">Clicked <span style="font-size:9px;color:var(--fa)">▼</span></button>
+            <sc-if value="{{ simOpen }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ toggleSim }}" style="position:fixed;inset:0;z-index:39"></div>
+              <div style="position:absolute;top:32px;left:0;width:380px;max-width:calc(100vw - 40px);background:var(--p);border:1px solid var(--bd2);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.35);z-index:40;padding:8px;animation:mskpop .14s ease-out">
+                <div style="padding:8px 11px;font-size:11.5px;color:var(--fa)">Liens extraits du HTML ({{ C.links.length }})</div>
+                <sc-for list="{{ C.links }}" as="l" hint-placeholder-count="2">
+                  <button onClick="{{ l.sim }}" style="width:100%;display:block;padding:9px 11px;border:0;border-radius:6px;background:transparent;cursor:pointer;text-align:left;font:11.5px 'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" style-hover="background:var(--h)">{{ l.u }}</button>
+                </sc-for>
+                <div style="display:flex;gap:8px;padding:8px;border-top:1px solid var(--bd);margin-top:4px">
+                  <input value="{{ simUrl }}" onChange="{{ onSimUrl }}" placeholder="https://… URL personnalisée" style="flex:1;min-width:0;height:28px;padding:0 11px;border-radius:6px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:11.5px 'JetBrains Mono',monospace">
+                  <button onClick="{{ simCustom }}" style="height:28px;padding:0 14px;border-radius:6px;border:1px solid var(--tx);background:var(--tx);color:var(--bg);cursor:pointer;font-size:12px;font-weight:500">Simuler</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <button onClick="{{ simBounce }}" style="height:26px;padding:0 14px;border-radius:6px;border:1px solid color-mix(in oklch,var(--s-hard_bounce) 40%,transparent);background:color-mix(in oklch,var(--s-hard_bounce) 10%,transparent);color:var(--s-hard_bounce);cursor:pointer;font:500 11.5px 'JetBrains Mono',monospace">Hard Bounce</button>
+          <sc-if value="{{ wide }}"><span style="font-size:11.5px;color:var(--fa)">→ met à jour le statut et livre les webhooks abonnés</span></sc-if>
+        </div>
+        <div style="display:flex;gap:2px;overflow-x:auto;margin:0 -4px;scrollbar-width:none">
+          <sc-for list="{{ insTabs }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.on }}" style="height:36px;padding:0 14px;border:0;border-bottom:2px solid {{ t.bd }};background:transparent;color:{{ t.c }};cursor:pointer;font-weight:500;white-space:nowrap;display:flex;align-items:center;gap:8px" style-hover="color:var(--tx)">{{ t.l }}<sc-if value="{{ t.hasN }}"><span style="height:17px;min-width:17px;padding:0 5px;border-radius:9px;background:var(--h);font:10.5px 'JetBrains Mono',monospace;color:var(--mu);display:inline-flex;align-items:center;justify-content:center">{{ t.n }}</span></sc-if></button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow:auto">
+        <sc-if value="{{ tabPreview }}" hint-placeholder-val="{{ true }}">
+          <div style="height:100%;display:flex;flex-direction:column;min-height:420px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 24px;border-bottom:1px solid var(--bd)">
+              <div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segDevice }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.on }}" style="height:24px;padding:0 14px;border:0;border-radius:5px;font-size:12px;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div>
+              <div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segMailBg }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.on }}" style="height:24px;padding:0 14px;border:0;border-radius:5px;font-size:12px;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div>
+              <div style="flex:1"></div>
+              <span style="font:11px 'JetBrains Mono',monospace;color:var(--fa)">iframe sandbox · scripts bloqués · {{ frameLabel }}</span>
+            </div>
+            <div style="flex:1;display:flex;justify-content:center;padding:24px;background:repeating-linear-gradient(45deg,var(--bg) 0 8px,var(--r) 8px 9px)">
+              <iframe ref="{{ frameRef }}" sandbox="" title="Aperçu email" style="width:{{ frameW }};max-width:100%;height:100%;min-height:520px;border:1px solid var(--bd2);border-radius:{{ frameR }};background:{{ frameBg }};box-shadow:0 8px 30px rgba(0,0,0,.25);transition:width .2s"></iframe>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ tabText }}" hint-placeholder-val="{{ false }}">
+          <pre style="margin:0;padding:27px 30px;font:12.5px/1.7 'JetBrains Mono',monospace;white-space:pre-wrap;color:var(--tx)">{{ C.text }}</pre>
+        </sc-if>
+        <sc-if value="{{ tabLinks }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:24px 30px;display:flex;flex-direction:column;gap:29px;max-width:900px">
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Liens détectés · {{ C.links.length }}</div>
+              <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
+                <sc-for list="{{ C.links }}" as="l" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid var(--bd);background:var(--p)">
+                    <span style="font:11px 'JetBrains Mono',monospace;color:var(--fa);width:18px">{{ l.i }}</span>
+                    <span style="flex:1;min-width:0;font:12px 'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.u }}</span>
+                    <button onClick="{{ l.sim }}" style="height:26px;padding:0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px;white-space:nowrap" style-hover="background:var(--h)">Simuler clic webhook</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Pièces jointes · {{ C.atts.length }}</div>
+              <sc-if value="{{ C.noAtt }}"><div style="padding:19px;border:1px dashed var(--bd2);border-radius:8px;color:var(--fa);font-size:12.5px">Aucune pièce jointe.</div></sc-if>
+              <div style="display:flex;flex-wrap:wrap;gap:10px">
+                <sc-for list="{{ C.atts }}" as="a" hint-placeholder-count="1">
+                  <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;border:1px solid var(--bd);border-radius:8px;background:var(--p);min-width:260px">
+                    <div style="width:30px;height:36px;border-radius:4px;border:1px solid var(--bd2);background:var(--r);display:grid;place-items:center;font:600 8.5px 'JetBrains Mono',monospace;color:var(--mu)">{{ a.ext }}</div>
+                    <div style="flex:1;min-width:0"><div style="font:12px 'JetBrains Mono',monospace">{{ a.n }}</div><div style="font-size:11.5px;color:var(--fa)">{{ a.t }} · {{ a.s }}</div></div>
+                    <button onClick="{{ a.dl }}" style="height:26px;padding:0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px" style-hover="background:var(--h)">Télécharger</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ tabHeaders }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:24px 30px;display:flex;flex-direction:column;gap:26px">
+            <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:var(--p)">
+              <sc-for list="{{ C.headers }}" as="h" hint-placeholder-count="8">
+                <div style="display:grid;grid-template-columns:minmax(120px,210px) minmax(0,1fr);gap:16px;padding:8px 16px;border-bottom:1px solid var(--bd);font:12px/1.5 'JetBrains Mono',monospace"><span style="color:var(--ac)">{{ h.k }}</span><span style="word-break:break-all">{{ h.v }}</span></div>
+              </sc-for>
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segSrc }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.on }}" style="height:24px;padding:0 14px;border:0;border-radius:5px;font-size:12px;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div>
+                <div style="flex:1"></div>
+                <button onClick="{{ copySrc }}" style="height:26px;padding:0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px" style-hover="background:var(--h)">Copier</button>
+              </div>
+              <pre style="margin:0;padding:19px 22px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:12px/1.65 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--mu);max-height:440px;overflow:auto">{{ C.source }}</pre>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ tabHistory }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:24px 30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:31px;align-items:start">
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:16px">Timeline des statuts</div>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ C.hist }}" as="h" hint-placeholder-count="3">
+                  <div style="display:flex;gap:16px">
+                    <div style="display:flex;flex-direction:column;align-items:center;flex:none;width:10px"><span style="width:9px;height:9px;border-radius:50%;background:{{ h.c }};margin-top:4px;flex:none"></span><span style="width:1px;flex:1;background:var(--bd2)"></span></div>
+                    <div style="padding-bottom:22px;min-width:0">
+                      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font:500 12px 'JetBrains Mono',monospace;color:{{ h.c }}">{{ h.ev }}</span><span style="font:11px 'JetBrains Mono',monospace;color:var(--fa)">{{ h.t }}</span><sc-if value="{{ h.sim }}"><span style="height:17px;display:inline-flex;align-items:center;padding:0 5px;border-radius:4px;border:1px solid var(--bd2);font-size:10.5px;color:var(--mu)">simulé</span></sc-if></div>
+                      <div style="font-size:12.5px;color:var(--mu);margin-top:2px">{{ h.note }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:16px">Livraisons webhook · {{ C.wh.length }}</div>
+              <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:var(--p)">
+                <sc-for list="{{ C.wh }}" as="w" hint-placeholder-count="2">
+                  <div style="display:grid;grid-template-columns:64px minmax(0,1fr) 46px 56px;gap:13px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--bd);font:11.5px 'JetBrains Mono',monospace">
+                    <span style="color:var(--fa)">{{ w.t }}</span>
+                    <div style="min-width:0"><div>{{ w.ev }}</div><div style="color:var(--fa);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px">{{ w.url }}</div></div>
+                    <span style="color:{{ w.c }};font-weight:600">{{ w.codeS }}</span>
+                    <span style="color:var(--mu);text-align:right">{{ w.ms }} ms</span>
+                  </div>
+                </sc-for>
+              </div>
+              <button onClick="{{ goLogsWh }}" style="margin-top:13px;border:0;background:transparent;color:var(--ac);cursor:pointer;padding:0;font-size:12.5px">Voir dans l'explorateur de logs →</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+    <sc-if value="{{ noCur }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:grid;place-items:center;padding:32px">
+        <div style="max-width:560px;width:100%;display:flex;flex-direction:column;gap:18px">
+          <div style="font-size:16px;font-weight:600">Boîte vide pour <span style="font-family:'JetBrains Mono',monospace">{{ wsSlug }}</span></div>
+          <div style="color:var(--mu);font-size:13px;text-wrap:pretty">Les emails envoyés via une connexion de ce workspace apparaissent ici en temps réel. Aucun message ne quitte Mailsink.</div>
+          <pre style="margin:0;padding:19px 22px;border:1px solid var(--bd);border-radius:8px;background:var(--p);font:12px/1.65 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--mu)">{{ curlSnippet }}</pre>
+          <div style="display:flex;gap:10px"><button onClick="{{ restoreDemo }}" style="height:30px;padding:0 16px;border-radius:7px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12.5px" style-hover="background:var(--h)">Charger des messages de démo</button><button onClick="{{ goSettings }}" style="height:30px;padding:0 16px;border-radius:7px;border:0;background:transparent;color:var(--ac);cursor:pointer;font-size:12.5px">Gérer les connexions →</button></div>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+  </sc-if>
+</sc-if>
+
+<sc-if value="{{ vLogs }}" hint-placeholder-val="{{ false }}">
+  <section style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+    <div style="padding:19px 24px;display:flex;align-items:center;gap:13px;flex-wrap:wrap;border-bottom:1px solid var(--bd);background:var(--p)">
+      <h1 style="margin:0 10px 0 0;font-size:15px;font-weight:600">Logs</h1>
+      <div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ logTabs }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.on }}" style="height:26px;padding:0 14px;border:0;border-radius:5px;font-size:12px;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }};display:flex;align-items:center;gap:8px">{{ o.l }}<span style="font:10.5px 'JetBrains Mono',monospace;color:var(--fa)">{{ o.n }}</span></button></sc-for></div>
+      <div style="flex:1"></div>
+      <input value="{{ logQ }}" onChange="{{ onLogQ }}" placeholder="Filtrer endpoint, statut, connexion…" style="width:260px;max-width:100%;height:30px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font-size:12.5px" style-focus="border-color:var(--ac)">
+    </div>
+    <div style="flex:1;overflow:auto">
+      <div style="min-width:860px">
+        <div style="display:grid;grid-template-columns:128px 86px 140px minmax(0,1fr) 104px 76px;gap:16px;padding:0 24px;height:34px;align-items:center;border-bottom:1px solid var(--bd);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;position:sticky;top:0;background:var(--bg);z-index:1">
+          <span>Horodatage</span><span>Type</span><span>Connexion</span><span>Action / Endpoint / Événement</span><span>Statut</span><span style="text-align:right">Durée</span>
+        </div>
+        <sc-for list="{{ logRows }}" as="l" hint-placeholder-count="10">
+          <button onClick="{{ l.open }}" style="width:100%;display:grid;grid-template-columns:128px 86px 140px minmax(0,1fr) 104px 76px;gap:16px;padding:0 24px;height:38px;align-items:center;border:0;border-bottom:1px solid var(--bd);background:{{ l.bg }};cursor:pointer;text-align:left;font:12px 'JetBrains Mono',monospace" style-hover="background:var(--h)">
+            <span style="color:var(--fa)">{{ l.t }}</span>
+            <span><span style="height:19px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;font-size:10.5px;font-weight:500;color:{{ l.tc }};border:1px solid color-mix(in oklch,{{ l.tc }} 35%,transparent)">{{ l.type }}</span></span>
+            <span style="color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.conn }}</span>
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.action }}</span>
+            <span><span style="height:19px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;font-size:11px;font-weight:600;color:{{ l.sc }};background:{{ l.sbg }}">{{ l.status }}</span></span>
+            <span style="text-align:right;color:{{ l.msc }}">{{ l.ms }} ms</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+  <sc-if value="{{ hasLog }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeLog }}" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;animation:mskfade .15s"></div>
+    <aside style="position:fixed;top:0;right:0;bottom:0;width:min(620px,100vw);background:var(--p);border-left:1px solid var(--bd);z-index:51;display:flex;flex-direction:column;animation:mskin .2s ease-out;box-shadow:-20px 0 50px rgba(0,0,0,.3)">
+      <div style="padding:19px 24px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;gap:13px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="height:20px;display:inline-flex;align-items:center;padding:0 9px;border-radius:5px;font:500 11px 'JetBrains Mono',monospace;color:{{ L.tc }};border:1px solid color-mix(in oklch,{{ L.tc }} 35%,transparent)">{{ L.type }}</span><span style="height:20px;display:inline-flex;align-items:center;padding:0 9px;border-radius:5px;font:600 11px 'JetBrains Mono',monospace;color:{{ L.sc }};background:{{ L.sbg }}">{{ L.status }}</span><span style="font:11.5px 'JetBrains Mono',monospace;color:var(--fa)">{{ L.ms }} ms</span></div>
+          <div style="font:600 14px 'JetBrains Mono',monospace;word-break:break-all">{{ L.action }}</div>
+          <div style="font:11.5px 'JetBrains Mono',monospace;color:var(--fa);margin-top:4px">{{ L.id }} · {{ L.conn }} · 22 nov. 2026 {{ L.t }}</div>
+        </div>
+        <button onClick="{{ closeLog }}" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--bd);background:transparent;cursor:pointer;color:var(--mu);font-size:15px" style-hover="background:var(--h)">×</button>
+      </div>
+      <div style="flex:1;overflow:auto;padding:22px 24px;display:flex;flex-direction:column;gap:23px">
+        <sc-if value="{{ L.isWh }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:13px;padding:16px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);flex-wrap:wrap">
+            <div style="flex:1;min-width:200px"><div style="font-size:11px;color:var(--fa);text-transform:uppercase;letter-spacing:.06em;font-weight:500">Endpoint cible</div><div style="font:12px 'JetBrains Mono',monospace;word-break:break-all;margin-top:2px">{{ L.url }}</div></div>
+            <button onClick="{{ replay }}" style="height:32px;padding:0 19px;border-radius:7px;border:1px solid var(--tx);background:var(--tx);color:var(--bg);cursor:pointer;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:9px">↻ Rejouer le webhook <span style="font:500 11px 'JetBrains Mono',monospace;opacity:.6">Replay</span></button>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Signature (Svix / HMAC-SHA256)</div>
+            <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
+              <sc-for list="{{ L.sigRows }}" as="h" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:130px minmax(0,1fr);gap:13px;padding:9px 16px;border-bottom:1px solid var(--bd);font:12px 'JetBrains Mono',monospace;background:var(--bg)"><span style="color:var(--ac)">{{ h.k }}</span><span style="word-break:break-all">{{ h.v }}</span></div></sc-for>
+              <div style="padding:9px 16px;font-size:12px;color:var(--s-delivered);display:flex;align-items:center;gap:8px;background:var(--bg)"><span style="width:6px;height:6px;border-radius:50%;background:var(--s-delivered)"></span>Signature valide avec le secret <span style="font-family:'JetBrains Mono',monospace">whsec_••••H4y</span></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Tentatives · {{ L.attempts.length }}</div>
+            <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
+              <sc-for list="{{ L.attempts }}" as="a" hint-placeholder-count="2"><div style="display:grid;grid-template-columns:40px 110px 1fr 70px;gap:13px;padding:11px 16px;border-bottom:1px solid var(--bd);font:12px 'JetBrains Mono',monospace;background:var(--bg);align-items:center"><span style="color:var(--fa)">#{{ a.n }}</span><span style="color:var(--mu)">{{ a.t }}</span><span style="color:{{ a.c }};font-weight:600">{{ a.label }}</span><span style="text-align:right;color:var(--mu)">{{ a.msS }}</span></div></sc-for>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Payload envoyé</div>
+            <pre style="margin:0;padding:16px 19px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:12px/1.6 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--mu)">{{ L.payload }}</pre>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Réponse du serveur cible</div>
+            <pre style="margin:0;padding:16px 19px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:12px/1.6 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--mu)">{{ L.target }}</pre>
+          </div>
+        </sc-if>
+        <sc-if value="{{ L.isApi }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Requête</div>
+            <pre style="margin:0 0 10px;padding:16px 19px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:12px/1.6 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--mu)">{{ L.req }}</pre>
+            <pre style="margin:0;padding:16px 19px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:12px/1.6 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--tx)">{{ L.reqBody }}</pre>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Réponse</div>
+            <pre style="margin:0 0 10px;padding:16px 19px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:12px/1.6 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--mu)">{{ L.res }}</pre>
+            <pre style="margin:0;padding:16px 19px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:12px/1.6 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:{{ L.sc }}">{{ L.resBody }}</pre>
+          </div>
+        </sc-if>
+        <sc-if value="{{ L.isSmtp }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500;margin-bottom:10px">Dialogue SMTP</div>
+            <div style="border:1px solid var(--bd);border-radius:8px;background:var(--bg);padding:11px 0">
+              <sc-for list="{{ L.dialog }}" as="d" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:34px minmax(0,1fr);padding:2px 16px;font:12px/1.6 'JetBrains Mono',monospace"><span style="color:{{ d.c }};font-weight:600">{{ d.d }}:</span><span style="white-space:pre-wrap;word-break:break-all;color:{{ d.tc }}">{{ d.l }}</span></div></sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+  </sc-if>
+</sc-if>
+
+<sc-if value="{{ vSettings }}" hint-placeholder-val="{{ false }}">
+  <section style="flex:1;min-width:0;overflow:auto">
+    <div style="max-width:1180px;margin:0 auto;padding:30px 27px;display:flex;flex-wrap:wrap;gap:31px;align-items:flex-start">
+      <div style="flex:0 1 200px;display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:15px;font-weight:600;margin:0 0 13px 10px">Paramètres</div>
+        <sc-for list="{{ setTabs }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.on }}" style="height:32px;padding:0 14px;border:0;border-radius:6px;background:{{ o.bg }};color:{{ o.c }};cursor:pointer;text-align:left;font-weight:500" style-hover="color:var(--tx)">{{ o.l }}</button></sc-for>
+      </div>
+      <div style="flex:1 1 560px;min-width:0">
+
+        <sc-if value="{{ stConn }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-wrap:wrap;gap:23px;align-items:flex-start">
+            <div style="flex:1 1 280px;max-width:360px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><div style="font-weight:600">Connexions</div><button onClick="{{ newConn }}" style="height:28px;padding:0 14px;border-radius:6px;border:1px solid var(--tx);background:var(--tx);color:var(--bg);cursor:pointer;font-size:12.5px;font-weight:500">+ Nouvelle connexion</button></div>
+              <sc-for list="{{ connRows }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.pick }}" style="display:flex;align-items:center;gap:13px;padding:15px 16px;border-radius:8px;border:1px solid {{ c.bd }};background:{{ c.bg }};cursor:pointer;text-align:left" style-hover="border-color:var(--bd2)">
+                  <span style="width:30px;height:30px;border-radius:7px;display:grid;place-items:center;font:600 11px 'JetBrains Mono',monospace;color:{{ c.cc }};border:1px solid var(--bd2);background:var(--r);flex:none">{{ c.ini }}</span>
+                  <div style="flex:1;min-width:0"><div style="font:500 12.5px 'JetBrains Mono',monospace">{{ c.name }}</div><div style="font-size:11.5px;color:var(--fa)">{{ c.label }} · {{ c.msgs }} messages</div></div>
+                  <sc-if value="{{ c.hasRl }}"><span style="font:10.5px 'JetBrains Mono',monospace;color:var(--am)">{{ c.rl }}/s</span></sc-if>
+                </button>
+              </sc-for>
+            </div>
+            <div style="flex:1 1 400px;min-width:0;border:1px solid var(--bd);border-radius:10px;background:var(--p);overflow:hidden">
+              <div style="padding:19px 22px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:13px">
+                <div style="flex:1"><div style="font-weight:600">{{ F.title }}</div><div style="font-size:12px;color:var(--fa)">{{ F.sub }}</div></div>
+                <sc-if value="{{ F.isNew }}"><div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segNewType }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.on }}" style="height:24px;padding:0 14px;border:0;border-radius:5px;font-size:12px;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div></sc-if>
+              </div>
+              <div style="padding:22px;display:flex;flex-direction:column;gap:18px">
+                <label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--mu);font-weight:500">Nom</span><input value="{{ F.name }}" onChange="{{ F.onName }}" placeholder="ex. resend-transactional" style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace" style-focus="border-color:var(--ac)"></label>
+                <sc-if value="{{ F.isNew }}">
+                  <div style="padding:16px;border-radius:8px;border:1px dashed var(--bd2);color:var(--mu);font-size:12.5px;text-wrap:pretty">{{ F.newHint }}</div>
+                </sc-if>
+                <sc-if value="{{ F.showApi }}">
+                  <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--mu);font-weight:500">Clé API</span>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap"><div style="flex:1 1 240px;height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);display:flex;align-items:center;font:12.5px 'JetBrains Mono',monospace;overflow:hidden;white-space:nowrap">{{ F.keyD }}</div>
+                      <button onClick="{{ F.reveal }}" style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px" style-hover="background:var(--h)">{{ F.revealL }}</button>
+                      <button onClick="{{ F.copyKey }}" style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px" style-hover="background:var(--h)">Copier</button>
+                      <button onClick="{{ F.rotate }}" style="height:32px;padding:0 14px;border-radius:7px;border:1px solid color-mix(in oklch,var(--am) 40%,transparent);background:transparent;color:var(--am);cursor:pointer;font-size:12px">↻ Rotation</button></div>
+                  </div>
+                  <label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--mu);font-weight:500">Override rate limit <span style="color:var(--fa);font-weight:400">· optionnel, sinon valeur du workspace (10 req/s)</span></span><div style="display:flex;align-items:center;gap:10px"><input type="number" value="{{ F.rl }}" onChange="{{ F.onRl }}" placeholder="10" style="width:110px;height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace"><span style="font:12px 'JetBrains Mono',monospace;color:var(--fa)">req/s</span></div></label>
+                </sc-if>
+                <sc-if value="{{ F.showSmtp }}">
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:13px">
+                    <label style="display:flex;flex-direction:column;gap:8px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:var(--mu)">SMTP_HOST</span><div style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);display:flex;align-items:center;font:12.5px 'JetBrains Mono',monospace">{{ F.host }}</div></label>
+                    <label style="display:flex;flex-direction:column;gap:8px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:var(--mu)">SMTP_PORT</span><div style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);display:flex;align-items:center;font:12.5px 'JetBrains Mono',monospace">{{ F.port }}</div></label>
+                    <label style="display:flex;flex-direction:column;gap:8px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:var(--mu)">SMTP_USER</span><div style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);display:flex;align-items:center;font:12.5px 'JetBrains Mono',monospace">{{ F.user }}</div></label>
+                    <div></div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:8px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:var(--mu)">SMTP_PASS</span>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap"><div style="flex:1 1 200px;height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);display:flex;align-items:center;font:12.5px 'JetBrains Mono',monospace">{{ F.passD }}</div>
+                      <button onClick="{{ F.reveal }}" style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px" style-hover="background:var(--h)">{{ F.revealL }}</button>
+                      <button onClick="{{ F.copyKey }}" style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px" style-hover="background:var(--h)">Copier</button>
+                      <button onClick="{{ F.rotate }}" style="height:32px;padding:0 14px;border-radius:7px;border:1px solid color-mix(in oklch,var(--am) 40%,transparent);background:transparent;color:var(--am);cursor:pointer;font-size:12px">↻ Régénérer</button></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ F.showSnippet }}">
+                  <div>
+                    <div style="display:flex;align-items:center;margin-bottom:8px"><span style="flex:1;font-size:12px;color:var(--mu);font-weight:500">{{ F.snipTitle }}</span><button onClick="{{ F.copySnip }}" style="height:24px;padding:0 12px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:11.5px" style-hover="background:var(--h)">Copier</button></div>
+                    <pre style="margin:0;padding:16px 19px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:12px/1.65 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--mu)">{{ F.snippet }}</pre></div></sc-if>
+                <sc-if value="{{ F.showSnippet }}"><div>
+                  <div style="display:flex;align-items:center;margin-bottom:8px"><span style="flex:1;font-size:12px;color:var(--mu);font-weight:500">Webhooks actifs ({{ F.hookActive }})</span><button onClick="{{ F.manageHooks }}" style="height:24px;padding:0 12px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:11.5px" style-hover="background:var(--h)">Gérer / Ajouter un webhook →</button></div>
+                  <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
+                    <sc-for list="{{ F.hooks }}" as="h" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--bd);background:var(--bg);opacity:{{ h.op }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ h.dot }};flex:none"></span><span style="flex:1;min-width:0;font:12px 'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.url }}</span><span style="font-size:11px;color:var(--fa);white-space:nowrap">{{ h.via }}</span><span style="height:19px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;font:500 10.5px 'JetBrains Mono',monospace;color:{{ h.fc }};background:color-mix(in oklch,{{ h.fc }} 12%,transparent)">{{ h.fmt }}</span></div></sc-for>
+                    <sc-if value="{{ F.noHooks }}"><div style="padding:14px;font-size:12px;color:var(--fa);background:var(--bg)">Aucun webhook n'écoute cette connexion.</div></sc-if>
+                  </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ F.isNew }}">
+                  <div style="display:flex;justify-content:flex-end;gap:10px"><button onClick="{{ cancelNew }}" style="height:32px;padding:0 16px;border-radius:7px;border:1px solid var(--bd2);background:transparent;cursor:pointer;font-size:12.5px">Annuler</button><button onClick="{{ createConn }}" style="height:32px;padding:0 19px;border-radius:7px;border:1px solid var(--tx);background:var(--tx);color:var(--bg);cursor:pointer;font-size:12.5px;font-weight:600">Créer la connexion</button></div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ stHooks }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div><div style="font-weight:600">Endpoints webhook</div><div style="font-size:12px;color:var(--fa)">Notifications HTTP sortantes au format natif du fournisseur ou unifié.</div><sc-if value="{{ hookFiltered }}"><div style="margin-top:10px;display:inline-flex;align-items:center;gap:8px;height:24px;padding:0 4px 0 12px;border-radius:6px;border:1px solid var(--ac);background:color-mix(in oklch,var(--ac) 10%,transparent);font-size:12px">Connexion · <span style="font-family:'JetBrains Mono',monospace">{{ hookFilter }}</span><span style="color:var(--fa)">+ Workspace</span><button onClick="{{ clearHookFilter }}" title="Retirer le filtre" style="width:18px;height:18px;border:0;border-radius:4px;background:transparent;color:var(--mu);cursor:pointer">×</button></div></sc-if></div><button onClick="{{ addHook }}" style="height:28px;padding:0 14px;border-radius:6px;border:1px solid var(--tx);background:var(--tx);color:var(--bg);cursor:pointer;font-size:12.5px;font-weight:500;flex:none">+ Ajouter un endpoint</button></div>
+          <div style="display:flex;flex-direction:column;gap:13px">
+            <sc-for list="{{ hookRows }}" as="h" hint-placeholder-count="3">
+              <div style="border:1px solid var(--bd);border-radius:10px;background:var(--p);padding:19px;display:flex;flex-direction:column;gap:13px;opacity:{{ h.op }}">
+                <div style="display:flex;align-items:center;gap:13px;flex-wrap:wrap">
+                  <button onClick="{{ h.toggle }}" role="switch" title="Actif / inactif" style="width:32px;height:18px;border-radius:10px;border:0;background:{{ h.swBg }};position:relative;cursor:pointer;flex:none;padding:0"><span style="position:absolute;top:2px;left:{{ h.swX }};width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:left .15s"></span></button>
+                  <input value="{{ h.url }}" onChange="{{ h.onUrl }}" style="flex:1 1 280px;min-width:0;height:30px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace" style-focus="border-color:var(--ac)">
+                  
+                  <button onClick="{{ h.test }}" style="height:28px;padding:0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px" style-hover="background:var(--h)">Test d'envoi</button></div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <div style="position:relative">
+                    <button onClick="{{ h.openScope }}" style="height:28px;display:flex;align-items:center;gap:9px;padding:0 11px 0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--bg);cursor:pointer;font-size:12px" style-hover="border-color:var(--fa)"><span style="color:var(--fa)">Scope</span><span style="font-family:'JetBrains Mono',monospace">{{ h.scope }}</span><span style="font-size:9px;color:var(--fa)">▼</span></button>
+                    <sc-if value="{{ h.scopeOpen }}" hint-placeholder-val="{{ false }}">
+                      <div onClick="{{ h.closeMenu }}" style="position:fixed;inset:0;z-index:39"></div>
+                      <div style="position:absolute;top:32px;left:0;width:260px;background:var(--p);border:1px solid var(--bd2);border-radius:9px;box-shadow:0 16px 40px rgba(0,0,0,.35);z-index:40;padding:4px;animation:mskpop .14s ease-out">
+                        <sc-for list="{{ h.scopeOpts }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.pick }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 11px;border:0;border-radius:6px;background:transparent;cursor:pointer;text-align:left" style-hover="background:var(--h)"><span style="width:12px;color:var(--ac);font-size:11px">{{ o.check }}</span><span style="flex:1;font:12px 'JetBrains Mono',monospace">{{ o.l }}</span><span style="font-size:11px;color:var(--fa)">{{ o.sub }}</span></button></sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                  <div style="position:relative">
+                    <button onClick="{{ h.openFmt }}" style="height:28px;display:flex;align-items:center;gap:9px;padding:0 11px 0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--bg);cursor:pointer;font-size:12px" style-hover="border-color:var(--fa)"><span style="color:var(--fa)">Format</span><span style="width:7px;height:7px;border-radius:2px;background:{{ h.fmtC }}"></span><span style="font-weight:500">{{ h.fmtLabel }}</span><span style="font-size:9px;color:var(--fa)">▼</span></button>
+                    <sc-if value="{{ h.fmtOpen }}" hint-placeholder-val="{{ false }}">
+                      <div onClick="{{ h.closeMenu }}" style="position:fixed;inset:0;z-index:39"></div>
+                      <div style="position:absolute;top:32px;left:0;width:320px;max-width:calc(100vw - 40px);background:var(--p);border:1px solid var(--bd2);border-radius:9px;box-shadow:0 16px 40px rgba(0,0,0,.35);z-index:40;padding:4px;animation:mskpop .14s ease-out">
+                        <sc-for list="{{ h.fmtOpts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="width:100%;display:flex;align-items:flex-start;gap:10px;padding:11px;border:0;border-radius:6px;background:transparent;cursor:pointer;text-align:left" style-hover="background:var(--h)"><span style="width:12px;color:var(--ac);font-size:11px;line-height:18px">{{ o.check }}</span><span style="width:8px;height:8px;border-radius:2px;background:{{ o.c }};margin-top:5px;flex:none"></span><span style="flex:1;min-width:0"><span style="display:block;font-size:12.5px;font-weight:500">{{ o.l }}</span><span style="display:block;font-size:11.5px;color:var(--fa)">{{ o.sub }}</span></span></button></sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ h.inherited }}"><span style="font-size:11.5px;color:var(--fa)">Hérité de la connexion</span></sc-if>
+                  <span style="flex:1"></span>
+                  <span style="height:22px;display:inline-flex;align-items:center;gap:8px;padding:0 11px;border-radius:5px;border:1px solid color-mix(in oklch,{{ h.fmtC }} 40%,transparent);background:color-mix(in oklch,{{ h.fmtC }} 10%,transparent);font:500 11px 'JetBrains Mono',monospace;color:{{ h.fmtC }}">Format: {{ h.fmtShort }} · {{ h.sigLabel }}</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px">
+                  <sc-for list="{{ h.evs }}" as="e" hint-placeholder-count="4"><button onClick="{{ e.on }}" style="height:22px;display:inline-flex;align-items:center;gap:6px;padding:0 9px;border-radius:5px;border:1px solid {{ e.bd }};background:{{ e.bg }};color:{{ e.c }};cursor:pointer;font:11px 'JetBrains Mono',monospace"><span style="width:10px;height:10px;border-radius:3px;border:1px solid {{ e.bd }};background:{{ e.box }};display:grid;place-items:center;font-size:8px;color:var(--on)">{{ e.tick }}</span>{{ e.k }}</button></sc-for>
+                </div>
+                <div style="display:flex;align-items:center;gap:13px;flex-wrap:wrap;font-size:12px;color:var(--fa)">
+                  <span>{{ h.secretLabel }}</span><span style="font:12px 'JetBrains Mono',monospace;color:var(--mu)">{{ h.secretD }}</span><button onClick="{{ h.reveal }}" style="border:0;background:transparent;color:var(--ac);cursor:pointer;padding:0;font-size:12px">{{ h.revealL }}</button><span style="font:11px 'JetBrains Mono',monospace;color:var(--fa);padding-left:11px;border-left:1px solid var(--bd2)">{{ h.sigHd }}</span>
+                  <span style="flex:1"></span><span>Dernière livraison</span><span style="font-family:'JetBrains Mono',monospace;color:{{ h.lastC }}">{{ h.last }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ stRet }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:29px">
+            <div style="border:1px solid var(--bd);border-radius:10px;background:var(--p);padding:22px;display:flex;flex-wrap:wrap;gap:31px">
+              <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:12px;color:var(--mu);font-weight:500">Durée de rétention</span><div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segRet }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.on }}" style="height:26px;padding:0 16px;border:0;border-radius:5px;font:12px 'JetBrains Mono',monospace;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div><span style="font-size:11.5px;color:var(--fa)">Messages et logs plus anciens purgés automatiquement.</span></div>
+              <div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:12px;color:var(--mu);font-weight:500">Quota max de messages</span><div style="display:flex;align-items:center;gap:10px"><input type="number" value="{{ quota }}" onChange="{{ onQuota }}" style="width:120px;height:30px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace"><span style="font-size:12px;color:var(--fa)">FIFO au-delà</span></div><div style="width:220px;height:4px;border-radius:2px;background:var(--bd2);overflow:hidden"><div style="height:100%;width:{{ quotaPct }};background:var(--acf)"></div></div><span style="font:11px 'JetBrains Mono',monospace;color:var(--fa)">1 284 / {{ quota }} utilisés</span></div>
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px"><div><div style="font-weight:600">Suppression list</div><div style="font-size:12px;color:var(--fa)">Les envois vers ces adresses sont marqués <span style="font-family:'JetBrains Mono',monospace">suppressed</span> sans tirage de statut.</div></div><span style="font:12px 'JetBrains Mono',monospace;color:var(--mu)">{{ supp.length }} adresses</span></div>
+              <div style="border:1px solid var(--bd);border-radius:10px;overflow:auto;background:var(--p)">
+                <div style="min-width:640px">
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) 120px 130px 120px 180px;gap:16px;padding:0 19px;height:34px;align-items:center;border-bottom:1px solid var(--bd);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500"><span>Adresse</span><span>Raison</span><span>Connexion</span><span>Depuis</span><span></span></div>
+                  <sc-for list="{{ suppRows }}" as="r" hint-placeholder-count="4">
+                    <div style="display:grid;grid-template-columns:minmax(0,1fr) 120px 130px 120px 180px;gap:16px;padding:0 19px;height:42px;align-items:center;border-bottom:1px solid var(--bd);font:12px 'JetBrains Mono',monospace">
+                      <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.a }}</span>
+                      <span><span style="height:19px;display:inline-flex;align-items:center;padding:0 8px;border-radius:4px;font-size:10.5px;color:{{ r.c }};background:{{ r.bg }}">{{ r.r }}</span></span>
+                      <span style="color:var(--mu)">{{ r.cn }}</span><span style="color:var(--fa)">{{ r.d }}</span>
+                      <span style="text-align:right"><button onClick="{{ r.rm }}" style="height:26px;padding:0 14px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font:12px Geist,sans-serif" style-hover="background:var(--h)">Retirer de la suppression</button></span>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ suppEmpty }}"><div style="padding:27px;text-align:center;color:var(--fa);font-size:12.5px">Suppression list vide.</div></sc-if>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </section>
+</sc-if>
+</main>
+
+<sc-if value="{{ ovOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeOv }}" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;animation:mskfade .15s"></div>
+  <aside style="position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:var(--p);border-left:1px solid var(--bd);z-index:51;display:flex;flex-direction:column;animation:mskin .2s ease-out;box-shadow:-20px 0 50px rgba(0,0,0,.3)">
+    <div style="padding:22px 24px;border-bottom:1px solid var(--bd);display:flex;gap:13px;align-items:flex-start">
+      <div style="flex:1"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:15px;font-weight:600">Override des paramètres</span><sc-if value="{{ ovActive }}"><span style="height:19px;display:inline-flex;align-items:center;padding:0 9px;border-radius:5px;font:500 10.5px 'JetBrains Mono',monospace;color:var(--am);background:color-mix(in oklch,var(--am) 15%,transparent)">actif</span></sc-if></div><div style="font-size:12px;color:var(--fa);margin-top:2px">Surcharge temporaire de <span style="font-family:'JetBrains Mono',monospace">{{ wsSlug }}</span> — restaurée au reset ou à expiration.</div></div>
+      <button onClick="{{ closeOv }}" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--bd);background:transparent;cursor:pointer;color:var(--mu);font-size:15px" style-hover="background:var(--h)">×</button>
+    </div>
+    <div style="flex:1;overflow:auto;padding:24px;display:flex;flex-direction:column;gap:31px">
+      <div style="display:flex;flex-direction:column;gap:13px">
+        <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500">Cible &amp; durée</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px"><sc-for list="{{ segTarget }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.on }}" style="height:26px;padding:0 14px;border-radius:6px;border:1px solid var(--bd2);font:12px 'JetBrains Mono',monospace;cursor:pointer;background:{{ o.bg }};color:{{ o.c }}">{{ o.l }}</button></sc-for></div>
+        <div style="display:flex;align-items:center;gap:13px"><span style="font-size:12px;color:var(--mu)">Expire</span><div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segExpire }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.on }}" style="height:24px;padding:0 14px;border:0;border-radius:5px;font-size:12px;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:13px">
+        <div style="display:flex;align-items:baseline"><span style="flex:1;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500">Taux de statuts</span><span style="font:600 13px 'JetBrains Mono',monospace;color:{{ totalC }}">{{ totalTxt }}</span></div>
+        <div style="position:relative;height:10px;border-radius:5px;background:var(--bd);display:flex;overflow:hidden">
+          <sc-for list="{{ rateRows }}" as="r" hint-placeholder-count="6"><div title="{{ r.k }}" style="height:100%;width:{{ r.w }};background:{{ r.c }};transition:width .15s;border-right:1px solid var(--p)"></div></sc-for>
+        </div>
+        <sc-if value="{{ over }}"><div style="position:relative;height:0"><div style="position:absolute;left:{{ markerLeft }};top:-16px;width:2px;height:12px;background:var(--tx)"></div></div></sc-if>
+        <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:{{ totalC }};padding:9px 14px;border-radius:7px;background:color-mix(in oklch,{{ totalC }} 10%,transparent)">
+          <span style="flex:1">{{ totalMsg }}</span>
+          <sc-if value="{{ notTotalOk }}"><button onClick="{{ fixTotal }}" style="height:24px;padding:0 12px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;font-size:11.5px;white-space:nowrap">Ajuster delivered</button></sc-if>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <sc-for list="{{ rateRows }}" as="r" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:118px minmax(0,1fr) 70px;gap:16px;align-items:center;height:32px">
+              <span style="display:flex;align-items:center;gap:9px;font:12px 'JetBrains Mono',monospace"><span style="width:8px;height:8px;border-radius:2px;background:{{ r.c }}"></span>{{ r.k }}</span>
+              <input type="range" min="0" max="100" value="{{ r.v }}" onChange="{{ r.on }}" style="width:100%;accent-color:{{ r.c }}">
+              <div style="display:flex;align-items:center;height:28px;border:1px solid var(--bd2);border-radius:6px;background:var(--bg);padding-right:11px"><input type="number" min="0" max="100" value="{{ r.v }}" onChange="{{ r.on }}" style="width:100%;min-width:0;height:100%;border:0;background:transparent;outline:none;padding:0 4px 0 11px;font:12px 'JetBrains Mono',monospace;text-align:right"><span style="font:11px 'JetBrains Mono',monospace;color:var(--fa)">%</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500">Chaos &amp; latence</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:13px">
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font:11.5px 'JetBrains Mono',monospace;color:var(--mu)">minMs</span><input type="number" value="{{ latMin }}" onChange="{{ onLatMin }}" style="height:30px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font:11.5px 'JetBrains Mono',monospace;color:var(--mu)">maxMs</span><input type="number" value="{{ latMax }}" onChange="{{ onLatMax }}" style="height:30px;padding:0 14px;border-radius:7px;border:1px solid {{ latBd }};background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace"></label>
+        </div>
+        <div style="position:relative;height:6px;border-radius:3px;background:var(--bd)"><div style="position:absolute;top:0;bottom:0;left:{{ latL }};width:{{ latW }};border-radius:3px;background:var(--acf)"></div></div>
+        <div style="display:flex;justify-content:space-between;font:10.5px 'JetBrains Mono',monospace;color:var(--fa);margin-top:-6px"><span>0 ms</span><span>{{ latLabel }}</span><span>3000 ms</span></div>
+        <div style="display:flex;align-items:flex-end;gap:13px;flex-wrap:wrap">
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font:11.5px 'JetBrains Mono',monospace;color:var(--mu)">errorRate</span><div style="display:flex;align-items:center;width:110px;height:30px;border:1px solid var(--bd2);border-radius:7px;background:var(--bg);padding-right:11px"><input type="number" min="0" max="100" value="{{ errRate }}" onChange="{{ onErrRate }}" style="width:100%;min-width:0;height:100%;border:0;background:transparent;outline:none;padding:0 4px 0 14px;font:12.5px 'JetBrains Mono',monospace"><span style="font:11px 'JetBrains Mono',monospace;color:var(--fa)">%</span></div></label>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font:11.5px 'JetBrains Mono',monospace;color:var(--mu)">code HTTP renvoyé</span><div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segErr }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.on }}" style="height:24px;padding:0 16px;border:0;border-radius:5px;font:12px 'JetBrains Mono',monospace;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div></div>
+          <span style="font-size:11.5px;color:var(--fa);padding-bottom:8px">SMTP : <span style="font-family:'JetBrains Mono',monospace">{{ smtpErr }}</span></span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:13px">
+        <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500">Rate limit</div>
+        <div style="display:flex;align-items:center;gap:13px;flex-wrap:wrap"><input type="number" value="{{ rl }}" onChange="{{ onRl }}" style="width:110px;height:30px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace"><div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segRlUnit }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.on }}" style="height:24px;padding:0 14px;border:0;border-radius:5px;font:12px 'JetBrains Mono',monospace;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div><span style="font-size:11.5px;color:var(--fa)">au-delà → <span style="font-family:'JetBrains Mono',monospace">429</span> / <span style="font-family:'JetBrains Mono',monospace">421</span></span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:13px">
+        <div style="display:flex;align-items:center"><span style="flex:1;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fa);font-weight:500">Règles déterministes par destinataire</span><button onClick="{{ addRule }}" style="height:24px;padding:0 12px;border-radius:6px;border:1px solid var(--bd2);background:var(--r);cursor:pointer;font-size:12px" style-hover="background:var(--h)">+ Règle</button></div>
+        <div style="font-size:11.5px;color:var(--fa);margin-top:-4px">Évaluées avant le tirage aléatoire, dans l'ordre. Jokers <span style="font-family:'JetBrains Mono',monospace">*</span> acceptés.</div>
+        <sc-for list="{{ ruleRows }}" as="r" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <input value="{{ r.p }}" onChange="{{ r.onP }}" placeholder="*@exemple.test" style="flex:1 1 160px;min-width:0;height:30px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace" style-focus="border-color:var(--ac)">
+            <span style="color:var(--fa)">→</span>
+            <select value="{{ r.a }}" onChange="{{ r.onA }}" style="height:30px;padding:0 11px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);font:12px 'JetBrains Mono',monospace;color:{{ r.c }}">
+              <option value="hard_bounce">hard_bounce</option><option value="soft_bounce">soft_bounce</option><option value="complained">complained</option><option value="deferred">deferred</option><option value="failed">failed</option><option value="delay">délai +ms</option>
+            </select>
+            <sc-if value="{{ r.isDelay }}"><input type="number" value="{{ r.ms }}" onChange="{{ r.onMs }}" style="width:84px;height:30px;padding:0 11px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12px 'JetBrains Mono',monospace"></sc-if>
+            <button onClick="{{ r.rm }}" title="Supprimer" style="width:30px;height:30px;border-radius:7px;border:1px solid var(--bd);background:transparent;color:var(--fa);cursor:pointer" style-hover="color:var(--s-hard_bounce)">×</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid var(--bd);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <sc-if value="{{ resetConfirm }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size:12px;color:var(--s-hard_bounce);flex:1 1 180px">Restaurer les valeurs par défaut du workspace ?</span>
+        <button onClick="{{ cancelReset }}" style="height:32px;padding:0 16px;border-radius:7px;border:1px solid var(--bd2);background:transparent;cursor:pointer;font-size:12.5px">Annuler</button>
+        <button onClick="{{ doReset }}" style="height:32px;padding:0 16px;border-radius:7px;border:1px solid var(--s-hard_bounce);background:var(--s-hard_bounce);color:#fff;cursor:pointer;font-size:12.5px;font-weight:600">Confirmer le reset</button>
+      </sc-if>
+      <sc-if value="{{ noResetConfirm }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ askReset }}" style="height:32px;padding:0 16px;border-radius:7px;border:1px solid var(--bd2);background:transparent;cursor:pointer;font-size:12.5px;color:var(--mu)" style-hover="color:var(--tx)">Réinitialiser aux valeurs par défaut</button>
+        <div style="flex:1"></div>
+        <button onClick="{{ applyOv }}" disabled="{{ cantApply }}" style="height:32px;padding:0 19px;border-radius:7px;border:1px solid {{ applyBg }};background:{{ applyBg }};color:{{ applyC }};cursor:{{ applyCur }};font-size:12.5px;font-weight:600">Appliquer l'override</button>
+      </sc-if>
+    </div>
+  </aside>
+</sc-if>
+
+<sc-if value="{{ cwOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeCreate }}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;animation:mskfade .15s"></div>
+  <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(500px,calc(100vw - 24px));max-height:calc(100vh - 40px);overflow:auto;background:var(--p);border:1px solid var(--bd2);border-radius:12px;z-index:61;box-shadow:0 30px 80px rgba(0,0,0,.45)">
+    <div style="padding:22px 24px;border-bottom:1px solid var(--bd)"><div style="font-size:15px;font-weight:600">Nouveau workspace persistant</div><div style="font-size:12px;color:var(--fa);margin-top:2px">Pour staging / QA. Les workspaces éphémères se créent via l'API Admin.</div></div>
+    <div style="padding:24px;display:flex;flex-direction:column;gap:18px">
+      <label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--mu);font-weight:500">Nom</span><input value="{{ cwName }}" onChange="{{ onCwName }}" placeholder="GTFS Manager — Staging" style="height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font-size:13px" style-focus="border-color:var(--ac)"></label>
+      <label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--mu);font-weight:500">Slug</span><div style="display:flex;align-items:center;height:32px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);overflow:hidden"><span style="padding:0 4px 0 14px;font:12.5px 'JetBrains Mono',monospace;color:var(--fa)">/w/</span><input value="{{ cwSlug }}" onChange="{{ onCwSlug }}" placeholder="gtfs-manager-staging" style="flex:1;min-width:0;height:100%;border:0;background:transparent;outline:none;font:12.5px 'JetBrains Mono',monospace"></div></label>
+      <div style="display:flex;flex-wrap:wrap;gap:21px">
+        <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--mu);font-weight:500">Rétention par défaut</span><div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd)"><sc-for list="{{ segCwRet }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.on }}" style="height:24px;padding:0 14px;border:0;border-radius:5px;font:12px 'JetBrains Mono',monospace;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div></div>
+        <label style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:var(--mu);font-weight:500">Rate limit par défaut</span><div style="display:flex;align-items:center;gap:8px"><input type="number" value="{{ cwRl }}" onChange="{{ onCwRl }}" style="width:80px;height:30px;padding:0 14px;border-radius:7px;border:1px solid var(--bd2);background:var(--bg);outline:none;font:12.5px 'JetBrains Mono',monospace"><span style="font:12px 'JetBrains Mono',monospace;color:var(--fa)">req/s</span></div></label>
+      </div>
+      <div style="border:1px solid var(--bd);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:13px">
+        <div style="display:flex;align-items:center;gap:13px"><button onClick="{{ toggleCwConn }}" role="switch" style="width:32px;height:18px;border-radius:10px;border:0;background:{{ cwSwBg }};position:relative;cursor:pointer;flex:none;padding:0"><span style="position:absolute;top:2px;left:{{ cwSwX }};width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:left .15s"></span></button><span style="font-size:12.5px">Ajouter une première connexion</span></div>
+        <sc-if value="{{ cwConn }}"><div style="display:inline-flex;padding:2px;gap:2px;border-radius:7px;background:var(--bg);border:1px solid var(--bd);align-self:flex-start"><sc-for list="{{ segCwType }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.on }}" style="height:24px;padding:0 14px;border:0;border-radius:5px;font-size:12px;cursor:pointer;background:{{ o.bg }};color:{{ o.c }};box-shadow:{{ o.sh }}">{{ o.l }}</button></sc-for></div></sc-if>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--fa);margin-bottom:8px">Équivalent éphémère (CI / E2E) — masqué par défaut, purgé après 1h d'inactivité :</div>
+        <pre style="margin:0;padding:14px 16px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font:11.5px/1.6 'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-all;color:var(--mu)">{{ ephSnippet }}</pre>
+      </div>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:10px"><button onClick="{{ closeCreate }}" style="height:32px;padding:0 16px;border-radius:7px;border:1px solid var(--bd2);background:transparent;cursor:pointer;font-size:12.5px">Annuler</button><button onClick="{{ createWs }}" style="height:32px;padding:0 19px;border-radius:7px;border:1px solid var(--tx);background:var(--tx);color:var(--bg);cursor:pointer;font-size:12.5px;font-weight:600">Créer le workspace</button></div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:70;max-width:calc(100vw - 24px);padding:14px 19px;border-radius:9px;background:var(--tx);color:var(--bg);font:500 12.5px 'JetBrains Mono',monospace;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:mskpop .16s ease-out">{{ toast }}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;startView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;messages&quot;,&quot;logs&quot;,&quot;settings&quot;],&quot;default&quot;:&quot;messages&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;overrideActive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;startEphemeral&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const ST6=['delivered','soft_bounce','hard_bounce','complained','deferred','failed'];
+const DEF_RATES={delivered:90,soft_bounce:4,hard_bounce:3,complained:1,deferred:1,failed:1};
+const OV_RATES={delivered:70,soft_bounce:10,hard_bounce:12,complained:3,deferred:3,failed:2};
+const CN={resend:'Resend',brevo:'Brevo',smtp:'SMTP'};
+const WH='https://api.livethewod.app/webhooks/mail';
+const BASE='https://mailsink.internal';
+const pad=(n,l=2)=>String(n).padStart(l,'0');
+const nowTs=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());};
+const addS=(ts,s)=>{const [h,m,x]=ts.split(':').map(Number);const t=h*3600+m*60+x+s;return pad(Math.floor(t/3600)%24)+':'+pad(Math.floor(t/60)%60)+':'+pad(t%60);};
+const AL='ABCDEFGHJKMNPQRSTVWXYZabcdefghjkmnpqrstvwxyz23456789';
+const rid=n=>Array.from({length:n},()=>AL[Math.random()*AL.length|0]).join('');
+const sc=s=>`var(--s-${s})`;
+const sbg=s=>`color-mix(in oklch, var(--s-${s}) 16%, transparent)`;
+const httpK=st=>{const c=parseInt(st);if(st==='bounced'||c>=500)return 'hard_bounce';if(c>=400)return 'soft_bounce';return 'delivered';};
+const emailOf=f=>{const m=f.match(/<(.+)>/);return m?m[1]:f;};
+const nameOf=f=>{const m=f.match(/^(.+?)\s*</);return m?m[1]:f;};
+const FINAL={delivered:['email.delivered','250 2.0.0 OK — accepté par la boîte simulée'],hard_bounce:['email.bounced','550 5.1.1 Mailbox does not exist — règle *@bounce.test'],soft_bounce:['email.delivery_delayed','452 4.2.2 Mailbox full — nouvel essai 1/3 dans 5 min'],complained:['email.complained','Plainte FBL simulée (taux complained)'],suppressed:['email.suppressed','Destinataire présent dans la suppression list — non envoyé'],failed:['email.failed','500 Chaos : échec injecté (errorRate 5 %)'],deferred:['email.deferred','Livraison différée']};
+const EVC={'email.received':'var(--mu)','email.sent':'var(--ac)','email.delivered':sc('delivered'),'email.bounced':sc('hard_bounce'),'email.delivery_delayed':sc('soft_bounce'),'email.complained':sc('complained'),'email.suppressed':sc('suppressed'),'email.failed':sc('failed'),'email.opened':sc('deferred'),'email.clicked':sc('deferred'),'email.deferred':sc('deferred')};
+
+function mkHist(m){
+  const [ev,note]=FINAL[m.status];
+  const h=[{t:m.ts,ev:'email.received',note:m.conn==='smtp'?`Reçu via SMTP ${m.cname} (:2525)`:`Reçu via ${CN[m.conn]} API · ${m.conn==='resend'?'POST /emails':'POST /v3/smtp/email'}`}];
+  if(m.status!=='suppressed')h.push({t:addS(m.ts,0),ev:'email.sent',note:'Accepté — tirage du statut selon les taux du workspace'});
+  h.push({t:addS(m.ts,1),ev,note});
+  return h;
+}
+function mkWh(m){
+  return m.history.filter(x=>x.ev!=='email.received').map((x,i)=>({t:x.t,ev:x.ev,code:m.status==='failed'&&x.ev==='email.failed'?500:200,ms:70+((i*37+m.id.charCodeAt(9)*13)%160),url:WH}));
+}
+function seedMessages(){
+  const L='live-the-wod-staging';
+  const base=[
+    {id:'msg_01JDA7K3QX9R',status:'delivered',conn:'resend',cname:'resend-main',from:'Live The WOD <no-reply@livethewod.app>',to:'julie.martin@gmail.test',subject:'Ta réservation WOD 18:00 est confirmée',heading:'Ta séance est confirmée',body:"Rendez-vous ce soir à 18:00 avec Coach Malik pour le WOD « Fran ». Arrive 10 minutes en avance pour l'échauffement.",cta:'Voir ma réservation',l2:'Annuler la réservation',time:'2 min',ts:'14:32:08',tags:{category:'booking',env:'staging',user_id:'u_4821'},links:['https://app.livethewod.app/bookings/b_9921','https://app.livethewod.app/bookings/b_9921/cancel','https://livethewod.app/unsubscribe?u=u_4821']},
+    {id:'msg_01JDA6ZP2M4T',status:'delivered',conn:'brevo',cname:'brevo-billing',from:'Live The WOD Facturation <billing@livethewod.app>',to:'thomas.leroy@outlook.test',subject:'Ta facture INV-2026-0412',heading:'Merci pour ton paiement',body:"Ta facture de 89,00 € pour l'abonnement Unlimited (novembre 2026) est disponible. Elle est également jointe à cet email.",cta:'Télécharger la facture',time:'8 min',ts:'14:26:41',tags:{category:'billing',invoice:'INV-2026-0412'},links:['https://app.livethewod.app/billing/INV-2026-0412','https://livethewod.app/unsubscribe?u=u_1290'],att:[{n:'INV-2026-0412.pdf',s:'48 Ko',t:'application/pdf'}]},
+    {id:'msg_01JDA6H1VB7C',status:'hard_bounce',conn:'smtp',cname:'smtp-legacy',from:'no-reply@livethewod.app',to:'qa+reset@bounce.test',subject:'Réinitialise ton mot de passe',heading:'Réinitialisation du mot de passe',body:'Tu as demandé à réinitialiser ton mot de passe. Ce lien expire dans 30 minutes.',cta:'Choisir un nouveau mot de passe',l2:"Centre d'aide",time:'12 min',ts:'14:22:03',tags:{category:'auth',flow:'reset'},links:['https://app.livethewod.app/reset?token=rst_8f2a91','https://livethewod.app/help','https://livethewod.app/unsubscribe?u=u_0193']},
+    {id:'msg_01JDA5W8NE2D',status:'soft_bounce',conn:'resend',cname:'resend-main',from:'Live The WOD <coach@livethewod.app>',to:'coach.malik@livethewod.test',subject:'Nouveau WOD publié : Murph',heading:'Murph est en ligne',body:'1 mile run, 100 pull-ups, 200 push-ups, 300 squats, 1 mile run. Le WOD de vendredi est publié — réserve ta place avant qu\'il soit complet.',cta:'Réserver ma place',time:'21 min',ts:'14:13:37',tags:{category:'programming',wod:'murph'},links:['https://app.livethewod.app/wods/murph','https://livethewod.app/unsubscribe?u=u_0007']},
+    {id:'msg_01JDA4RT6KQ1',status:'complained',conn:'brevo',cname:'brevo-billing',from:'Live The WOD <news@livethewod.app>',to:'sarah.k@yahoo.test',subject:'Ton abonnement expire dans 3 jours',heading:'Ton abonnement arrive à échéance',body:"Ton abonnement Unlimited expire le 25 novembre. Renouvelle-le pour garder l'accès à toutes les séances.",cta:'Renouveler',time:'34 min',ts:'14:00:12',tags:{category:'lifecycle',campaign:'renewal-j3'},links:['https://app.livethewod.app/billing/renew','https://livethewod.app/unsubscribe?u=u_3381']},
+    {id:'msg_01JDA3B5HZ8P',status:'suppressed',conn:'smtp',cname:'smtp-legacy',from:'no-reply@livethewod.app',to:'old.member@bounce.test',subject:'Rappel : séance demain 07:00',heading:'À demain 7h',body:'Petit rappel : tu es inscrit·e à la séance Early Bird de demain 07:00. Pense à ta corde à sauter.',cta:'Voir le planning',time:'52 min',ts:'13:42:55',tags:{category:'reminder'},links:['https://app.livethewod.app/schedule','https://livethewod.app/unsubscribe?u=u_0021']},
+    {id:'msg_01JDA2M0CW3F',status:'failed',conn:'resend',cname:'resend-main',from:'Live The WOD <exports@livethewod.app>',to:'admin@livethewod.test',subject:'Ton export CSV des membres est prêt',heading:'Export prêt',body:'L\'export des 412 membres actifs est prêt. Le fichier est joint et reste disponible 24 h dans ton espace admin.',cta:"Ouvrir l'espace admin",time:'1 h',ts:'13:31:20',tags:{category:'export'},links:['https://admin.livethewod.app/exports/exp_221','https://livethewod.app/unsubscribe?u=u_0001'],att:[{n:'members-2026-11-22.csv',s:'212 Ko',t:'text/csv'}]},
+    {id:'msg_01JDA1D7FA5Y',status:'delivered',conn:'resend',cname:'resend-main',from:'Live The WOD <hello@livethewod.app>',to:'nina.b@proton.test',subject:'Bienvenue chez Live The WOD',heading:'Bienvenue dans la box',body:'Ton compte est prêt. Réserve ta première séance découverte gratuite et rencontre les coachs.',cta:'Réserver ma séance découverte',time:'2 h',ts:'12:18:04',tags:{category:'onboarding',user_id:'u_5102'},links:['https://app.livethewod.app/onboarding','https://livethewod.app/unsubscribe?u=u_5102']},
+  ].map(m=>({ws:L,brand:'LIVE THE WOD',att:[],...m}));
+  const E='ci-run-8841-w3';
+  const eph=[
+    {id:'msg_01JDA7Z1E2E1',status:'delivered',conn:'resend',cname:'e2e-resend',from:'Acme <no-reply@acme.test>',to:'user-w3-1732282331@e2e.test',subject:'Vérifie ton adresse email',heading:'Confirme ton email',body:'Saisis ce code dans l\'application pour activer ton compte. Il expire dans 10 minutes.',code:'482 913',cta:'Vérifier mon email',time:'40 s',ts:'14:33:51',tags:{run:'8841',worker:'w3',spec:'signup.spec.ts'},links:['https://staging.acme.test/verify?t=vt_91af','https://staging.acme.test/unsubscribe']},
+    {id:'msg_01JDA7Z0R8K4',status:'hard_bounce',conn:'resend',cname:'e2e-resend',from:'Acme <no-reply@acme.test>',to:'reject@bounce.test',subject:'Vérifie ton adresse email',heading:'Confirme ton email',body:'Saisis ce code dans l\'application pour activer ton compte.',code:'117 402',cta:'Vérifier mon email',time:'52 s',ts:'14:33:39',tags:{run:'8841',worker:'w3',spec:'signup-bounce.spec.ts'},links:['https://staging.acme.test/verify?t=vt_77c2','https://staging.acme.test/unsubscribe']},
+    {id:'msg_01JDA7YX3P6M',status:'soft_bounce',conn:'smtp',cname:'e2e-smtp',from:'Acme <auth@acme.test>',to:'user+delay@e2e.test',subject:'Ton lien magique de connexion',heading:'Connexion en un clic',body:'Clique sur le bouton ci-dessous pour te connecter. Ce lien est valable 15 minutes.',cta:'Me connecter',time:'1 min',ts:'14:33:02',tags:{run:'8841',worker:'w3',spec:'magic-link.spec.ts'},links:['https://staging.acme.test/auth/magic?t=ml_3d0e','https://staging.acme.test/unsubscribe']},
+  ].map(m=>({ws:E,brand:'ACME',att:[],foot:'Acme Inc. · environnement E2E',...m}));
+  return [...base,...eph].map(m=>{const x={...m,preview:m.body};x.history=mkHist(x);x.wh=mkWh(x);return x;});
+}
+function emailHtml(m,dark){
+  const bg=dark?'#121316':'#f3f3f1',card=dark?'#1b1c20':'#ffffff',tx=dark?'#ececef':'#18191c',mu=dark?'#a0a2a9':'#62656c',bd=dark?'#2a2c31':'#e6e6e2';
+  const code=m.code?`<div style="font:600 28px/1 ui-monospace,Menlo,monospace;letter-spacing:.2em;padding:24px;margin:0 0 29px;background:${bg};border-radius:8px;text-align:center">${m.code}</div>`:'';
+  const sec=m.l2&&m.links.length>2?`<p style="font-size:13px;color:${mu};margin:29px 0 0"><a href="${m.links[1]}">${m.l2}</a></p>`:'';
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:${bg};color:${tx};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}a{color:${tx}}</style></head><body><div style="max-width:560px;margin:0 auto;padding:49px 27px"><div style="font-weight:800;font-size:13px;letter-spacing:.18em;margin:0 0 29px">${m.brand}</div><div style="background:${card};border:1px solid ${bd};border-radius:12px;padding:43px 38px"><h1 style="font-size:22px;line-height:1.25;margin:0 0 18px;letter-spacing:-.01em">${m.heading}</h1><p style="font-size:15px;line-height:1.6;color:${mu};margin:0 0 31px">${m.body}</p>${code}<a href="${m.links[0]}" style="display:inline-block;background:${tx};color:${card};padding:16px 27px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">${m.cta}</a>${sec}</div><p style="font-size:12px;line-height:1.6;color:${mu};margin:29px 4px 0">${m.foot||'Live The WOD · 12 rue des Athlètes, 69007 Lyon'}<br><a href="${m.links[m.links.length-1]}">Se désinscrire</a></p></div></body></html>`;
+}
+const emailText=m=>`${m.heading}\n\n${m.body}\n${m.code?'\nCode : '+m.code+'\n':''}\n${m.cta} : ${m.links[0]}\n${m.l2&&m.links.length>2?m.l2+' : '+m.links[1]+'\n':''}\n—\n${m.foot||'Live The WOD · 12 rue des Athlètes, 69007 Lyon'}\nSe désinscrire : ${m.links[m.links.length-1]}`;
+function mkHeaders(m,ws){
+  const h=[['Message-ID',`<${m.id}@mailsink.local>`],['Date',`Sun, 22 Nov 2026 ${m.ts} +0100`],['From',m.from],['To',m.to],['Subject',m.subject],['MIME-Version','1.0'],['Content-Type','multipart/alternative; boundary="msk_b1"']];
+  if(m.conn==='smtp')h.push(['Received','from app-staging-02 (10.0.4.12) by smtp.mailsink.internal with ESMTP id '+m.id.slice(4,12)]);
+  else h.push(['X-Provider-Endpoint',m.conn==='resend'?'POST /emails':'POST /v3/smtp/email']);
+  h.push(['X-Mailsink-Workspace',ws],['X-Mailsink-Connection',m.cname],['X-Mailsink-Status',m.status]);
+  Object.entries(m.tags).forEach(([k,v])=>h.push(['X-Tag-'+k,v]));
+  return h.map(([k,v])=>({k,v}));
+}
+function mkPayload(m){
+  if(m.conn==='resend')return JSON.stringify({from:m.from,to:[m.to],subject:m.subject,html:'<!doctype html><html>… (3,1 Ko)',text:'…',tags:Object.entries(m.tags).map(([name,value])=>({name,value})),...(m.att.length?{attachments:m.att.map(a=>({filename:a.n,content:'<base64 · '+a.s+'>'}))}:{})},null,2);
+  if(m.conn==='brevo')return JSON.stringify({sender:{name:nameOf(m.from),email:emailOf(m.from)},to:[{email:m.to}],subject:m.subject,htmlContent:'<!doctype html><html>… (3,4 Ko)',tags:Object.values(m.tags),...(m.att.length?{attachment:m.att.map(a=>({name:a.n,content:'<base64 · '+a.s+'>'}))}:{})},null,2);
+  return JSON.stringify({envelope:{mailFrom:emailOf(m.from),rcptTo:[m.to]},size:3412,tls:false,auth:'PLAIN '+(m.cname==='e2e-smtp'?'ci_8841_w3':'lwod_staging_x8f2'),client:'10.0.4.12'},null,2);
+}
+const mkEml=m=>`Message-ID: <${m.id}@mailsink.local>\nDate: Sun, 22 Nov 2026 ${m.ts} +0100\nFrom: ${m.from}\nTo: ${m.to}\nSubject: ${m.subject}\nMIME-Version: 1.0\nContent-Type: multipart/alternative; boundary="msk_b1"\n\n--msk_b1\nContent-Type: text/plain; charset=utf-8\nContent-Transfer-Encoding: quoted-printable\n\n${emailText(m)}\n\n--msk_b1\nContent-Type: text/html; charset=utf-8\nContent-Transfer-Encoding: quoted-printable\n\n<!doctype html><html><head><meta charset=3D"utf-8">…\n\n--msk_b1--`;
+
+const LOGS=[
+  {id:'log_7Kq2',t:'14:33:51.204',type:'API',conn:'e2e-resend',action:'POST /emails',status:'200',ms:38,msgId:'msg_01JDA7Z1E2E1'},
+  {id:'log_7Kp9',t:'14:32:09.118',type:'Webhook',conn:'resend-main',action:'email.delivered',status:'200',ms:142,url:WH,msgId:'msg_01JDA7K3QX9R',attempts:[{n:1,t:'14:32:09',code:200,ms:142}]},
+  {id:'log_7Kp4',t:'14:32:08.412',type:'API',conn:'resend-main',action:'POST /emails',status:'200',ms:41,msgId:'msg_01JDA7K3QX9R'},
+  {id:'log_7Kn1',t:'14:31:55.090',type:'API',conn:'resend-main',action:'POST /emails',status:'429',ms:3},
+  {id:'log_7Km8',t:'14:26:42.007',type:'Webhook',conn:'brevo-billing',action:'delivered',status:'200',ms:96,url:'https://billing.livethewod.app/hooks/brevo',msgId:'msg_01JDA6ZP2M4T',attempts:[{n:1,t:'14:26:42',code:200,ms:96}]},
+  {id:'log_7Km3',t:'14:26:41.552',type:'API',conn:'brevo-billing',action:'POST /v3/smtp/email',status:'201',ms:57,msgId:'msg_01JDA6ZP2M4T'},
+  {id:'log_7Kk6',t:'14:22:05.311',type:'Webhook',conn:'smtp-legacy',action:'email.bounced',status:'500',ms:2034,url:'https://staging-legacy.livethewod.app/smtp-events',msgId:'msg_01JDA6H1VB7C',attempts:[{n:1,t:'14:22:05',code:500,ms:2034},{n:2,t:'14:23:05',code:500,ms:1998},{n:3,t:'14:27:05',code:500,ms:2011}]},
+  {id:'log_7Kk2',t:'14:22:03.870',type:'SMTP',conn:'smtp-legacy',action:'RCPT TO · qa+reset@bounce.test',status:'550 5.1.1',ms:88},
+  {id:'log_7Kj9',t:'14:13:38.240',type:'Webhook',conn:'resend-main',action:'email.delivery_delayed',status:'200',ms:121,url:WH,msgId:'msg_01JDA5W8NE2D',attempts:[{n:1,t:'14:13:38',code:200,ms:121}]},
+  {id:'log_7Kh5',t:'14:00:13.004',type:'Webhook',conn:'brevo-billing',action:'spam',status:'200',ms:110,url:'https://billing.livethewod.app/hooks/brevo',msgId:'msg_01JDA4RT6KQ1',attempts:[{n:1,t:'14:00:13',code:200,ms:110}]},
+  {id:'log_7Kg1',t:'13:44:19.611',type:'SMTP',conn:'smtp-legacy',action:'DATA · 1 rcpt',status:'250 OK',ms:64},
+  {id:'log_7Kf7',t:'13:31:21.336',type:'API',conn:'resend-main',action:'POST /emails',status:'500',ms:12,msgId:'msg_01JDA2M0CW3F'},
+  {id:'log_7Ke2',t:'13:12:40.115',type:'API',conn:'resend-main',action:'GET /emails/msg_01JDA1D7FA5Y',status:'200',ms:9},
+  {id:'log_7Kd8',t:'12:58:02.447',type:'SMTP',conn:'smtp-legacy',action:'AUTH PLAIN',status:'535 5.7.8',ms:4},
+];
+function logDetail(l){
+  const d={};
+  if(l.type==='API'){
+    const brevo=l.conn.startsWith('brevo'),[method]=l.action.split(' '),c=parseInt(l.status);
+    d.req=`${l.action} HTTP/1.1\nHost: mailsink.internal\nAuthorization: ${brevo?'api-key':'Bearer'} msk_live_••••••••${brevo?'5Gj3':'1Hd4'}\nContent-Type: application/json\nUser-Agent: ${brevo?'brevo-node/2.2.0':'resend-node/4.1.2'}\nX-Request-Id: req_${l.id.slice(4)}`;
+    d.reqBody=method==='GET'?'— aucun corps':JSON.stringify(brevo?{sender:{email:'billing@livethewod.app'},to:[{email:'thomas.leroy@outlook.test'}],subject:'Ta facture INV-2026-0412',htmlContent:'<!doctype html>…'}:{from:'Live The WOD <no-reply@livethewod.app>',to:['julie.martin@gmail.test'],subject:'Ta réservation WOD 18:00 est confirmée',html:'<!doctype html>…',tags:[{name:'category',value:'booking'}]},null,2);
+    d.res=`HTTP/1.1 ${l.status} ${({200:'OK',201:'Created',202:'Accepted',429:'Too Many Requests',500:'Internal Server Error'})[c]||''}\nContent-Type: application/json\nX-RateLimit-Limit: 10\nX-RateLimit-Remaining: ${c===429?0:7}${c===429?'\nRetry-After: 1':''}\nX-Mailsink-Latency: ${l.ms}ms`;
+    d.resBody=JSON.stringify(c===429?{statusCode:429,name:'rate_limit_exceeded',message:'Too many requests — override actif : 10 req/s'}:c>=500?{statusCode:500,name:'internal_server_error',message:'Chaos : échec injecté (errorRate 5 %)'}:brevo?{messageId:`<20261122.${l.id.slice(4)}@smtp-relay.mailsink>`}:{id:l.msgId||'msg_01JDA1D7FA5Y',object:'email'},null,2);
+  }
+  if(l.type==='SMTP'){
+    const S=x=>['S',x],Cc=x=>['C',x];
+    const lines=[S('220 smtp.mailsink.internal ESMTP Mailsink ready'),Cc('EHLO app-staging-02.livethewod.internal'),S('250-smtp.mailsink.internal\n250-AUTH PLAIN LOGIN\n250-SIZE 26214400\n250 8BITMIME'),Cc('AUTH PLAIN AGx3b2Rfc3RhZ2luZ194OGYy••••••')];
+    if(l.action.startsWith('AUTH'))lines.push(S('535 5.7.8 Authentication credentials invalid'),Cc('QUIT'),S('221 2.0.0 Bye'));
+    else{
+      lines.push(S('235 2.7.0 Authentication successful'),Cc('MAIL FROM:<no-reply@livethewod.app>'),S('250 2.1.0 Sender OK'));
+      if(l.status.startsWith('550'))lines.push(Cc('RCPT TO:<qa+reset@bounce.test>'),S('550 5.1.1 <qa+reset@bounce.test>: Mailbox does not exist (règle *@bounce.test)'),Cc('QUIT'),S('221 2.0.0 Bye'));
+      else lines.push(Cc('RCPT TO:<julie.martin@gmail.test>'),S('250 2.1.5 Recipient OK'),Cc('DATA'),S('354 End data with <CR><LF>.<CR><LF>'),Cc('[3 412 octets · multipart/alternative]\n.'),S('250 2.0.0 OK queued as msg_01JDA3B5HZ8P'),Cc('QUIT'),S('221 2.0.0 Bye'));
+    }
+    d.dialog=lines.map(([dd,ll])=>({d:dd,l:ll,c:dd==='C'?'var(--ac)':'var(--fa)',tc:dd==='S'&&/^[45]/.test(ll)?sc('hard_bounce'):dd==='C'?'var(--tx)':'var(--mu)'}));
+  }
+  if(l.type==='Webhook'){
+    const last=l.attempts[l.attempts.length-1];
+    d.sigRows=[{k:'svix-id',v:'msg_'+l.id.slice(4)+'Wh2f'},{k:'svix-timestamp',v:'1795353'+l.t.replace(/\D/g,'').slice(0,3)},{k:'svix-signature',v:'v1,'+btoa(l.id+l.t).replace(/=/g,'').slice(0,32)+'Qm='}];
+    d.payload=JSON.stringify({type:l.action,created_at:'2026-11-22T'+l.t.slice(0,8)+'.000Z',data:{email_id:l.msgId||'msg_01JDA7K3QX9R',connection:l.conn,to:['julie.martin@gmail.test']}},null,2);
+    d.target=last.code>=500?`HTTP/1.1 500 Internal Server Error\ncontent-type: application/json\n\n{"error":"upstream timeout","request_id":"rq_a91f"}`:`HTTP/1.1 200 OK\ncontent-type: application/json\n\n{"received":true}`;
+    d.attempts=l.attempts.map(a=>({...a,label:a.code+(a.code>=500?' — retry planifié':' OK'),c:sc(httpK(String(a.code))),msS:a.ms+' ms'}));
+    if(last.code>=500&&l.attempts.length<5)d.attempts.push({n:l.attempts.length+1,t:'14:37:05',label:'— prévu (backoff exponentiel)',c:'var(--fa)',msS:''});
+  }
+  return d;
+}
+const CONNS=[
+  {id:'c_resend',name:'resend-main',type:'resend',key:'msk_live_4Fq9Zt2LwR8xKp3vNb6Ys1Hd',rl:'',msgs:'842'},
+  {id:'c_brevo',name:'brevo-billing',type:'brevo',key:'msk_live_9Tc2Mv7QeL4nWx8Ra1Kp5Gj3',rl:'5',msgs:'301'},
+  {id:'c_smtp',name:'smtp-legacy',type:'smtp',host:'smtp.mailsink.internal',port:'2525',user:'lwod_staging_x8f2',key:'Zq7mR2vK9pL4wTxB',rl:'',msgs:'141'},
+];
+const FMT={
+  resend:{l:'Resend',short:'Resend',sig:'Svix HMAC',c:'var(--c-resend)',pre:'whsec_',sl:'Secret Svix',hd:'svix-id · svix-timestamp · svix-signature',ev:{sent:'email.sent',delivered:'email.delivered',bounced:'email.bounced',soft:'email.delivery_delayed',complained:'email.complained',opened:'email.opened',clicked:'email.clicked'}},
+  brevo:{l:'Brevo',short:'Brevo',sig:'Bearer / Secret',c:'var(--c-brevo)',pre:'bvo_',sl:'Token Bearer',hd:'Authorization: Bearer <token>',ev:{delivered:'delivered',bounced:'hard_bounce',soft:'soft_bounce',complained:'spam',opened:'opened',clicked:'click'}},
+  unified:{l:'Mailsink Unified',short:'Unified',sig:'X-Mailsink-Signature',c:'var(--ac)',pre:'mskwh_',sl:'Secret HMAC',hd:'X-Mailsink-Signature: t=…,v1=…',ev:{sent:'email.sent',delivered:'email.delivered',bounced:'email.bounced',soft:'email.soft_bounced',complained:'email.complained',opened:'email.opened',clicked:'email.clicked',failed:'email.failed',suppressed:'email.suppressed'}},
+};
+const nativeFmt=t=>t==='smtp'?'unified':t;
+const HOOKS=[
+  {id:'wh1',url:WH,scope:'Workspace',fmt:'unified',events:['delivered','bounced','complained','opened','clicked'],secret:'MfK2pQ8vR3nT6xW1zL9cB4yH',active:true,last:'200 · il y a 1 min'},
+  {id:'wh4',url:'https://api.livethewod.app/webhooks/resend',scope:'resend-main',fmt:'resend',events:['delivered','bounced','complained'],secret:'Ty6nB1qW8kR3mZ5vC2xL7pD9',active:true,last:'200 · il y a 2 min'},
+  {id:'wh2',url:'https://billing.livethewod.app/hooks/brevo',scope:'brevo-billing',fmt:'brevo',events:['delivered','bounced','complained'],secret:'Pq4nX7vT2mK9wR1zL6cB8yJ3',active:true,last:'200 · il y a 26 min'},
+  {id:'wh3',url:'https://staging-legacy.livethewod.app/smtp-events',scope:'smtp-legacy',fmt:'unified',events:['bounced'],secret:'Lz8cB2yH5mK1wR9pQ4vT7nX6',active:false,last:'500 · il y a 12 min'},
+];
+const SUPP=[
+  {a:'qa+reset@bounce.test',r:'hard_bounce',c:'smtp-legacy',d:'22 nov. 14:22'},
+  {a:'sarah.k@yahoo.test',r:'complained',c:'brevo-billing',d:'22 nov. 14:00'},
+  {a:'old.member@bounce.test',r:'hard_bounce',c:'smtp-legacy',d:'18 nov. 09:12'},
+  {a:'no-such-user@bounce.test',r:'hard_bounce',c:'resend-main',d:'14 nov. 17:40'},
+];
+const WSS=[
+  {slug:'live-the-wod-staging',n:'1 284'},{slug:'gtfs-manager-qa',n:'312'},{slug:'billing-sandbox',n:'57'},
+  {slug:'ci-run-8841-w3',eph:true,ttl:2892,creator:'github-actions · run #8841 · worker 3'},
+  {slug:'ci-run-8841-w1',eph:true,ttl:744,creator:'github-actions · run #8841 · worker 1'},
+  {slug:'pr-2290-e2e',eph:true,ttl:3310,creator:'playwright · PR #2290'},
+];
+
+class Component extends DCLogic {
+  frameRef = React.createRef();
+  state = {
+    view:this.props.startView ?? 'messages', theme:this.props.theme ?? 'dark',
+    workspaces:WSS, ws:this.props.startEphemeral ? 'ci-run-8841-w3' : 'live-the-wod-staging', wsOpen:false, showEph:!!this.props.startEphemeral,
+    messages:seedMessages(), selMsg:null, tab:'preview', device:'desktop', mailBg:'light', srcView:'payload', simOpen:false, simUrl:'', purgeConfirm:false,
+    q:'', connF:'all', statusF:'',
+    ovOpen:false, ovActive:this.props.overrideActive ?? true, ovTarget:'workspace', ovExpire:'1h', rates:{...OV_RATES}, latMin:120, latMax:850, errRate:5, errCode:'429', rl:10, rlUnit:'req/s',
+    rules:[{id:1,p:'*@bounce.test',a:'hard_bounce',ms:0},{id:2,p:'*+delay@*',a:'delay',ms:30000},{id:3,p:'complain-*@e2e.test',a:'complained',ms:0}], resetConfirm:false,
+    logs:LOGS, logF:'all', logQ:'', selLog:null,
+    setTab:'connections', conns:CONNS, selConn:'c_resend', newType:'resend', newName:'', newRl:'', reveal:{}, hooks:HOOKS, hookMenu:null, hookFilter:'', retention:'7d', quota:5000, supp:SUPP,
+    cwOpen:false, cwName:'', cwSlug:'', cwRet:'7d', cwRl:'10', cwConn:true, cwType:'resend',
+    toast:null, mobile:false, pane:'list'
+  };
+  componentDidMount(){
+    this._rs=()=>{const m=window.innerWidth<820,w=window.innerWidth>=1100;if(m!==this.state.mobile||w!==this.state.wide)this.setState({mobile:m,wide:w});};
+    window.addEventListener('resize',this._rs);this._rs();
+    this._iv=setInterval(()=>this.setState(s=>({workspaces:s.workspaces.map(w=>w.eph?{...w,ttl:w.ttl>0?w.ttl-1:3600}:w)})),1000);
+    this.syncFrame();
+  }
+  componentDidUpdate(pp){
+    this.syncFrame();
+    if(pp.theme!==this.props.theme&&this.props.theme)this.setState({theme:this.props.theme});
+    if(pp.startView!==this.props.startView&&this.props.startView)this.setState({view:this.props.startView});
+  }
+  componentWillUnmount(){window.removeEventListener('resize',this._rs);clearInterval(this._iv);clearTimeout(this._tt);}
+  syncFrame(){const f=this.frameRef.current;if(f&&this._html&&f.srcdoc!==this._html)f.srcdoc=this._html;}
+  toast(t){clearTimeout(this._tt);this.setState({toast:t});this._tt=setTimeout(()=>this.setState({toast:null}),2600);}
+  copy(t,label){try{navigator.clipboard.writeText(t);}catch(e){}this.toast(label||'Copié dans le presse-papiers');}
+  whLog(conn,ev,url,code,ms,msgId){const t=nowTs();return {id:'log_'+rid(4),t:t+'.'+pad(Math.random()*999|0,3),type:'Webhook',conn,action:ev,status:String(code),ms,url,msgId,attempts:[{n:1,t,code,ms}]};}
+  simulate(kind,url){
+    const m=this._cur;if(!m)return;
+    const t=nowTs(),ev={opened:'email.opened',clicked:'email.clicked',bounce:'email.bounced'}[kind];
+    const note=kind==='clicked'?'Clic simulé → '+url:kind==='opened'?'Ouverture simulée (pixel de tracking)':'550 5.1.1 Hard bounce simulé manuellement';
+    const ms=60+Math.floor(Math.random()*160);
+    this.setState(s=>({
+      messages:s.messages.map(x=>x.id!==m.id?x:{...x,status:kind==='bounce'?'hard_bounce':x.status,history:[...x.history,{t,ev,note,sim:true}],wh:[...x.wh,{t,ev,code:200,ms,url:WH}]}),
+      supp:kind==='bounce'&&!s.supp.some(a=>a.a===m.to)?[{a:m.to,r:'hard_bounce',c:m.cname,d:'22 nov. '+t.slice(0,5)},...s.supp]:s.supp,
+      logs:[this.whLog(m.cname,ev,WH,200,ms,m.id),...s.logs],simOpen:false,simUrl:''
+    }));
+    this.toast(`${ev} simulé · webhook livré → 200 (${ms} ms)`);
+  }
+  resetOv(){this.setState({ovActive:false,rates:{...DEF_RATES},rules:[],latMin:0,latMax:0,errRate:0,rl:10,resetConfirm:false,ovTarget:'workspace'});}
+  renderVals(){
+    const s=this.state,mob=s.mobile;
+    const seg=(opts,cur,key)=>opts.map(([v,l])=>({l,bg:v===cur?'var(--h)':'transparent',c:v===cur?'var(--tx)':'var(--mu)',sh:v===cur?'inset 0 0 0 1px var(--bd2)':'none',on:()=>this.setState({[key]:v})}));
+    const wsObj=s.workspaces.find(w=>w.slug===s.ws)||s.workspaces[0];
+    const isEph=!!wsObj.eph;
+    const mkWs=w=>({...w,ttlShort:w.eph?'TTL '+Math.ceil(w.ttl/60)+'m':'',check:w.slug===s.ws?'✓':'',bg:w.slug===s.ws?'var(--h)':'transparent',pick:()=>this.setState({ws:w.slug,wsOpen:false,pane:'list',selMsg:null,purgeConfirm:false,statusF:'',connF:'all',q:''})});
+    const all=s.messages.filter(m=>m.ws===s.ws);
+    const q=s.q.trim().toLowerCase();
+    const list=all.filter(m=>(s.connF==='all'||m.conn===s.connF)&&(!s.statusF||m.status===s.statusF)&&(!q||(m.to+' '+m.subject+' '+m.from+' '+Object.values(m.tags).join(' ')).toLowerCase().includes(q)));
+    const cur=all.find(m=>m.id===s.selMsg)||list[0]||null;this._cur=cur;
+    const msgList=list.map(m=>({...m,connLabel:CN[m.conn],cc:`var(--c-${m.conn})`,sColor:sc(m.status),sBg:sbg(m.status),fromShort:emailOf(m.from),bg:cur&&m.id===cur.id?'var(--h)':'transparent',bl:cur&&m.id===cur.id?'var(--ac)':'transparent',open:()=>this.setState({selMsg:m.id,pane:'insp',simOpen:false,purgeConfirm:false})}));
+    const connChips=[['all','All'],['resend','Resend'],['brevo','Brevo'],['smtp','SMTP']].map(([v,l])=>({...seg([[v,l]],s.connF,'connF')[0],n:v==='all'?all.length:all.filter(m=>m.conn===v).length}));
+    const statusChips=['delivered','hard_bounce','soft_bounce','complained','suppressed','failed'].map(k=>{const a=s.statusF===k;return {k,n:all.filter(m=>m.status===k).length,c:sc(k),bd:a?sc(k):'var(--bd2)',bg:a?sbg(k):'transparent',tc:a?sc(k):'var(--mu)',on:()=>this.setState({statusF:a?'':k})};});
+    let C=null;
+    if(cur){
+      this._html=emailHtml(cur,s.mailBg==='dark');
+      C={...cur,connLabel:CN[cur.conn],cc:`var(--c-${cur.conn})`,sColor:sc(cur.status),sBg:sbg(cur.status),tagList:Object.entries(cur.tags).map(([k,v])=>({k,v})),text:emailText(cur),
+        links:cur.links.map((u,i)=>({u,i:i+1,sim:()=>this.simulate('clicked',u)})),atts:cur.att.map(a=>({...a,ext:a.n.split('.').pop().toUpperCase(),dl:()=>this.toast('Téléchargement · '+a.n)})),noAtt:cur.att.length===0,
+        headers:mkHeaders(cur,s.ws),source:s.srcView==='payload'?mkPayload(cur):mkEml(cur),
+        hist:cur.history.map(h=>({...h,c:EVC[h.ev]||'var(--mu)',sim:!!h.sim})),wh:cur.wh.map(w=>({...w,codeS:String(w.code),c:sc(httpK(String(w.code)))}))};
+    } else this._html=null;
+    const W=s.wide!==false;
+    const tabs=[['preview',W?'Aperçu rendu':'Aperçu'],['text',W?'Texte brut':'Texte'],['links',W?'Liens & pièces jointes':'Liens & PJ',C?C.links.length+C.atts.length:0],['headers',W?'Headers & source MIME':'Headers & MIME'],['history',W?'Historique & webhooks':'Historique',C?C.hist.length:0]];
+    const insTabs=tabs.map(([k,l,n])=>({l,n,hasN:!!n,c:s.tab===k?'var(--tx)':'var(--mu)',bd:s.tab===k?'var(--ac)':'transparent',on:()=>this.setState({tab:k})}));
+    // override
+    const total=ST6.reduce((a,k)=>a+(+s.rates[k]||0),0),scale=Math.max(total,100);
+    const rateRows=ST6.map(k=>({k,v:s.rates[k],c:sc(k),w:(s.rates[k]/scale*100)+'%',on:e=>{const v=Math.max(0,Math.min(100,parseInt(e.target.value)||0));this.setState(st=>({rates:{...st.rates,[k]:v},resetConfirm:false}));}}));
+    const totalC=total===100?sc('delivered'):total>100?sc('hard_bounce'):sc('soft_bounce');
+    const totalMsg=total===100?'Répartition valide — chaque envoi tire un statut selon ces taux.':total>100?`Total supérieur à 100 % (+${total-100} %) — réduisez un ou plusieurs taux.`:`${100-total} % non attribués — le total doit faire 100 %.`;
+    const canApply=total===100&&+s.latMin<=+s.latMax;
+    const latMax=3000;
+    const ruleRows=s.rules.map(r=>({...r,c:r.a==='delay'?sc('deferred'):sc(r.a),isDelay:r.a==='delay',
+      onP:e=>{const v=e.target.value;this.setState(st=>({rules:st.rules.map(x=>x.id===r.id?{...x,p:v}:x)}));},
+      onA:e=>{const v=e.target.value;this.setState(st=>({rules:st.rules.map(x=>x.id===r.id?{...x,a:v,ms:v==='delay'?(x.ms||30000):x.ms}:x)}));},
+      onMs:e=>{const v=e.target.value;this.setState(st=>({rules:st.rules.map(x=>x.id===r.id?{...x,ms:v}:x)}));},
+      rm:()=>this.setState(st=>({rules:st.rules.filter(x=>x.id!==r.id)}))}));
+    const tgtName=s.ovTarget==='workspace'?'workspace':s.ovTarget;
+    // logs
+    const lf={all:()=>true,api:l=>l.type==='API',smtp:l=>l.type==='SMTP',webhook:l=>l.type==='Webhook'};
+    const tc=t=>t==='API'?'var(--ac)':t==='SMTP'?'var(--c-smtp)':sc('complained');
+    const lq=s.logQ.trim().toLowerCase();
+    const decor=l=>({...l,tc:tc(l.type),sc:sc(httpK(l.status)),sbg:sbg(httpK(l.status)),msc:l.ms>1000?'var(--am)':'var(--mu)'});
+    const logRows=s.logs.filter(lf[s.logF]).filter(l=>!lq||(l.action+' '+l.status+' '+l.conn+' '+l.type).toLowerCase().includes(lq)).map(l=>({...decor(l),bg:s.selLog===l.id?'var(--h)':'transparent',open:()=>this.setState({selLog:l.id})}));
+    const logTabs=[['all','Tous'],['api','API / Providers'],['smtp','SMTP'],['webhook','Webhooks']].map(([v,l])=>({...seg([[v,l]],s.logF,'logF')[0],n:s.logs.filter(lf[v]).length}));
+    const selLog=s.logs.find(l=>l.id===s.selLog);
+    const L=selLog?{...decor(selLog),...logDetail(selLog),isApi:selLog.type==='API',isSmtp:selLog.type==='SMTP',isWh:selLog.type==='Webhook'}:null;
+    // settings
+    const connRows=s.conns.map(c=>{const a=s.selConn===c.id;return {...c,label:CN[c.type],cc:`var(--c-${c.type})`,ini:c.type==='smtp'?'SM':c.type==='brevo'?'BR':'RE',hasRl:!!c.rl,bd:a?'var(--ac)':'var(--bd)',bg:a?'var(--p)':'transparent',pick:()=>this.setState({selConn:c.id})};});
+    const isNew=s.selConn==='new';
+    const sc0=s.conns.find(c=>c.id===s.selConn);
+    const type=isNew?s.newType:sc0.type;
+    let F;
+    if(isNew){
+      F={isNew:true,title:'Nouvelle connexion',sub:'Choisissez le type de provider à émuler',name:s.newName,onName:e=>this.setState({newName:e.target.value}),showApi:false,showSmtp:false,showSnippet:false,
+        newHint:type==='smtp'?'SMTP_HOST, SMTP_PORT, SMTP_USER et SMTP_PASS seront générés à la création. Compatible Nodemailer, Symfony Mailer, Django…':`Une clé ${'msk_live_…'} sera générée à la création. Pointez le SDK ${CN[type]} vers l'URL de base Mailsink — aucun changement de code applicatif.`};
+    } else {
+      const rev=!!s.reveal[sc0.id];
+      const keyD=rev?sc0.key:sc0.key.slice(0,9)+'••••••••••••••••'+sc0.key.slice(-4);
+      const passD=rev?sc0.key:'••••••••••••••••';
+      const env=type==='resend'?`# .env\nRESEND_BASE_URL=${BASE}/w/${s.ws}/resend\nRESEND_API_KEY=${keyD}`:type==='brevo'?`# .env\nBREVO_API_URL=${BASE}/w/${s.ws}/brevo/v3\nBREVO_API_KEY=${keyD}`:`# .env\nSMTP_HOST=${sc0.host}\nSMTP_PORT=${sc0.port}\nSMTP_USER=${sc0.user}\nSMTP_PASS=${passD}\n\n// nodemailer\nconst transport = nodemailer.createTransport({\n  host: process.env.SMTP_HOST,\n  port: Number(process.env.SMTP_PORT),\n  secure: false,\n  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },\n});`;
+      const envReal=env.split(keyD).join(sc0.key).split(passD).join(sc0.key);
+      const upd=patch=>this.setState(st=>({conns:st.conns.map(c=>c.id===sc0.id?{...c,...patch}:c)}));
+      F={isNew:false,title:sc0.name,sub:`${CN[type]} · ${sc0.msgs} messages capturés`,name:sc0.name,onName:e=>upd({name:e.target.value}),showApi:type!=='smtp',showSmtp:type==='smtp',showSnippet:true,
+        keyD,passD,host:sc0.host,port:sc0.port,user:sc0.user,rl:sc0.rl,onRl:e=>upd({rl:e.target.value}),
+        revealL:rev?'Masquer':'Révéler',reveal:()=>this.setState(st=>({reveal:{...st.reveal,[sc0.id]:!rev}})),
+        copyKey:()=>this.copy(sc0.key,type==='smtp'?'SMTP_PASS copié':'Clé API copiée'),
+        rotate:()=>{upd({key:type==='smtp'?rid(16):'msk_live_'+rid(24)});this.setState(st=>({reveal:{...st.reveal,[sc0.id]:true}}));this.toast(type==='smtp'?'Nouveau SMTP_PASS généré — l\'ancien est révoqué':'Clé rotée — l\'ancienne est révoquée immédiatement');},
+        ...(()=>{const hs=s.hooks.filter(h=>h.scope===sc0.name||h.scope==='Workspace');return {
+          hooks:hs.map(h=>({url:h.url.replace('https://',''),via:h.scope==='Workspace'?'via Workspace':'Connexion',fmt:FMT[h.fmt].short,fc:FMT[h.fmt].c,dot:h.active?sc('delivered'):'var(--fa)',op:h.active?1:.55})),
+          hookActive:hs.filter(h=>h.active).length,noHooks:hs.length===0,manageHooks:()=>this.setState({setTab:'webhooks',hookFilter:sc0.name})};})(),
+        snipTitle:type==='smtp'?'Variables SMTP & snippet Nodemailer':'Snippet .env prêt à copier',snippet:env,copySnip:()=>this.copy(envReal,'Snippet copié')};
+    }
+    const connType=n=>{const c=s.conns.find(c=>c.name===n);return c?c.type:null;};
+    const hf=s.hookFilter||'';
+    const hookRows=s.hooks.filter(h=>!hf||h.scope===hf||h.scope==='Workspace').map(h=>{const rev=!!s.reveal[h.id];const upd=p=>this.setState(st=>({hooks:st.hooks.map(x=>x.id===h.id?{...x,...p}:x)}));
+      const F0=FMT[h.fmt],ct=h.scope==='Workspace'?null:connType(h.scope),mk=s.hookMenu;
+      const setFmt=f=>upd({fmt:f,events:h.events.filter(k=>FMT[f].ev[k])});
+      const scopeOpts=[['Workspace','Toutes les connexions'],...s.conns.map(c=>[c.name,CN[c.type]])].map(([v,sub])=>({l:v,sub,check:v===h.scope?'✓':'',pick:()=>{const t=v==='Workspace'?null:connType(v);const f=t?nativeFmt(t):'unified';upd({scope:v,fmt:f,events:h.events.filter(k=>FMT[f].ev[k])});this.setState({hookMenu:null});}}));
+      const fl=ct?(ct==='smtp'?[['unified',"Hérité — SMTP n'a pas de format natif"]]:[[ct,'Hérité de la connexion · natif'],['unified','Normalisé multi-providers']]):[['unified','Par défaut · normalisé multi-connexions'],['resend','Traduction vers le format Resend'],['brevo','Traduction vers le format Brevo']];
+      const fmtOpts=fl.map(([v,sub])=>({l:FMT[v].l,sub:sub+' · '+FMT[v].sig,check:v===h.fmt?'✓':'',c:FMT[v].c,pick:()=>{setFmt(v);this.setState({hookMenu:null});}}));
+      return {...h,op:h.active?1:.6,swBg:h.active?'var(--acf)':'var(--bd2)',swX:h.active?'16px':'2px',toggle:()=>upd({active:!h.active}),onUrl:e=>upd({url:e.target.value}),
+        scopeOpen:mk===h.id+':s',fmtOpen:mk===h.id+':f',openScope:()=>this.setState({hookMenu:mk===h.id+':s'?null:h.id+':s'}),openFmt:()=>this.setState({hookMenu:mk===h.id+':f'?null:h.id+':f'}),closeMenu:()=>this.setState({hookMenu:null}),
+        scopeOpts,fmtOpts,fmtLabel:F0.l,fmtShort:F0.short,fmtC:F0.c,sigLabel:F0.sig,inherited:!!ct&&h.fmt===nativeFmt(ct),secretLabel:F0.sl,sigHd:F0.hd,
+        secretD:rev?F0.pre+h.secret:F0.pre+'••••••••••••'+h.secret.slice(-3),revealL:rev?'Masquer':'Révéler',reveal:()=>this.setState(st=>({reveal:{...st.reveal,[h.id]:!rev}})),
+        lastC:sc(httpK(h.last)),
+        evs:Object.entries(F0.ev).map(([k,name])=>{const on=h.events.includes(k);return {k:name,tick:on?'✓':'',bd:on?'var(--ac)':'var(--bd2)',box:on?'var(--acf)':'transparent',bg:on?'color-mix(in oklch,var(--ac) 10%,transparent)':'transparent',c:on?'var(--tx)':'var(--mu)',on:()=>upd({events:on?h.events.filter(x=>x!==k):[...h.events,k]})};}),
+        test:()=>{if(!h.active){this.toast('Endpoint inactif — activez-le pour tester');return;}const ms=80+(Math.random()*120|0);upd({last:'200 · à l\'instant'});this.setState(st=>({logs:[this.whLog(h.scope==='Workspace'?'workspace':h.scope,'test.ping',h.url,200,ms),...st.logs]}));this.toast(`test.ping → ${h.url.replace('https://','')} · 200 (${ms} ms)`);}};});
+    const suppRows=s.supp.map(r=>({...r,cn:r.c,c:sc(r.r),bg:sbg(r.r),rm:()=>{this.setState(st=>({supp:st.supp.filter(x=>x.a!==r.a)}));this.toast(r.a+' retiré de la suppression list');}}));
+    const ephs=s.workspaces.filter(w=>w.eph);
+    const slugify=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    return {
+      theme:s.theme,mobile:mob,notMobile:!mob,wide:s.wide!==false,ovLabel:s.wide===false?'Override':'Override actif',
+      toggleTheme:()=>this.setState({theme:s.theme==='dark'?'light':'dark'}),
+      wsSlug:wsObj.slug,isEph,wsTtlShort:isEph?'TTL '+Math.ceil(wsObj.ttl/60)+'m':'',wsTtl:isEph?Math.floor(wsObj.ttl/60)+'m '+pad(wsObj.ttl%60)+'s':'',wsTtlPct:isEph?(wsObj.ttl/3600*100)+'%':'0%',wsCreator:wsObj.creator||'',
+      wsOpen:s.wsOpen,toggleWs:()=>this.setState({wsOpen:!s.wsOpen}),showEph:s.showEph,toggleEph:()=>this.setState({showEph:!s.showEph}),
+      ephSwBg:s.showEph?'var(--acf)':'var(--bd2)',ephSwX:s.showEph?'16px':'2px',ephCount:ephs.length,
+      wsPersist:s.workspaces.filter(w=>!w.eph).map(mkWs),wsEph:ephs.map(mkWs),
+      openCreate:()=>this.setState({wsOpen:false,cwOpen:true}),
+      nav:[['messages','Messages',all.length],['logs','Logs',s.logs.length],['settings','Paramètres']].map(([k,l,n])=>({l,n,hasN:n!=null,c:s.view===k?'var(--tx)':'var(--mu)',bd:s.view===k?'var(--ac)':'transparent',on:()=>this.setState({view:k})})),
+      ovActive:s.ovActive,ovInactive:!s.ovActive,ovSummary:`${tgtName} · ${s.rates.hard_bounce}% hb · ${s.rules.length} règles`,
+      openOv:()=>this.setState({ovOpen:true,resetConfirm:false}),closeOv:()=>this.setState({ovOpen:false,resetConfirm:false}),
+      quickReset:()=>{this.resetOv();this.toast('Override réinitialisé — valeurs par défaut du workspace restaurées');},
+      vMessages:s.view==='messages',vLogs:s.view==='logs',vSettings:s.view==='settings',
+      showList:!mob||s.pane==='list',showInsp:!mob||s.pane==='insp',listW:mob?'100%':'400px',back:()=>this.setState({pane:'list'}),
+      q:s.q,onQ:e=>this.setState({q:e.target.value}),connChips,statusChips,msgList,listEmpty:list.length===0&&all.length>0,
+      hasCur:!!C,noCur:!C,C:C||{},
+      purge:()=>{if(!s.purgeConfirm){this.setState({purgeConfirm:true});return;}this.setState(st=>({messages:st.messages.filter(m=>m.ws!==st.ws),purgeConfirm:false,selMsg:null}));this.toast(`Boîte ${s.ws} purgée · ${all.length} messages supprimés`);},
+      purgeLabel:s.purgeConfirm?`Confirmer la purge (${all.length})`:'Purger la boîte',purgeBg:s.purgeConfirm?sc('hard_bounce'):'transparent',purgeC:s.purgeConfirm?'#fff':'var(--mu)',purgeBd:s.purgeConfirm?sc('hard_bounce'):'var(--bd2)',
+      simOpen:s.simOpen,toggleSim:()=>this.setState({simOpen:!s.simOpen}),simUrl:s.simUrl,onSimUrl:e=>this.setState({simUrl:e.target.value}),
+      simCustom:()=>{if(s.simUrl.trim())this.simulate('clicked',s.simUrl.trim());},simOpened:()=>this.simulate('opened'),simBounce:()=>this.simulate('bounce'),
+      insTabs,tabPreview:s.tab==='preview',tabText:s.tab==='text',tabLinks:s.tab==='links',tabHeaders:s.tab==='headers',tabHistory:s.tab==='history',
+      segDevice:seg([['desktop','Desktop'],['mobile','Mobile']],s.device,'device'),segMailBg:seg([['light','Fond clair'],['dark','Fond sombre']],s.mailBg,'mailBg'),
+      segSrc:seg([['payload',C&&C.conn==='smtp'?'Enveloppe SMTP':'Payload '+(C?C.connLabel:'')],['eml','Source EML']],s.srcView,'srcView'),
+      copySrc:()=>this.copy(C?C.source:''),
+      frameRef:this.frameRef,frameW:s.device==='mobile'?'375px':'100%',frameR:s.device==='mobile'?'28px':'8px',frameBg:s.mailBg==='dark'?'#121316':'#f3f3f1',frameLabel:s.device==='mobile'?'375 px':'fluide',
+      goLogsWh:()=>this.setState({view:'logs',logF:'webhook'}),goSettings:()=>this.setState({view:'settings',setTab:'connections'}),
+      restoreDemo:()=>{const seed=seedMessages().filter(m=>m.ws==='live-the-wod-staging'||m.ws==='ci-run-8841-w3');const src=seed.filter(m=>m.ws===(isEph?'ci-run-8841-w3':'live-the-wod-staging'));this.setState(st=>({messages:[...st.messages.filter(m=>m.ws!==st.ws),...src.map(m=>({...m,ws:st.ws}))]}));},
+      curlSnippet:`curl -X POST ${BASE}/w/${s.ws}/resend/emails \\\n  -H "Authorization: Bearer msk_live_…" \\\n  -H "Content-Type: application/json" \\\n  -d '{"from":"app@example.test","to":"qa@example.test","subject":"Hello","html":"<p>Hi</p>"}'`,
+      // logs
+      logTabs,logRows,logQ:s.logQ,onLogQ:e=>this.setState({logQ:e.target.value}),hasLog:!!L,L:L||{},closeLog:()=>this.setState({selLog:null}),
+      replay:()=>{if(!selLog)return;const ms=70+(Math.random()*120|0);const t=nowTs();this.setState(st=>({logs:st.logs.map(l=>l.id===selLog.id?{...l,status:'200',ms,attempts:[...l.attempts,{n:l.attempts.length+1,t,code:200,ms}]}:l)}));this.toast(`Replay ${selLog.action} → 200 (${ms} ms)`);},
+      // override
+      rateRows,totalTxt:total+'% / 100%',totalC,totalMsg,notTotalOk:total!==100,over:total>100,markerLeft:(100/scale*100)+'%',
+      fixTotal:()=>this.setState(st=>({rates:{...st.rates,delivered:Math.max(0,Math.min(100,st.rates.delivered+(100-total)))}})),
+      segTarget:[['workspace','Workspace entier'],...s.conns.map(c=>[c.name,c.name])].map(([v,l])=>({l,bg:s.ovTarget===v?'color-mix(in oklch,var(--am) 14%,transparent)':'transparent',c:s.ovTarget===v?'var(--am)':'var(--mu)',on:()=>this.setState({ovTarget:v})})),
+      segExpire:seg([['15m','15 min'],['1h','1 h'],['reset','Jusqu\'au reset']],s.ovExpire,'ovExpire'),
+      latMin:s.latMin,latMax:s.latMax,onLatMin:e=>this.setState({latMin:e.target.value}),onLatMax:e=>this.setState({latMax:e.target.value}),latBd:+s.latMin>+s.latMax?sc('hard_bounce'):'var(--bd2)',
+      latL:Math.min(100,s.latMin/latMax*100)+'%',latW:Math.max(0,Math.min(100,(s.latMax-s.latMin)/latMax*100))+'%',latLabel:+s.latMin>+s.latMax?'minMs > maxMs':`${s.latMin}–${s.latMax} ms`,
+      errRate:s.errRate,onErrRate:e=>this.setState({errRate:e.target.value}),segErr:seg([['429','429'],['500','500']],s.errCode,'errCode'),smtpErr:s.errCode==='429'?'421 4.7.0':'451 4.3.0',
+      rl:s.rl,onRl:e=>this.setState({rl:e.target.value}),segRlUnit:seg([['req/s','req/s'],['mails/min','mails/min']],s.rlUnit,'rlUnit'),
+      ruleRows,addRule:()=>this.setState(st=>({rules:[...st.rules,{id:Date.now(),p:'',a:'hard_bounce',ms:0}]})),
+      resetConfirm:s.resetConfirm,noResetConfirm:!s.resetConfirm,askReset:()=>this.setState({resetConfirm:true}),cancelReset:()=>this.setState({resetConfirm:false}),
+      doReset:()=>{this.resetOv();this.setState({ovOpen:false});this.toast('Override réinitialisé — valeurs par défaut restaurées');},
+      cantApply:!canApply,applyBg:canApply?'var(--tx)':'var(--h)',applyC:canApply?'var(--bg)':'var(--fa)',applyCur:canApply?'pointer':'not-allowed',
+      applyOv:()=>{if(!canApply)return;this.setState({ovActive:true,ovOpen:false});this.toast(`Override appliqué sur ${tgtName} · expire ${s.ovExpire==='reset'?'au reset':'dans '+s.ovExpire}`);},
+      // settings
+      setTabs:[['connections','Connexions'],['webhooks','Webhooks'],['retention','Rétention & suppression']].map(([v,l])=>({l,bg:s.setTab===v?'var(--h)':'transparent',c:s.setTab===v?'var(--tx)':'var(--mu)',on:()=>this.setState({setTab:v})})),
+      stConn:s.setTab==='connections',stHooks:s.setTab==='webhooks',stRet:s.setTab==='retention',
+      connRows,F,newConn:()=>this.setState({selConn:'new',newName:''}),cancelNew:()=>this.setState({selConn:s.conns[0].id}),
+      segNewType:seg([['resend','Resend'],['brevo','Brevo'],['smtp','SMTP']],s.newType,'newType'),
+      createConn:()=>{const name=s.newName.trim()||`${s.newType}-${rid(4).toLowerCase()}`;const id='c_'+rid(6);const c=s.newType==='smtp'?{id,name,type:'smtp',host:'smtp.mailsink.internal',port:'2525',user:s.ws.split('-')[0]+'_'+rid(6).toLowerCase(),key:rid(16),rl:'',msgs:'0'}:{id,name,type:s.newType,key:'msk_live_'+rid(24),rl:'',msgs:'0'};this.setState(st=>({conns:[...st.conns,c],selConn:id,reveal:{...st.reveal,[id]:true}}));this.toast('Connexion créée — copiez les credentials maintenant');},
+      hookRows,hookFiltered:!!hf,hookFilter:hf,clearHookFilter:()=>this.setState({hookFilter:''}),
+      addHook:()=>{const t=hf?connType(hf):null;this.setState(st=>({hooks:[...st.hooks,{id:'wh'+rid(4),url:'https://',scope:hf||'Workspace',fmt:t?nativeFmt(t):'unified',events:['delivered','bounced'],secret:rid(24),active:false,last:'—'}]}));},
+      segRet:seg([['1h','1h'],['24h','24h'],['7d','7d'],['30d','30d']],s.retention,'retention'),quota:s.quota,onQuota:e=>this.setState({quota:e.target.value}),quotaPct:Math.min(100,1284/(+s.quota||1)*100)+'%',
+      supp:s.supp,suppRows,suppEmpty:s.supp.length===0,
+      // create ws
+      cwOpen:s.cwOpen,closeCreate:()=>this.setState({cwOpen:false}),cwName:s.cwName,cwSlug:s.cwSlug,
+      onCwName:e=>{const v=e.target.value;this.setState(st=>({cwName:v,cwSlug:st.cwSlugTouched?st.cwSlug:slugify(v)}));},
+      onCwSlug:e=>this.setState({cwSlug:slugify(e.target.value)||e.target.value,cwSlugTouched:true}),
+      segCwRet:seg([['1h','1h'],['24h','24h'],['7d','7d'],['30d','30d']],s.cwRet,'cwRet'),cwRl:s.cwRl,onCwRl:e=>this.setState({cwRl:e.target.value}),
+      cwConn:s.cwConn,toggleCwConn:()=>this.setState({cwConn:!s.cwConn}),cwSwBg:s.cwConn?'var(--acf)':'var(--bd2)',cwSwX:s.cwConn?'16px':'2px',
+      segCwType:seg([['resend','Resend'],['brevo','Brevo'],['smtp','SMTP']],s.cwType,'cwType'),
+      ephSnippet:`curl -X POST ${BASE}/admin/workspaces \\\n  -H "Authorization: Bearer $MAILSINK_ADMIN_TOKEN" \\\n  -d '{"slug":"ci-$RUN_ID-$WORKER","ephemeral":true,"ttl":"1h"}'`,
+      createWs:()=>{const slug=s.cwSlug||slugify(s.cwName);if(!slug){this.toast('Indiquez un nom ou un slug');return;}if(s.workspaces.some(w=>w.slug===slug)){this.toast('Slug déjà utilisé');return;}
+        this.setState(st=>({workspaces:[...st.workspaces.filter(w=>!w.eph),{slug,n:'0'},...st.workspaces.filter(w=>w.eph)],ws:slug,cwOpen:false,cwName:'',cwSlug:'',cwSlugTouched:false,view:st.cwConn?'settings':'messages',setTab:'connections',selConn:st.cwConn?'new':st.selConn,newType:st.cwType}));
+        this.toast(`Workspace ${slug} créé${s.cwConn?' — configurez la première connexion':''}`);},
+      hasToast:!!s.toast,toast:s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
