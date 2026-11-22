@@ -1,0 +1,13 @@
+{
+  "name": "@mailsink/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Drizzle schema, migrations and Postgres / PGlite drivers",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
