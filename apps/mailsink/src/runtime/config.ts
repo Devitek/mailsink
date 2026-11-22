@@ -38,6 +38,12 @@ const Env = z.object({
   MAILSINK_ADMIN_KEY: z.string().optional(),
   MAILSINK_SMTP_HOST: z.string().default('0.0.0.0'),
   MAILSINK_SMTP_PORT: Port.default(1025),
+  MAILSINK_RETENTION_INTERVAL_SECONDS: z.coerce
+    .number({ error: 'must be a number of seconds (1-86400)' })
+    .int('must be a number of seconds (1-86400)')
+    .min(1, 'must be a number of seconds (1-86400)')
+    .max(86_400, 'must be a number of seconds (1-86400)')
+    .default(60),
   MAILSINK_MAX_MESSAGE_BYTES: z.coerce
     .number({ error: 'must be a positive number of bytes' })
     .int('must be a positive number of bytes')
@@ -54,6 +60,11 @@ export type RuntimeConfig = {
   smtpHost: string
   smtpPort: number
   workerIntervalMs: number
+  /**
+   * Period of the retention scheduler (#17). Always set by readRuntimeConfig; optional so
+   * hand-built test configs need not list it (the container defaults it to 60 s).
+   */
+  retentionIntervalMs?: number
   /** Ingestion cap (`MAILSINK_MAX_MESSAGE_BYTES`): request bodies and composed messages. */
   maxMessageBytes: number
   /** Base of the links and `.env` snippets given to clients (D35), no trailing slash. */
@@ -80,6 +91,7 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     smtpHost: e.MAILSINK_SMTP_HOST,
     smtpPort: e.MAILSINK_SMTP_PORT,
     workerIntervalMs: 1000,
+    retentionIntervalMs: e.MAILSINK_RETENTION_INTERVAL_SECONDS * 1000,
     maxMessageBytes: e.MAILSINK_MAX_MESSAGE_BYTES,
     publicUrl: e.MAILSINK_PUBLIC_URL,
     defaultIdleTtlSeconds: e.MAILSINK_DEFAULT_IDLE_TTL,

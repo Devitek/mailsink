@@ -9,10 +9,20 @@ describe('readRuntimeConfig', () => {
       smtpHost: '0.0.0.0',
       smtpPort: 1025,
       workerIntervalMs: 1000,
+      retentionIntervalMs: 60_000,
       maxMessageBytes: 26_214_400,
       publicUrl: 'http://localhost:3000',
       defaultIdleTtlSeconds: 3600,
     })
+  })
+
+  it('reads the retention interval in seconds', () => {
+    expect(
+      readRuntimeConfig({ MAILSINK_RETENTION_INTERVAL_SECONDS: '5' }).retentionIntervalMs,
+    ).toBe(5000)
+    expect(() => readRuntimeConfig({ MAILSINK_RETENTION_INTERVAL_SECONDS: '0' })).toThrow(
+      /MAILSINK_RETENTION_INTERVAL_SECONDS/,
+    )
   })
 
   it('reads MAILSINK_MAX_MESSAGE_BYTES and rejects a non-positive value', () => {

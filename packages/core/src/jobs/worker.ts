@@ -1,13 +1,16 @@
 export type WorkerOptions = {
   intervalMs: number
-  /** One polling round. The real queue (D5) claims jobs here; the spike only counts ticks. */
-  tick: () => Promise<void>
+  /**
+   * One polling round (a job runner, a retention pass). `signal` aborts when `stop()` is
+   * called: a long round should stop at the next safe point and hand back unstarted work.
+   */
+  tick: (signal: AbortSignal) => Promise<void>
   onError?: (error: unknown) => void
 }
 
 export type Worker = {
   readonly running: boolean
-  /** Stops polling and resolves once the tick in flight (if any) has settled. */
+  /** Stops polling, aborts the tick signal and resolves once the tick in flight settled. */
   stop: () => Promise<void>
 }
 
@@ -15,11 +18,12 @@ export type Worker = {
 export function startWorker(options: WorkerOptions): Worker {
   let running = true
   let inFlight: Promise<void> | undefined
+  const stopping = new AbortController()
 
   const timer = setInterval(() => {
     if (!running || inFlight) return
     inFlight = options
-      .tick()
+      .tick(stopping.signal)
       .catch((error: unknown) => options.onError?.(error))
       .finally(() => {
         inFlight = undefined
@@ -33,6 +37,7 @@ export function startWorker(options: WorkerOptions): Worker {
     async stop() {
       running = false
       clearInterval(timer)
+      stopping.abort()
       await inFlight
     },
   }
