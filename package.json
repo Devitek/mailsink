@@ -15,6 +15,7 @@
     "typecheck": "tsc -p . && pnpm -r --parallel typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "pnpm --filter @mailsink/app test:e2e",
     "i18n:extract": "lingui extract --clean",
     "i18n:compile": "lingui compile --strict",
     "i18n:check": "lingui check sync --clean && lingui check missing --mode catalog --locale en,fr"
