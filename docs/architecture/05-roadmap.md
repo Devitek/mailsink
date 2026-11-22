@@ -53,9 +53,12 @@ URL / host change.
 3. Brevo templates management (Admin API + seed).
 4. SMTP server: `smtp-server` + `mailparser`, AUTH PLAIN/LOGIN, STARTTLS option, size cap,
    SMTP chaos and rate limit codes, transcripts; contract tests with `nodemailer`.
-5. Webhook endpoints CRUD (workspace or connection scope, events, format).
-6. Webhook dispatcher: unified + Resend + Brevo payloads, HMAC + Svix signatures,
-   backoff retries, attempts journal, replay.
+5. Webhook endpoints CRUD: workspace or connection scope, `payloadFormat` defaulted from
+   the connection kind, canonical events mapped both ways per format, preview endpoint.
+6. Webhook dispatcher: `WebhookFormatter` strategy (unified, Resend, Brevo), decoupled
+   from the ingestion channel; X-Mailsink HMAC, Svix and Brevo auth headers; exact body
+   stored once; backoff retries; attempts journal with exact headers; replay
+   (`exact` / `resign`).
 7. Manual events: `POST /_capture/messages/:id/events` (opened, clicked + url), auto
    open/click rates.
 8. Request logging: `api_logs` (redaction, truncation), `smtp_sessions`, log query API.
@@ -74,9 +77,11 @@ Goal: staging teams inspect everything in the browser; AI agents drive tests thr
 5. Message viewer: sandboxed HTML preview (desktop/mobile), text, MIME source, headers,
    attachments, links with click simulation, status/webhook timeline.
 6. Logs: DataTables (API / SMTP / webhooks), faceted filters, server pagination,
-   inspector `Sheet`, webhook replay (optimistic).
+   inspector `Sheet` (webhooks: `payloadFormat`, exact signature headers, exact body),
+   webhook replay (optimistic, `exact` / `resign`).
 7. Override panel (rates sum <= 100, latency bounds, reset) and suppression list UI.
-8. Settings: defaults, retention, rate limits, webhooks.
+8. Settings: defaults, retention, rate limits, webhooks (scope prefills
+   `payloadFormat`, event labels follow the format, live payload and headers preview).
 9. MCP server: tools (`list_emails`, `get_email`, `wait_for_email`,
    `trigger_email_event`, `set_override_config`, `reset_override_config`,
    `purge_emails`, `get_delivery_logs`), Streamable HTTP at `/mcp`, stdio proxy CLI.

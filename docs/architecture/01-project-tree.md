@@ -51,6 +51,10 @@ mailsink/
 │       │   │   ├── [_]capture.override.ts            # GET current, POST activate
 │       │   │   ├── [_]capture.override.reset.ts
 │       │   │   ├── [_]capture.suppressions.ts        # GET, DELETE (reset)
+│       │   │   ├── [_]capture.webhooks.ts                # GET, POST endpoints
+│       │   │   ├── [_]capture.webhooks.$id.ts            # GET, PATCH, DELETE
+│       │   │   ├── [_]capture.webhooks.preview.ts        # sample body + headers
+│       │   │   ├── [_]capture.webhooks.deliveries.ts     # delivery log
 │       │   │   ├── [_]capture.webhooks.deliveries.$id.replay.ts
 │       │   │   ├── [_]capture.stream.ts              # SSE
 │       │   │   ├── mcp.ts                            # Streamable HTTP (stateless)
@@ -64,7 +68,8 @@ mailsink/
 │       │   │   ├── message-viewer/        # sandboxed iframe, desktop/mobile, MIME, links
 │       │   │   ├── logs/                  # TanStack Table DataTable + Sheet inspector
 │       │   │   ├── connections/           # TanStack Form, kind-conditional fields
-│       │   │   ├── webhooks/
+│       │   │   ├── webhooks/              # scope -> payloadFormat prefill, dialect event
+│       │   │   │                          # labels, live payload/headers preview
 │       │   │   ├── override/              # rates sum <= 100, latency bounds
 │       │   │   └── realtime/              # useWorkspaceStream(): EventSource -> invalidate
 │       │   ├── i18n/                      # Lingui (D17, D18)
@@ -106,9 +111,10 @@ mailsink/
 │   │       ├── simulation/   settings-resolver.ts rules.ts draw.ts latency.ts chaos.ts
 │   │       ├── rate-limit/   token-bucket.ts
 │   │       ├── suppression/  service.ts
-│   │       ├── events/       bus.ts record.ts
-│   │       ├── webhooks/     dispatcher.ts sign.ts payload-unified.ts
-│   │       │                 payload-resend.ts payload-brevo.ts backoff.ts replay.ts
+│       │   ├── events/       bus.ts record.ts
+│       │   ├── webhooks/     endpoints.ts fanout.ts dispatcher.ts backoff.ts replay.ts
+│       │   │   └── formatters/            # Strategy, one per payloadFormat (D20, D21)
+│       │   │       types.ts events-map.ts unified.ts resend.ts brevo.ts index.ts
 │   │       ├── capture/      query.ts wait.ts purge.ts
 │   │       ├── blobs/        store.ts db-store.ts
 │   │       └── jobs/         queue.ts worker.ts handlers/{simulate,webhook,retention,expiry}.ts
