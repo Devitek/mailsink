@@ -11,6 +11,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@mailsink/contracts": "workspace:*"
+    "@mailsink/contracts": "workspace:*",
+    "@mailsink/db": "workspace:*"
+  },
+  "devDependencies": {
+    "drizzle-orm": "^0.45.4"
   }
 }

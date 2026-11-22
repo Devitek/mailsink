@@ -39,6 +39,23 @@ describe('startWorker', () => {
     expect(stopped).toBe(true)
   })
 
+  it('aborts the signal of the tick in flight on stop', async () => {
+    vi.useFakeTimers()
+    let seen: AbortSignal | undefined
+    const tick = vi.fn(
+      (signal: AbortSignal) =>
+        new Promise<void>((resolve) => {
+          seen = signal
+          signal.addEventListener('abort', () => resolve())
+        }),
+    )
+    const worker = startWorker({ intervalMs: 10, tick })
+    await vi.advanceTimersByTimeAsync(10)
+    expect(seen?.aborted).toBe(false)
+    await worker.stop()
+    expect(seen?.aborted).toBe(true)
+  })
+
   it('reports tick errors and keeps running', async () => {
     vi.useFakeTimers()
     const onError = vi.fn()
