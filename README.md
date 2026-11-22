@@ -1,10 +1,13 @@
 <p align="center">
-  <img src=".github/assets/banner.svg" alt="mailsink" width="100%">
+  <img src=".github/assets/mailsink-mark.svg" alt="" width="116" height="116">
 </p>
 
-<p align="center">Self-hosted email sink for E2E tests and staging, Resend/Brevo/SMTP drop-in.</p>
+<h1 align="center">mailsink</h1>
+
+<p align="center">Every email caught. None delivered. The sandbox for your transactional email.</p>
 
 <p align="center">
+  <a href="https://github.com/Devitek/mailsink/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Devitek/mailsink/ci.yml?branch=main&style=flat-square&label=ci&labelColor=141517" alt="ci"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Devitek/mailsink?style=flat-square&labelColor=141517&color=F6F5F2" alt="license"></a>
 </p>
 
@@ -79,6 +82,7 @@ curl "http://localhost:3000/capture/messages?to=jane@example.com&wait=true&timeo
   [Contracts](docs/architecture/03-contracts.md) ·
   [Sequence](docs/architecture/04-sequence.md) ·
   [Roadmap](docs/architecture/05-roadmap.md)
+- [Design deliveries and brand](docs/design/README.md)
 - [Translating the web UI](docs/contributing/translations.md)
 
 ## Contributing
