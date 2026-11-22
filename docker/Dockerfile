@@ -1,14 +1,25 @@
 # syntax=docker/dockerfile:1
 # Mailsink image (#18): build from the repository root,
 #   docker build -f docker/Dockerfile -t mailsink .
-# Stages: deps (pnpm store), build (app + CLI), runtime (node:24-slim, non-root).
+# Stages: pnpm-spec and base (pinned pnpm), deps (pnpm store), build (app + CLI),
+# runtime (node:24-slim, non-root).
 
+# The pnpm version pinned by `packageManager` in package.json (`pnpm@x.y.z`, hash suffix
+# dropped). BuildKit keys the COPY below on this file's content, so editing package.json
+# elsewhere (scripts...) keeps the pnpm layer cached.
+FROM node:24-slim AS pnpm-spec
+COPY package.json /tmp/package.json
+RUN node -e "const s = require('/tmp/package.json').packageManager.split('+')[0]; \
+      if (!/^pnpm@\d+\.\d+\.\d+$/.test(s)) throw new Error('packageManager: ' + s); \
+      require('fs').writeFileSync('/pnpm-spec', s)"
+
+# pnpm installed with npm (shipped with every Node image) rather than corepack, which
+# Node 25+ no longer bundles.
 FROM node:24-slim AS base
-ENV PNPM_HOME=/pnpm \
-    COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
-# pnpm at the version pinned by `packageManager` in package.json (Node 24 ships corepack).
-RUN corepack enable
+COPY --from=pnpm-spec /pnpm-spec /pnpm-spec
+RUN npm install --global --no-fund --no-audit "$(cat /pnpm-spec)" && pnpm --version
 WORKDIR /repo
 
 # Dependencies: the pnpm store (in $PNPM_HOME/store, kept in this layer rather than in a

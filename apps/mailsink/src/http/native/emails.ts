@@ -29,6 +29,7 @@ function toResponse({ response, replayed }: IngestOutcome): Response {
 export const postEmail = defineApi({
   auth: 'connection',
   body: SendEmailRequest,
+  maxBodyBytes: 'message',
   handler: async ({ request, runtime, auth, body }) =>
     toResponse(
       await sendNativeEmail(
@@ -44,6 +45,7 @@ export const postEmail = defineApi({
 export const postEmailBatch = defineApi({
   auth: 'connection',
   body: BatchRequest,
+  maxBodyBytes: 'message',
   handler: async ({ request, runtime, auth, body }) =>
     toResponse(
       await sendNativeBatch(

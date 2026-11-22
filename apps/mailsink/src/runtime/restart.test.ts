@@ -28,10 +28,22 @@ describe('runtime restart (vite dev HMR, #60)', () => {
 
     const second = fake(2)
     const again = startRuntimeFromPlugin({ ...quiet, start: async () => second }, 0)
-    expect(again.restart).toBe(true)
+    expect(again.restart).toBe('scheduled')
     await expect(again.ready).resolves.toBe(second)
     expect(first.stop).toHaveBeenCalledTimes(1)
     await expect(whenRuntimeReady()).resolves.toBe(second)
+  })
+
+  it('reports the evaluations an existing pending restart absorbs as coalesced', async () => {
+    await startRuntimeFromPlugin({ ...quiet, start: async () => fake(1) }, 0).ready
+    const first = startRuntimeFromPlugin({ ...quiet, start: async () => fake(2) }, 20)
+    const second = startRuntimeFromPlugin({ ...quiet, start: async () => fake(3) }, 20)
+    expect([first.restart, second.restart]).toEqual(['scheduled', 'coalesced'])
+    expect(second.ready).toBe(first.ready)
+    await expect(first.ready).resolves.toMatchObject({ smtpPort: 3 })
+    expect(startRuntimeFromPlugin({ ...quiet, start: async () => fake(4) }, 0).restart).toBe(
+      'scheduled',
+    )
   })
 
   it('stops the old runtime before booting the new one (same SMTP port)', async () => {

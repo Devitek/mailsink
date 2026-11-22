@@ -26,14 +26,15 @@ function writeFinalLine(line: string): void {
  */
 export default definePlugin((nitroApp) => {
   const { restart, ready } = startRuntimeFromPlugin()
-  if (restart) {
+  if (restart === 'scheduled') {
     // `vite dev` only (#60): Vite re-evaluated this plugin because code it imports changed.
-    // A broken edit must not kill the dev server: the next edit retries.
+    // A broken edit must not kill the dev server: the next edit retries. The other
+    // evaluations of the same edit join this restart ('coalesced') and log nothing.
     console.info('[mailsink] runtime code changed, restarting runtime')
     ready.catch((error: unknown) => {
       console.error('[mailsink] runtime restart failed, fix the code to retry', error)
     })
-  } else {
+  } else if (!restart) {
     ready.catch((error: unknown) => {
       // Fail fast (#56): port taken, database unreachable, migration or config error. The
       // orchestrator restarts the process; serving 500s from a half-started one helps no one.
