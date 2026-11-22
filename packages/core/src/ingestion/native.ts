@@ -9,6 +9,7 @@ import {
 import type { Database } from '@mailsink/db'
 import { fromNativeRequest } from '../dialects/native'
 import { isDomainError } from '../errors'
+import { type EventBus, publishAll, type StreamFrame } from '../events/bus'
 import { hashRequest, runIdempotent, type StoredResponse } from './idempotency'
 import type { IngestTarget } from './normalize'
 import { persistEmails } from './pipeline'
@@ -17,6 +18,8 @@ import { type PreparedEmail, prepareEmail } from './prepare'
 export interface IngestDeps {
   db: Database
   maxMessageBytes: number
+  /** Receives the stored messages' frames once the transaction has committed (D6). */
+  bus?: EventBus
 }
 
 export interface IngestOutcome {
@@ -29,13 +32,14 @@ const idempotency = (scope: string, key: string | undefined, body: unknown) =>
   key ? { key, requestHash: hashRequest(scope, body) } : undefined
 
 /** `POST /v1/emails`: one validated request, 200 `{ id, status }`. */
-export function sendNativeEmail(
+export async function sendNativeEmail(
   deps: IngestDeps,
   target: IngestTarget,
   request: SendEmailRequest,
   idempotencyKey?: string,
 ): Promise<IngestOutcome> {
-  return runIdempotent(
+  const frames: StreamFrame[] = []
+  const outcome = await runIdempotent(
     deps.db,
     target.workspaceId,
     idempotency('POST /v1/emails', idempotencyKey, request),
@@ -43,7 +47,8 @@ export function sendNativeEmail(
       prepare: () =>
         prepareEmail(fromNativeRequest(request), { maxMessageBytes: deps.maxMessageBytes }),
       persist: async (tx, prepared) => {
-        const [message] = await persistEmails(tx, target, [prepared], { idempotencyKey })
+        frames.length = 0 // a retried transaction starts over
+        const [message] = await persistEmails(tx, target, [prepared], { idempotencyKey, frames })
         if (!message) throw new Error('message not persisted')
         return {
           status: 200,
@@ -52,6 +57,8 @@ export function sendNativeEmail(
       },
     },
   )
+  if (!outcome.replayed) publishAll(deps.bus, target.workspaceId, frames)
+  return outcome
 }
 
 type Slot = { index: number; prepared: PreparedEmail } | { index: number; error: ApiError }
@@ -77,13 +84,14 @@ async function prepareItem(item: unknown, index: number, maxMessageBytes: number
  * oversized item fails its own slot; the valid ones are stored in one transaction.
  * 200 when every item is accepted, 207 otherwise.
  */
-export function sendNativeBatch(
+export async function sendNativeBatch(
   deps: IngestDeps,
   target: IngestTarget,
   items: readonly unknown[],
   idempotencyKey?: string,
 ): Promise<IngestOutcome> {
-  return runIdempotent(
+  const frames: StreamFrame[] = []
+  const outcome = await runIdempotent(
     deps.db,
     target.workspaceId,
     idempotency('POST /v1/emails/batch', idempotencyKey, items),
@@ -97,7 +105,8 @@ export function sendNativeBatch(
       },
       persist: async (tx, slots) => {
         const ok = slots.flatMap((s) => ('prepared' in s ? [s.prepared] : []))
-        await persistEmails(tx, target, ok, { idempotencyKey })
+        frames.length = 0
+        await persistEmails(tx, target, ok, { idempotencyKey, frames })
         const data: BatchItemResult[] = slots.map((s) =>
           'prepared' in s
             ? { ok: true, index: s.index, id: s.prepared.id }
@@ -108,4 +117,6 @@ export function sendNativeBatch(
       },
     },
   )
+  if (!outcome.replayed) publishAll(deps.bus, target.workspaceId, frames)
+  return outcome
 }
