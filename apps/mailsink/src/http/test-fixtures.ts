@@ -17,6 +17,7 @@ export function installTestRuntime(db: DbHandle, config: Partial<RuntimeConfig> 
       smtpHost: '127.0.0.1',
       smtpPort: 0,
       workerIntervalMs: 1000,
+      maxMessageBytes: 26_214_400,
       ...config,
     },
     db,

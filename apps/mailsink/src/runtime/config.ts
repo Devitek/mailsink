@@ -1,3 +1,4 @@
+import { DEFAULT_MAX_MESSAGE_BYTES } from '@mailsink/core'
 import { DEFAULT_DATABASE_URL, parseDatabaseUrl } from '@mailsink/db'
 import { z } from 'zod'
 
@@ -24,6 +25,11 @@ const Env = z.object({
   MAILSINK_ADMIN_KEY: z.string().optional(),
   MAILSINK_SMTP_HOST: z.string().default('0.0.0.0'),
   MAILSINK_SMTP_PORT: Port.default(1025),
+  MAILSINK_MAX_MESSAGE_BYTES: z.coerce
+    .number({ error: 'must be a positive number of bytes' })
+    .int('must be a positive number of bytes')
+    .positive('must be a positive number of bytes')
+    .default(DEFAULT_MAX_MESSAGE_BYTES),
 })
 
 export type RuntimeConfig = {
@@ -33,6 +39,8 @@ export type RuntimeConfig = {
   smtpHost: string
   smtpPort: number
   workerIntervalMs: number
+  /** Ingestion cap (`MAILSINK_MAX_MESSAGE_BYTES`): request bodies and composed messages. */
+  maxMessageBytes: number
 }
 
 type EnvSource = Record<string, string | undefined>
@@ -53,5 +61,6 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     smtpHost: e.MAILSINK_SMTP_HOST,
     smtpPort: e.MAILSINK_SMTP_PORT,
     workerIntervalMs: 1000,
+    maxMessageBytes: e.MAILSINK_MAX_MESSAGE_BYTES,
   }
 }

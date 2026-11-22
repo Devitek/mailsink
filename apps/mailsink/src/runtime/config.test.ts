@@ -9,7 +9,15 @@ describe('readRuntimeConfig', () => {
       smtpHost: '0.0.0.0',
       smtpPort: 1025,
       workerIntervalMs: 1000,
+      maxMessageBytes: 26_214_400,
     })
+  })
+
+  it('reads MAILSINK_MAX_MESSAGE_BYTES and rejects a non-positive value', () => {
+    expect(readRuntimeConfig({ MAILSINK_MAX_MESSAGE_BYTES: '1024' }).maxMessageBytes).toBe(1024)
+    expect(() => readRuntimeConfig({ MAILSINK_MAX_MESSAGE_BYTES: '0' })).toThrow(
+      /MAILSINK_MAX_MESSAGE_BYTES/,
+    )
   })
 
   it('reads every variable, empty values meaning unset', () => {
