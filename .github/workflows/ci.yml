@@ -47,4 +47,7 @@ jobs:
       - run: pnpm i18n:check
       - run: pnpm typecheck
       - run: pnpm test
+      # Builds every package with a build script: the app and the standalone CLI bin.
       - run: pnpm build
+      # The bundled bin must run on its own and apply the migrations it ships.
+      - run: node packages/cli/dist/bin.mjs migrate --database-url pglite://memory
