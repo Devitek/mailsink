@@ -51,8 +51,18 @@ jobs:
       - run: pnpm build
       # The bundled bin must run on its own and apply the migrations it ships.
       - run: node packages/cli/dist/bin.mjs migrate --database-url pglite://memory
+      # The e2e job serves this build instead of building the app again. The Nitro output is
+      # self-contained (traced node_modules, migrations) and has no symlink or hidden file,
+      # which artifacts would not keep.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app-output
+          path: apps/mailsink/.output/
+          if-no-files-found: error
+          retention-days: 1
 
   e2e:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -77,8 +87,12 @@ jobs:
         run: pnpm --filter @mailsink/app exec playwright install --with-deps --only-shell chromium
       - if: steps.browsers.outputs.cache-hit == 'true'
         run: pnpm --filter @mailsink/app exec playwright install-deps chromium
-      # Scenarios run against the production build (`node .output/server/index.mjs`).
-      - run: pnpm --filter @mailsink/app build
+      # Scenarios run against the production build of the check job
+      # (`node .output/server/index.mjs`); the fallback suite still builds its own variant.
+      - uses: actions/download-artifact@v8
+        with:
+          name: app-output
+          path: apps/mailsink/.output/
       - run: pnpm test:e2e
       - if: failure()
         uses: actions/upload-artifact@v7
