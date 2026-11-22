@@ -2,8 +2,7 @@ import { eq, sql } from 'drizzle-orm'
 import { beforeEach, expect, it } from 'vitest'
 import { claimJobs, enqueueJobs } from '../src/repositories/jobs'
 import { jobs } from '../src/schema'
-import { describeDb } from '../src/testing'
-import { insertWorkspace } from './fixtures'
+import { createTestWorkspace, describeDb } from '../src/testing'
 
 const ids = (rows: { id: number }[]) => rows.map((r) => r.id).sort((a, b) => a - b)
 
@@ -12,7 +11,7 @@ describeDb('jobs queue', (ctx) => {
 
   beforeEach(async () => {
     await ctx.db.delete(jobs)
-    workspaceId = (await insertWorkspace(ctx.db)).id
+    workspaceId = (await createTestWorkspace(ctx.db)).id
   })
 
   const enqueue = (n: number, runAt?: Date) =>

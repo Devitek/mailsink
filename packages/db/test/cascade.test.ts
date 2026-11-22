@@ -16,8 +16,12 @@ import {
   webhookEndpoints,
   workspaces,
 } from '../src/schema'
-import { describeDb } from '../src/testing'
-import { insertConnection, insertMessage, insertWorkspace } from './fixtures'
+import {
+  createTestConnection,
+  createTestMessage,
+  createTestWorkspace,
+  describeDb,
+} from '../src/testing'
 
 async function rows(db: Database, table: PgTable): Promise<number> {
   const [result] = await db.select({ n: count() }).from(table)
@@ -25,8 +29,8 @@ async function rows(db: Database, table: PgTable): Promise<number> {
 }
 
 async function seedWorkspace(db: Database): Promise<string> {
-  const ws = await insertWorkspace(db, { ephemeral: true, idleTtlSeconds: 60 })
-  const con = await insertConnection(db, ws.id)
+  const ws = await createTestWorkspace(db, { ephemeral: true, idleTtlSeconds: 60 })
+  const con = await createTestConnection(db, ws.id)
   await db.insert(apiKeys).values({
     id: newId('key'),
     workspaceId: ws.id,
@@ -46,7 +50,7 @@ async function seedWorkspace(db: Database): Promise<string> {
     sizeBytes: 3,
     data: new Uint8Array([1, 2, 3]),
   })
-  const msg = await insertMessage(db, ws.id, con.id, blobId)
+  const msg = await createTestMessage(db, ws.id, { connectionId: con.id, rawBlobId: blobId })
   await db.insert(messageRecipients).values({
     id: newId('rcp'),
     messageId: msg.id,
@@ -109,7 +113,7 @@ describeDb('workspace cascade', (ctx) => {
   })
 
   it('round-trips bytea blobs', async () => {
-    const ws = await insertWorkspace(ctx.db)
+    const ws = await createTestWorkspace(ctx.db)
     const data = new Uint8Array([0, 255, 128, 7])
     const id = newId('blob')
     await ctx.db.insert(blobs).values({ id, workspaceId: ws.id, sha256: 'x', sizeBytes: 4, data })

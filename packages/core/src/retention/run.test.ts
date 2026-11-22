@@ -1,8 +1,8 @@
 import { blobs, messages, newId, workspaces } from '@mailsink/db'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestWorkspace, describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
 import { beforeEach, expect, it } from 'vitest'
-import { insertQueuedMessage, insertWorkspace } from '../simulation/testing/fixtures'
+import { insertQueuedMessage } from '../simulation/testing/fixtures'
 import { type RetentionReport, runRetention } from './run'
 import { startRetentionScheduler } from './scheduler'
 
@@ -13,7 +13,7 @@ describeDb('retention pass', (ctx) => {
 
   beforeEach(async () => {
     await ctx.db.delete(workspaces)
-    workspaceId = await insertWorkspace(ctx.db)
+    workspaceId = (await createTestWorkspace(ctx.db)).id
   })
 
   /** An expired message whose raw EML blob only it references. */

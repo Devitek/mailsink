@@ -1,8 +1,8 @@
 import { jobs, messageEvents, messageRecipients, messages } from '@mailsink/db'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestWorkspace, describeDb } from '@mailsink/db/testing'
 import { sql } from 'drizzle-orm'
 import { expect, it } from 'vitest'
-import { insertQueuedMessage, insertWorkspace } from '../simulation/testing/fixtures'
+import { insertQueuedMessage } from '../simulation/testing/fixtures'
 import { simulateDeliveryHandler } from './handlers/simulate'
 import { createJobRunner } from './queue'
 
@@ -10,7 +10,7 @@ const MESSAGES = 40
 
 describeDb('two workers on one queue', (ctx) => {
   it('simulates every message exactly once', async () => {
-    const workspaceId = await insertWorkspace(ctx.db)
+    const workspaceId = (await createTestWorkspace(ctx.db)).id
     for (let i = 0; i < MESSAGES; i += 1) {
       await insertQueuedMessage(ctx.db, workspaceId, [
         { email: `a${i}@example.com` },

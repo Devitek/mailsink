@@ -1,11 +1,11 @@
 import { SendEmailRequest } from '@mailsink/contracts'
 import { attachments, blobs, jobs, messageEvents, messageRecipients, messages } from '@mailsink/db'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestSuppression, describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
 import { beforeAll, expect, it } from 'vitest'
 import { sendNativeEmail } from './native'
 import type { IngestTarget } from './normalize'
-import { sampleRequest, seedTarget, suppress } from './test/fixtures'
+import { sampleRequest, seedTarget } from './testing/fixtures'
 
 const MAX = 64 * 1024
 const b64 = (s: string) => Buffer.from(s).toString('base64')
@@ -92,7 +92,7 @@ describeDb('ingestion pipeline', (ctx) => {
   })
 
   it('marks suppressed recipients and skips the job when nobody is left', async () => {
-    await suppress(ctx.db, target.workspaceId, 'gone@x.io')
+    await createTestSuppression(ctx.db, target.workspaceId, 'gone@x.io')
     const partial = (await send({ to: ['gone@x.io', 'ok@x.io'] })).response.body as {
       id: string
       status: string

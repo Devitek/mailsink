@@ -1,8 +1,8 @@
 import { ListMessagesQuery } from '@mailsink/contracts'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestWorkspaceWithConnection, describeDb } from '@mailsink/db/testing'
 import { beforeAll, expect, it } from 'vitest'
 import { listCapturedMessages } from './service'
-import { insertCapturedMessage, insertCaptureWorkspace } from './testing/fixtures'
+import { insertCapturedMessage } from './testing/fixtures'
 
 const at = (minute: number) => new Date(Date.UTC(2026, 10, 22, 10, minute))
 
@@ -16,7 +16,7 @@ describeDb('capture: list and filters', (ctx) => {
     (await list(q)).data.map((m) => Object.keys(ids).find((k) => ids[k] === m.id))
 
   beforeAll(async () => {
-    const seeded = await insertCaptureWorkspace(ctx.db)
+    const seeded = await createTestWorkspaceWithConnection(ctx.db)
     ws = seeded.workspace.id
     con = seeded.connection.id
     const add = async (key: string, f: Parameters<typeof insertCapturedMessage>[2]) => {
@@ -52,7 +52,7 @@ describeDb('capture: list and filters', (ctx) => {
       attachments: [{ contentType: 'image/png', content: 'png', disposition: 'inline' }],
     })
     // Another workspace with matching data: never listed.
-    const other = await insertCaptureWorkspace(ctx.db)
+    const other = await createTestWorkspaceWithConnection(ctx.db)
     await insertCapturedMessage(ctx.db, other.workspace.id, { subject: 'Welcome aboard' })
   })
 
@@ -131,7 +131,7 @@ describeDb('capture: list and filters', (ctx) => {
   })
 
   it('keeps the cursor exact for rows sharing a timestamp to the microsecond', async () => {
-    const { workspace } = await insertCaptureWorkspace(ctx.db)
+    const { workspace } = await createTestWorkspaceWithConnection(ctx.db)
     const same = new Date('2026-11-22T12:00:00.000Z')
     const made = []
     for (let i = 0; i < 5; i++) {

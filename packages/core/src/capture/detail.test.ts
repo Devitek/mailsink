@@ -1,8 +1,8 @@
 import { MessageDetail } from '@mailsink/contracts'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestWorkspaceWithConnection, describeDb } from '@mailsink/db/testing'
 import { beforeAll, expect, it } from 'vitest'
 import { getCapturedMessage, readAttachment, readRawMessage } from './service'
-import { insertCapturedMessage, insertCaptureWorkspace } from './testing/fixtures'
+import { insertCapturedMessage } from './testing/fixtures'
 
 const RAW = 'From: app@example.com\r\nTo: jane@acme.io\r\nSubject: Hi\r\n\r\nHello\r\n'
 
@@ -12,8 +12,8 @@ describeDb('capture: detail, raw and attachments', (ctx) => {
   let msg: { id: string; attachmentIds: string[] }
 
   beforeAll(async () => {
-    ws = (await insertCaptureWorkspace(ctx.db)).workspace.id
-    other = (await insertCaptureWorkspace(ctx.db)).workspace.id
+    ws = (await createTestWorkspaceWithConnection(ctx.db)).workspace.id
+    other = (await createTestWorkspaceWithConnection(ctx.db)).workspace.id
     msg = await insertCapturedMessage(ctx.db, ws, {
       subject: 'Hi',
       to: [{ email: 'jane@acme.io', name: 'Jane' }],

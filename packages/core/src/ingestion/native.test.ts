@@ -6,7 +6,7 @@ import { beforeAll, expect, it } from 'vitest'
 import { hashRequest, readIdempotencyKey } from './idempotency'
 import { sendNativeBatch, sendNativeEmail } from './native'
 import type { IngestTarget } from './normalize'
-import { sampleRequest, seedTarget } from './test/fixtures'
+import { sampleRequest, seedTarget } from './testing/fixtures'
 
 const MAX = 16 * 1024
 

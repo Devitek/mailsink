@@ -1,17 +1,8 @@
 // Test-only fixtures for the capture API: captured messages written with direct inserts,
-// independent of the ingestion pipeline (exported as @mailsink/core/capture-testing).
-import { createHash, randomBytes } from 'node:crypto'
-import {
-  attachments,
-  blobs,
-  connections,
-  type Database,
-  messageEvents,
-  messageRecipients,
-  messages,
-  newId,
-  workspaces,
-} from '@mailsink/db'
+// independent of the ingestion pipeline (exported as @mailsink/core/capture-testing). Plain
+// workspaces, connections and blobs come from @mailsink/db/testing.
+import { attachments, type Database, messageEvents, type messages, newId } from '@mailsink/db'
+import { createTestBlob, createTestMessage, createTestRecipients } from '@mailsink/db/testing'
 
 type Status = (typeof messages.$inferInsert)['status']
 type EventInsert = Omit<typeof messageEvents.$inferInsert, 'id' | 'workspaceId' | 'messageId'>
@@ -45,34 +36,6 @@ export interface MessageFixture {
   events?: EventInsert[]
 }
 
-export async function insertCaptureWorkspace(db: Database) {
-  const suffix = randomBytes(4).toString('hex')
-  const [workspace] = await db
-    .insert(workspaces)
-    .values({ id: newId('ws'), slug: `cap-${suffix}`, name: 'Capture', createdVia: 'admin_api' })
-    .returning()
-  if (!workspace) throw new Error('workspace not inserted')
-  const [connection] = await db
-    .insert(connections)
-    .values({ id: newId('con'), workspaceId: workspace.id, name: 'Resend', kind: 'resend' })
-    .returning()
-  if (!connection) throw new Error('connection not inserted')
-  return { workspace, connection }
-}
-
-export async function insertBlob(db: Database, workspaceId: string, content: string | Uint8Array) {
-  const data = typeof content === 'string' ? new TextEncoder().encode(content) : content
-  const sha256 = createHash('sha256').update(data).digest('hex')
-  const id = newId('blob')
-  const [row] = await db
-    .insert(blobs)
-    .values({ id, workspaceId, sha256, sizeBytes: data.byteLength, data })
-    .onConflictDoUpdate({ target: [blobs.workspaceId, blobs.sha256], set: { sha256 } })
-    .returning({ id: blobs.id })
-  if (!row) throw new Error('blob not inserted')
-  return row.id
-}
-
 const addr = (a: string | { email: string; name?: string }) =>
   typeof a === 'string' ? { email: a } : a
 
@@ -81,14 +44,9 @@ export async function insertCapturedMessage(
   workspaceId: string,
   f: MessageFixture = {},
 ) {
-  const id = newId('msg', f.createdAt?.getTime())
-  const rawBlobId = f.raw === undefined ? undefined : await insertBlob(db, workspaceId, f.raw)
-  await db.insert(messages).values({
-    id,
-    workspaceId,
+  const rawBlobId = f.raw === undefined ? undefined : await createTestBlob(db, workspaceId, f.raw)
+  const { id } = await createTestMessage(db, workspaceId, {
     connectionId: f.connectionId ?? null,
-    source: 'native',
-    providerMessageId: id,
     from: f.from ?? { email: 'app@example.com', name: 'App' },
     replyTo: f.replyTo,
     subject: f.subject ?? 'Hello',
@@ -102,25 +60,15 @@ export async function insertCapturedMessage(
     status: f.status ?? 'delivered',
     ...(f.createdAt ? { createdAt: f.createdAt } : {}),
   })
-  const recipients = [
-    ...(f.to ?? ['jane@example.com']).map((a) => ({ kind: 'to' as const, ...addr(a) })),
-    ...(f.cc ?? []).map((email) => ({ kind: 'cc' as const, email })),
-    ...(f.bcc ?? []).map((email) => ({ kind: 'bcc' as const, email })),
-  ]
-  await db.insert(messageRecipients).values(
-    recipients.map((r) => ({
-      id: newId('rcp'),
-      messageId: id,
-      workspaceId,
-      kind: r.kind,
-      email: r.email,
-      name: 'name' in r ? r.name : undefined,
-      status: f.status ?? 'delivered',
-    })),
-  )
+  const status = f.status ?? 'delivered'
+  await createTestRecipients(db, { id, workspaceId }, [
+    ...(f.to ?? ['jane@example.com']).map((a) => ({ kind: 'to' as const, status, ...addr(a) })),
+    ...(f.cc ?? []).map((email) => ({ kind: 'cc' as const, status, email })),
+    ...(f.bcc ?? []).map((email) => ({ kind: 'bcc' as const, status, email })),
+  ])
   const atts = []
   for (const a of f.attachments ?? []) {
-    const blobId = await insertBlob(db, workspaceId, a.content)
+    const blobId = await createTestBlob(db, workspaceId, a.content)
     const size = typeof a.content === 'string' ? Buffer.byteLength(a.content) : a.content.length
     atts.push({
       id: newId('att'),

@@ -1,5 +1,11 @@
-import { enqueueJobs, jobs, messageRecipients, messages, newId, workspaces } from '@mailsink/db'
-import { openTestDb, testDatabaseUrl } from '@mailsink/db/testing'
+import { enqueueJobs, jobs, messages } from '@mailsink/db'
+import {
+  createTestMessage,
+  createTestRecipients,
+  createTestWorkspace,
+  openTestDb,
+  testDatabaseUrl,
+} from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RuntimeConfig } from './config'
@@ -30,28 +36,18 @@ describe('createRuntime background processing', () => {
   it('runs the simulate_delivery jobs of queued messages', async () => {
     runtime = await createRuntime(baseConfig, silent)
     const { db } = runtime.db
-    const workspaceId = newId('ws')
-    const messageId = newId('msg')
-    await db.transaction(async (tx) => {
-      await tx
-        .insert(workspaces)
-        .values({ id: workspaceId, slug: workspaceId, name: 'W', createdVia: 'admin_api' })
-      await tx.insert(messages).values({
-        id: messageId,
-        workspaceId,
-        source: 'native',
-        providerMessageId: messageId,
-        from: { email: 'app@example.com' },
-        sizeBytes: 1,
-      })
-      await tx.insert(messageRecipients).values({
-        id: newId('rcp'),
-        messageId,
-        workspaceId,
-        kind: 'to',
-        email: 'a@example.com',
-      })
-      await enqueueJobs(tx, [{ kind: 'simulate_delivery', workspaceId, payload: { messageId } }])
+    const messageId = await db.transaction(async (tx) => {
+      const workspace = await createTestWorkspace(tx)
+      const message = await createTestMessage(tx, workspace.id)
+      await createTestRecipients(tx, message, [{ email: 'a@example.com' }])
+      await enqueueJobs(tx, [
+        {
+          kind: 'simulate_delivery',
+          workspaceId: workspace.id,
+          payload: { messageId: message.id },
+        },
+      ])
+      return message.id
     })
 
     const status = async () =>
