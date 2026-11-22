@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as V1EmailsRouteImport } from './routes/v1.emails'
+import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +24,48 @@ const HealthzRoute = HealthzRouteImport.update({
   path: '/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V1EmailsRoute = V1EmailsRouteImport.update({
+  id: '/v1/emails',
+  path: '/v1/emails',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V1EmailsBatchRoute = V1EmailsBatchRouteImport.update({
+  id: '/batch',
+  path: '/batch',
+  getParentRoute: () => V1EmailsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/v1/emails': typeof V1EmailsRouteWithChildren
+  '/v1/emails/batch': typeof V1EmailsBatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/v1/emails': typeof V1EmailsRouteWithChildren
+  '/v1/emails/batch': typeof V1EmailsBatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/healthz': typeof HealthzRoute
+  '/v1/emails': typeof V1EmailsRouteWithChildren
+  '/v1/emails/batch': typeof V1EmailsBatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/healthz'
+  fullPaths: '/' | '/healthz' | '/v1/emails' | '/v1/emails/batch'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/healthz'
-  id: '__root__' | '/' | '/healthz'
+  to: '/' | '/healthz' | '/v1/emails' | '/v1/emails/batch'
+  id: '__root__' | '/' | '/healthz' | '/v1/emails' | '/v1/emails/batch'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HealthzRoute: typeof HealthzRoute
+  V1EmailsRoute: typeof V1EmailsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +84,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/emails': {
+      id: '/v1/emails'
+      path: '/v1/emails'
+      fullPath: '/v1/emails'
+      preLoaderRoute: typeof V1EmailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/emails/batch': {
+      id: '/v1/emails/batch'
+      path: '/batch'
+      fullPath: '/v1/emails/batch'
+      preLoaderRoute: typeof V1EmailsBatchRouteImport
+      parentRoute: typeof V1EmailsRoute
+    }
   }
 }
+
+interface V1EmailsRouteChildren {
+  V1EmailsBatchRoute: typeof V1EmailsBatchRoute
+}
+
+const V1EmailsRouteChildren: V1EmailsRouteChildren = {
+  V1EmailsBatchRoute: V1EmailsBatchRoute,
+}
+
+const V1EmailsRouteWithChildren = V1EmailsRoute._addFileChildren(
+  V1EmailsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HealthzRoute: HealthzRoute,
+  V1EmailsRoute: V1EmailsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

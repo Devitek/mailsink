@@ -3,6 +3,7 @@ import type { z } from 'zod'
 import type { Runtime } from '../runtime/container'
 import { whenRuntimeReady } from '../runtime/slot'
 import { type AuthFor, type AuthMode, authenticate } from './auth'
+import { limitBody } from './body-limit'
 import { type ErrorFormatter, errorResponse, REQUEST_ID_HEADER } from './errors'
 import { type ApiExtension, DEFAULT_EXTENSIONS } from './extensions'
 import { parseInput, queryObject, readJsonBody } from './validation'
@@ -26,6 +27,8 @@ export interface ApiSpec<M extends AuthMode, B, Q, P> {
   params?: P
   /** Error body shape of the dialect, native by default. */
   errorFormat?: ErrorFormatter
+  /** Body size cap in bytes (`payload_too_large`), `MAILSINK_MAX_MESSAGE_BYTES` by default. */
+  maxBodyBytes?: number
   /** Route-specific extensions, run after DEFAULT_EXTENSIONS. */
   extensions?: readonly ApiExtension[]
   /** A plain value is sent as JSON 200; return a Response for anything else. */
@@ -65,7 +68,15 @@ export function defineApi<
       const input = {
         params: await parse(spec.params, params ?? {}, 'params'),
         query: await parse(spec.query, queryObject(new URL(request.url)), 'query'),
-        body: spec.body ? await parse(spec.body, await readJsonBody(request), 'body') : undefined,
+        body: spec.body
+          ? await parse(
+              spec.body,
+              await readJsonBody(
+                await limitBody(request, spec.maxBodyBytes ?? runtime.config.maxMessageBytes),
+              ),
+              'body',
+            )
+          : undefined,
       } as Pick<ApiContext<M, B, Q, P>, 'params' | 'query' | 'body'>
       const result = await spec.handler({ request, requestId, runtime, auth, ...input })
       response = withRequestId(
