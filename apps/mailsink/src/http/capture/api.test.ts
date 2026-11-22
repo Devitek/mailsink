@@ -122,11 +122,11 @@ describeDb('Capture API over HTTP', (ctx) => {
     expect(await res.text()).toBe('<script>x</script>')
   })
 
-  it('validates the query: 422 on bad status, bad cursor and wait=true (#26)', async () => {
+  it('validates the query: 422 on bad status, bad cursor and timeout', async () => {
     for (const [qs, field] of [
       ['status=nope', 'status'],
       ['cursor=garbage', 'cursor'],
-      ['wait=true', 'wait'],
+      ['wait=true&timeout=40000', 'timeout'],
       ['since=2026-11-02T00:00:00Z&until=2026-11-01T00:00:00Z', 'until'],
     ] as const) {
       const res = await listMessages({ request: get(`/capture/messages?${qs}`, a.workspaceKey) })
