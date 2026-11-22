@@ -1,5 +1,5 @@
 import { Duration, IDLE_TTL_BOUNDS } from '@mailsink/contracts'
-import { DEFAULT_MAX_MESSAGE_BYTES } from '@mailsink/core'
+import { DEFAULT_JOB_SETTINGS, DEFAULT_MAX_MESSAGE_BYTES, type JobSettings } from '@mailsink/core'
 import { DEFAULT_DATABASE_URL, parseDatabaseUrl } from '@mailsink/db'
 import { z } from 'zod'
 
@@ -8,6 +8,17 @@ const Port = z.coerce
   .int('must be a port number (0-65535)')
   .min(0, 'must be a port number (0-65535)')
   .max(65535, 'must be a port number (0-65535)')
+
+/** Whole number within bounds, the message naming the expected range and unit. */
+const Int = (min: number, max: number, unit: string) => {
+  const message = `must be ${unit} (${min}-${max})`
+  return z.coerce.number({ error: message }).int(message).min(min, message).max(max, message)
+}
+
+/** Host name or IP literal given to SMTP clients (no scheme, port or spaces). */
+const Host = z
+  .string()
+  .regex(/^[A-Za-z0-9.:[\]-]+$/, 'must be a host name or an IP address, without port')
 
 const DatabaseUrl = z.string().superRefine((url, ctx) => {
   try {
@@ -33,25 +44,48 @@ const PublicUrl = z
  * Environment read once at boot (docs/architecture/01-project-tree.md, « Configuration »).
  * `PORT` is read by Nitro itself. Variables join this schema with the feature using them.
  */
-const Env = z.object({
-  DATABASE_URL: DatabaseUrl.default(DEFAULT_DATABASE_URL),
-  MAILSINK_ADMIN_KEY: z.string().optional(),
-  MAILSINK_SMTP_HOST: z.string().default('0.0.0.0'),
-  MAILSINK_SMTP_PORT: Port.default(1025),
-  MAILSINK_RETENTION_INTERVAL_SECONDS: z.coerce
-    .number({ error: 'must be a number of seconds (1-86400)' })
-    .int('must be a number of seconds (1-86400)')
-    .min(1, 'must be a number of seconds (1-86400)')
-    .max(86_400, 'must be a number of seconds (1-86400)')
-    .default(60),
-  MAILSINK_MAX_MESSAGE_BYTES: z.coerce
-    .number({ error: 'must be a positive number of bytes' })
-    .int('must be a positive number of bytes')
-    .positive('must be a positive number of bytes')
-    .default(DEFAULT_MAX_MESSAGE_BYTES),
-  MAILSINK_PUBLIC_URL: PublicUrl.default('http://localhost:3000'),
-  MAILSINK_DEFAULT_IDLE_TTL: IdleTtl.default(3600),
-})
+const Env = z
+  .object({
+    DATABASE_URL: DatabaseUrl.default(DEFAULT_DATABASE_URL),
+    MAILSINK_ADMIN_KEY: z.string().optional(),
+    MAILSINK_SMTP_HOST: z.string().default('0.0.0.0'),
+    MAILSINK_SMTP_PORT: Port.default(1025),
+    MAILSINK_SMTP_PUBLIC_HOST: Host.optional(),
+    MAILSINK_SMTP_PUBLIC_PORT: Int(1, 65_535, 'a port number').optional(),
+    MAILSINK_RETENTION_INTERVAL_SECONDS: Int(1, 86_400, 'a number of seconds').default(60),
+    MAILSINK_JOBS_POLL_INTERVAL_MS: Int(10, 60_000, 'a number of milliseconds').default(
+      DEFAULT_JOB_SETTINGS.pollIntervalMs,
+    ),
+    MAILSINK_JOBS_BATCH_SIZE: Int(1, 1000, 'a number of jobs').default(
+      DEFAULT_JOB_SETTINGS.batchSize,
+    ),
+    MAILSINK_JOBS_LOCK_SECONDS: Int(1, 86_400, 'a number of seconds').default(
+      DEFAULT_JOB_SETTINGS.lockSeconds,
+    ),
+    MAILSINK_JOBS_MAX_ATTEMPTS: Int(1, 100, 'a number of attempts').default(
+      DEFAULT_JOB_SETTINGS.maxAttempts,
+    ),
+    MAILSINK_JOBS_BACKOFF_BASE_SECONDS: Int(1, 86_400, 'a number of seconds').default(
+      DEFAULT_JOB_SETTINGS.backoffBaseSeconds,
+    ),
+    MAILSINK_JOBS_BACKOFF_MAX_SECONDS: Int(1, 86_400, 'a number of seconds').default(
+      DEFAULT_JOB_SETTINGS.backoffMaxSeconds,
+    ),
+    MAILSINK_JOBS_FAILED_RETENTION_SECONDS: Int(60, 31_536_000, 'a number of seconds').default(
+      DEFAULT_JOB_SETTINGS.failedRetentionSeconds,
+    ),
+    MAILSINK_MAX_MESSAGE_BYTES: z.coerce
+      .number({ error: 'must be a positive number of bytes' })
+      .int('must be a positive number of bytes')
+      .positive('must be a positive number of bytes')
+      .default(DEFAULT_MAX_MESSAGE_BYTES),
+    MAILSINK_PUBLIC_URL: PublicUrl.default('http://localhost:3000'),
+    MAILSINK_DEFAULT_IDLE_TTL: IdleTtl.default(3600),
+  })
+  .refine((e) => e.MAILSINK_JOBS_BACKOFF_MAX_SECONDS >= e.MAILSINK_JOBS_BACKOFF_BASE_SECONDS, {
+    path: ['MAILSINK_JOBS_BACKOFF_MAX_SECONDS'],
+    message: 'must not be below MAILSINK_JOBS_BACKOFF_BASE_SECONDS',
+  })
 
 export type RuntimeConfig = {
   databaseUrl: string
@@ -59,7 +93,17 @@ export type RuntimeConfig = {
   adminKey: string | undefined
   smtpHost: string
   smtpPort: number
+  /** Host written in SMTP credentials; unset = the hostname of `publicUrl`. */
+  smtpPublicHost?: string
+  /** Port written in SMTP credentials; unset = the port the listener is bound to. */
+  smtpPublicPort?: number
+  /** Job worker polling period (`MAILSINK_JOBS_POLL_INTERVAL_MS`). */
   workerIntervalMs: number
+  /**
+   * Job runner tunables (`MAILSINK_JOBS_*`). Always set by readRuntimeConfig; optional so
+   * hand-built test configs need not list them (DEFAULT_JOB_SETTINGS applies).
+   */
+  jobs?: Omit<JobSettings, 'pollIntervalMs'>
   /**
    * Period of the retention scheduler (#17). Always set by readRuntimeConfig; optional so
    * hand-built test configs need not list it (the container defaults it to 60 s).
@@ -90,10 +134,20 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     adminKey: e.MAILSINK_ADMIN_KEY,
     smtpHost: e.MAILSINK_SMTP_HOST,
     smtpPort: e.MAILSINK_SMTP_PORT,
-    workerIntervalMs: 1000,
+    smtpPublicHost: e.MAILSINK_SMTP_PUBLIC_HOST,
+    smtpPublicPort: e.MAILSINK_SMTP_PUBLIC_PORT,
+    workerIntervalMs: e.MAILSINK_JOBS_POLL_INTERVAL_MS,
     retentionIntervalMs: e.MAILSINK_RETENTION_INTERVAL_SECONDS * 1000,
     maxMessageBytes: e.MAILSINK_MAX_MESSAGE_BYTES,
     publicUrl: e.MAILSINK_PUBLIC_URL,
     defaultIdleTtlSeconds: e.MAILSINK_DEFAULT_IDLE_TTL,
+    jobs: {
+      batchSize: e.MAILSINK_JOBS_BATCH_SIZE,
+      lockSeconds: e.MAILSINK_JOBS_LOCK_SECONDS,
+      maxAttempts: e.MAILSINK_JOBS_MAX_ATTEMPTS,
+      backoffBaseSeconds: e.MAILSINK_JOBS_BACKOFF_BASE_SECONDS,
+      backoffMaxSeconds: e.MAILSINK_JOBS_BACKOFF_MAX_SECONDS,
+      failedRetentionSeconds: e.MAILSINK_JOBS_FAILED_RETENTION_SECONDS,
+    },
   }
 }
