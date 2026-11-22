@@ -1,9 +1,9 @@
+import type { OverrideConfig } from '@mailsink/contracts'
 import { sql } from 'drizzle-orm'
 import { jsonb, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core'
 import { createdAt, tstz } from './columns'
 import { connections } from './connections'
 import { eventOrigin } from './enums'
-import type { OverrideConfig } from './json-types'
 import { workspaces } from './workspaces'
 
 export const overrides = pgTable(

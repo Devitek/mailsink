@@ -1,7 +1,7 @@
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createDb } from '@mailsink/db'
+import { createDb, MIGRATIONS_FOLDER } from '@mailsink/db'
 import { sql } from 'drizzle-orm'
 import { afterEach, describe, expect, it } from 'vitest'
 import { run } from '../src/index'
@@ -43,7 +43,10 @@ describe('mailsink cli', () => {
       sql`select count(*)::int as n from drizzle.__drizzle_migrations`,
     )
     await handle.close()
-    expect(result.rows[0]?.n).toBe(1)
+    const journal = JSON.parse(
+      await readFile(join(MIGRATIONS_FOLDER, 'meta', '_journal.json'), 'utf8'),
+    ) as { entries: unknown[] }
+    expect(result.rows[0]?.n).toBe(journal.entries.length)
   }, 60_000)
 
   it('reports an invalid DATABASE_URL without echoing it', async () => {
