@@ -13,6 +13,7 @@ test('Accept-Language fr renders the page in French', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
   await expect(page.getByText(TAGLINE.fr)).toBeVisible()
   await expect(page.getByLabel('Langue')).toHaveValue('fr')
+  await expect(page.getByRole('button', { name: 'Basculer clair / sombre' })).toBeVisible()
 })
 
 test('switching to English updates the page in place and is remembered', async ({

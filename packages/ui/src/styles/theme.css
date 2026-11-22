@@ -1,0 +1,166 @@
+/* Tailwind v4 theme on top of the --ms-* tokens (single source of truth).
+ * Default palettes, radii and fonts are reset, so only brand values exist as utilities. */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* shadcn/ui semantic variables, aliased to the brand. Accent split (IMPLEMENTATION 1):
+ * fills use --ms-accent with --ms-on-accent; links, text accents and the focus ring use
+ * --ms-accent-text. Declared on [data-theme] too so a themed subtree resolves its own. */
+:root,
+[data-theme] {
+  --background: var(--ms-bg);
+  --foreground: var(--ms-text);
+  --card: var(--ms-panel);
+  --card-foreground: var(--ms-text);
+  --popover: var(--ms-panel);
+  --popover-foreground: var(--ms-text);
+  --primary: var(--ms-accent);
+  --primary-foreground: var(--ms-on-accent);
+  --secondary: var(--ms-raised);
+  --secondary-foreground: var(--ms-text);
+  --muted: var(--ms-hover);
+  --muted-foreground: var(--ms-text-muted);
+  --accent: var(--ms-hover);
+  --accent-foreground: var(--ms-text);
+  --destructive: var(--ms-danger);
+  --border: var(--ms-border);
+  --input: var(--ms-border-strong);
+  --ring: var(--ms-accent-text);
+}
+
+@theme inline {
+  --color-*: initial;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-ms-bg: var(--ms-bg);
+  --color-ms-panel: var(--ms-panel);
+  --color-ms-raised: var(--ms-raised);
+  --color-ms-hover: var(--ms-hover);
+  --color-ms-border: var(--ms-border);
+  --color-ms-border-strong: var(--ms-border-strong);
+  --color-ms-text: var(--ms-text);
+  --color-ms-text-muted: var(--ms-text-muted);
+  --color-ms-text-faint: var(--ms-text-faint);
+  --color-ms-accent: var(--ms-accent);
+  --color-ms-on-accent: var(--ms-on-accent);
+  --color-ms-accent-text: var(--ms-accent-text);
+  --color-ms-override: var(--ms-override);
+  --color-ms-danger: var(--ms-danger);
+  --color-ms-status-queued: var(--ms-status-queued);
+  --color-ms-status-sent: var(--ms-status-sent);
+  --color-ms-status-delivered: var(--ms-status-delivered);
+  --color-ms-status-soft-bounce: var(--ms-status-soft-bounce);
+  --color-ms-status-hard-bounce: var(--ms-status-hard-bounce);
+  --color-ms-status-complained: var(--ms-status-complained);
+  --color-ms-status-deferred: var(--ms-status-deferred);
+  --color-ms-status-failed: var(--ms-status-failed);
+  --color-ms-status-suppressed: var(--ms-status-suppressed);
+  --color-ms-conn-resend: var(--ms-conn-resend);
+  --color-ms-conn-brevo: var(--ms-conn-brevo);
+  --color-ms-conn-smtp: var(--ms-conn-smtp);
+  --color-ms-switch-thumb: var(--ms-switch-thumb);
+  --color-ms-overlay: var(--ms-overlay);
+
+  --radius-*: initial;
+  --radius-xs: var(--ms-radius-xs);
+  --radius-sm: var(--ms-radius-sm);
+  --radius-md: var(--ms-radius-md);
+  --radius-lg: var(--ms-radius-lg);
+  --radius-xl: var(--ms-radius-xl);
+
+  --font-*: initial;
+  --font-sans: var(--ms-font-sans);
+  --font-mono: var(--ms-font-mono);
+
+  /* Type scale of BRAND.md, plus the small sizes the prototype uses on controls. */
+  --text-*: initial;
+  --text-badge: 10.5px;
+  --text-label: 11px;
+  --text-xs: 12px;
+  --text-sm: 12.5px;
+  --text-body: 13px;
+  --text-md: 14px;
+  --text-heading: 15px;
+  --text-title: 22px;
+  --text-display: 48px;
+
+  --shadow-*: initial;
+  --shadow-thumb: var(--ms-shadow-thumb);
+  --shadow-sheet: var(--ms-shadow-sheet);
+  --shadow-popover: var(--ms-shadow-popover);
+
+  --ease-ms: var(--ms-ease);
+}
+
+/* Control heights (24 / 30 / 34, 44 for the sign-in screen) and motion durations have no
+ * Tailwind namespace: explicit utilities keep them on the tokens. */
+@utility h-control-sm {
+  height: var(--ms-control-h-sm);
+}
+@utility h-control-md {
+  height: var(--ms-control-h-md);
+}
+@utility h-control-lg {
+  height: var(--ms-control-h-lg);
+}
+@utility h-control-xl {
+  height: var(--ms-control-h-xl);
+}
+@utility size-control-sm {
+  width: var(--ms-control-h-sm);
+  height: var(--ms-control-h-sm);
+}
+@utility size-control-md {
+  width: var(--ms-control-h-md);
+  height: var(--ms-control-h-md);
+}
+@utility size-control-lg {
+  width: var(--ms-control-h-lg);
+  height: var(--ms-control-h-lg);
+}
+@utility h-header {
+  height: var(--ms-header-h);
+}
+@utility duration-fast {
+  transition-duration: var(--ms-dur-fast);
+}
+@utility duration-base {
+  transition-duration: var(--ms-dur-base);
+}
+/* Focus (IMPLEMENTATION 6): accent text border plus the soft ring. */
+@utility focus-ring {
+  outline: none;
+  border-color: var(--ms-accent-text);
+  box-shadow: var(--ms-focus-ring);
+}
+
+@layer base {
+  html {
+    background: var(--ms-bg);
+    color: var(--ms-text);
+    font: var(--ms-text-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  *,
+  ::before,
+  ::after {
+    border-color: var(--ms-border);
+  }
+}

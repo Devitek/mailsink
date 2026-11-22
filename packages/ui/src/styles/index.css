@@ -1,0 +1,7 @@
+/* Entry imported by the app after `@import "tailwindcss"`. Tokens come first. */
+@import "./tokens.css";
+@import "./tokens-ext.css";
+@import "./theme.css";
+
+/* Let Tailwind see the classes used by the components of this package. */
+@source "../components";
