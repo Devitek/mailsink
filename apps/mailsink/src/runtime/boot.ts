@@ -29,7 +29,8 @@ export function bootRuntime(options: BootOptions = {}): Promise<Runtime> {
     .then(
       (runtime) => {
         log.info(`[mailsink] runtime started (pid ${process.pid}, smtp :${runtime.smtpPort})`)
-        if (options.shutdownHooks ?? true) {
+        if ((options.shutdownHooks ?? true) && !slot.shutdownHooks) {
+          slot.shutdownHooks = true
           installShutdownHooks({ stop: stopRuntime, stopped: whenRuntimeStopped, log })
         }
         return runtime

@@ -1,3 +1,4 @@
+import { Duration, IDLE_TTL_BOUNDS } from '@mailsink/contracts'
 import { DEFAULT_MAX_MESSAGE_BYTES } from '@mailsink/core'
 import { DEFAULT_DATABASE_URL, parseDatabaseUrl } from '@mailsink/db'
 import { z } from 'zod'
@@ -16,6 +17,18 @@ const DatabaseUrl = z.string().superRefine((url, ctx) => {
   }
 })
 
+/** Bare seconds ("3600") or a duration ("1h"), within the idle TTL bounds of the contract. */
+const IdleTtl = z
+  .string()
+  .transform((v) => (/^\d+$/.test(v) ? Number(v) : v))
+  .pipe(Duration)
+  .pipe(z.number().min(IDLE_TTL_BOUNDS.min).max(IDLE_TTL_BOUNDS.max))
+
+/** Absolute http(s) URL, stored without its trailing slash. */
+const PublicUrl = z
+  .url({ protocol: /^https?$/, error: 'must be an absolute http(s) URL' })
+  .transform((url) => url.replace(/\/+$/, ''))
+
 /**
  * Environment read once at boot (docs/architecture/01-project-tree.md, « Configuration »).
  * `PORT` is read by Nitro itself. Variables join this schema with the feature using them.
@@ -30,6 +43,8 @@ const Env = z.object({
     .int('must be a positive number of bytes')
     .positive('must be a positive number of bytes')
     .default(DEFAULT_MAX_MESSAGE_BYTES),
+  MAILSINK_PUBLIC_URL: PublicUrl.default('http://localhost:3000'),
+  MAILSINK_DEFAULT_IDLE_TTL: IdleTtl.default(3600),
 })
 
 export type RuntimeConfig = {
@@ -41,6 +56,10 @@ export type RuntimeConfig = {
   workerIntervalMs: number
   /** Ingestion cap (`MAILSINK_MAX_MESSAGE_BYTES`): request bodies and composed messages. */
   maxMessageBytes: number
+  /** Base of the links and `.env` snippets given to clients (D35), no trailing slash. */
+  publicUrl: string
+  /** Idle TTL of ephemeral workspaces created without `idleTtlSeconds` (#19). */
+  defaultIdleTtlSeconds: number
 }
 
 type EnvSource = Record<string, string | undefined>
@@ -62,5 +81,7 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     smtpPort: e.MAILSINK_SMTP_PORT,
     workerIntervalMs: 1000,
     maxMessageBytes: e.MAILSINK_MAX_MESSAGE_BYTES,
+    publicUrl: e.MAILSINK_PUBLIC_URL,
+    defaultIdleTtlSeconds: e.MAILSINK_DEFAULT_IDLE_TTL,
   }
 }
