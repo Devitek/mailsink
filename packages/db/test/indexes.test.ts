@@ -68,6 +68,16 @@ describeDb('capture search indexes', (ctx) => {
     expect(await plan(ctx.handle, query.toSQL())).toContain('messages_search_gin')
   })
 
+  it('indexes a body whose full tsvector would exceed the 1 MB cap', async () => {
+    const html = Array.from({ length: 250_000 }, (_, i) => `w${i}`).join(' ')
+    const row = await createTestMessage(ctx.db, workspaceId, { subject: 'Huge', html })
+    const found = await ctx.db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(sql`${searchDocument(messages)} @@ websearch_to_tsquery('simple', ${'w42'})`)
+    expect(found.map((f) => f.id)).toEqual([row.id])
+  })
+
   it('serves the keyset page from messages_ws_created_idx', async () => {
     const after = { createdAt: new Date().toISOString(), id: 'msg_z' }
     const query = searchMessagesQuery(ctx.db, { workspaceId, after, limit: 50 })

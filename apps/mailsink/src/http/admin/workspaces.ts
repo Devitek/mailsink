@@ -1,8 +1,4 @@
-import {
-  CreateWorkspaceRequest,
-  ListWorkspacesQuery,
-  WorkspaceRef,
-} from '@mailsink/contracts'
+import { CreateWorkspaceRequest, ListWorkspacesQuery, WorkspaceRef } from '@mailsink/contracts'
 import {
   createWorkspace,
   getWorkspaceDetail,
