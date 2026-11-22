@@ -39,6 +39,17 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 Workspace scope = `Authorization: Bearer msk_…|mskw_…`, or Admin key +
 `X-Mailsink-Workspace: <id|slug>`. Every authenticated call touches workspace activity.
 
+Activity and ephemeral GC (#20, D16, propositions D85 to D87): the `activity` extension of
+`defineApi()` touches the workspace of every call authenticated on one (ingestion,
+Capture, SSE, MCP; Admin-only calls touch nothing); SMTP ingestion (#31) calls the same
+tracker. One write per workspace per 15 s window: the first touch writes at once, later
+ones in the window are written with their own time when it closes. A touch sets
+`last_activity_at` and, for an ephemeral workspace, `expires_at = last_activity_at +
+idle_ttl_seconds`, never moving them back. Every 30 s the GC writes the pending touches,
+deletes the ephemeral workspaces past `expires_at` (everything they own cascades) and
+publishes `workspace.deleted` on their channel, which closes their SSE streams. An open
+SSE stream is not activity by itself: only its opening request touches.
+
 ## Conventions
 
 - The code in `packages/contracts/src/` is the reference; the blocks below are faithful
@@ -498,8 +509,14 @@ Capture behaviour (#15, owner decisions D59 to D61 of 23/11):
 - Isolation: every query is scoped to the authenticated workspace (D12, D41). A message or
   attachment of another workspace answers 404 `not_found`, exactly like a missing id; a purge
   never deletes rows of another workspace (`{ count: 0 }`).
-- `wait=true` is refused with 422 `validation_error` (issue `params.code: wait_not_supported`,
-  path `wait`) until long polling lands (#26), rather than answering without waiting.
+- `wait=true` long polls (#26, `capture/wait.ts`): it subscribes to the workspace bus
+  channel *before* the first query, answers the first page as soon as it is not empty, and
+  re-runs the query on every frame of the workspace (a `status` filter may start matching
+  after a simulation), coalesced while one runs. Without `since`, `since` = the request
+  time (a message counts from its `created_at`, set when the request that sent it was
+  prepared). No match within `timeout` ms (0 .. 30 000, default 5 000): 408
+  `wait_timeout`; workspace deleted meanwhile: 404 `not_found`. The 422
+  `wait_not_supported` refusal of D59 is lifted.
 - Filters: `to`, `from` and `subject` are case-insensitive substrings (`to` matches any
   recipient email or name, `to`, `cc` or `bcc`); `tag=name` matches any value, `name:value`
   splits on the first colon; `since` and `until` are inclusive; `q` is Postgres full text
@@ -523,6 +540,35 @@ Capture behaviour (#15, owner decisions D59 to D61 of 23/11):
 `text/event-stream`, heartbeat comment every 15 s, `id:` = event id, `Last-Event-ID`
 replays from `message_events` (bounded to 500). Query: `connectionId?`, `types?`.
 
+Behaviour (#26, propositions D80 to D84):
+- Workspace scope auth (D12). Response headers `Content-Type: text/event-stream;
+  charset=utf-8`, `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no`. The
+  stream opens with `retry: 3000` and a `: connected` comment, then a `: ping` comment
+  every 15 s.
+- Frames carry no `event:` field (every frame reaches `EventSource.onmessage`); `data:` is
+  one `StreamEvent` JSON, told apart by `type`.
+- One `message_events` row gives one frame whose `id:` is the row id, live and on replay:
+  `accepted` -> `message.created` (current summary), any other type -> `message.event`.
+  Derived frames have no `id:` and are never replayed: the aggregated `message.status`
+  (`recipient: null`) after a simulation run, `messages.purged`, `override.changed`,
+  `workspace.deleted`.
+- Publishers: ingestion after its transaction committed (`message.created`, one
+  `message.event` per suppressed recipient; nothing for an idempotent replay); the
+  `simulate_delivery` job handler (`sent` and final event per recipient, then the
+  aggregated status); `DELETE /capture/messages` (`messages.purged`); the ephemeral GC
+  (`workspace.deleted`, then the stream closes).
+- `Last-Event-ID` (an `evt_…` id, anything else ignored): the bus subscription is taken
+  first and buffered while the replay reads the 500 rows after that id in `(occurred_at,
+  id)` order; buffered frames already replayed are dropped. An id the workspace does not
+  know replays nothing. A client more than 500 events behind resyncs through
+  `GET /capture/messages`.
+- Filters: `types` (comma-separated or repeated `StreamEventType`); `connectionId` drops
+  message frames of other connections (and of none); `messages.purged`,
+  `override.changed` and `workspace.deleted` always pass.
+- A client that stops reading while 1 000 frames are queued is disconnected.
+- `webhook.delivery`, `log.api` and `log.smtp` join the union with their view contracts
+  (#33, #35).
+
 ```ts
 export const StreamEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('message.created'), message: MessageSummary }),
@@ -534,7 +580,11 @@ export const StreamEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('log.smtp'), session: SmtpSessionSummary }),
   z.object({ type: z.literal('override.changed'), state: OverrideState }),
   z.object({ type: z.literal('messages.purged'), count: z.number() }),
+  z.object({ type: z.literal('workspace.deleted'), workspaceId: WorkspaceId }),
 ])
+export const StreamQuery = z.object({ connectionId: ConnectionId.optional(),
+  types: z.preprocess((v) => (typeof v === 'string' ? v.split(',') : v),
+    z.array(StreamEventType)).optional() })
 ```
 
 ## Webhooks (`webhook.ts`)
