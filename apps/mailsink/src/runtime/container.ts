@@ -1,4 +1,9 @@
-import { startWorker } from '@mailsink/core'
+import {
+  createJobRunner,
+  simulateDeliveryHandler,
+  startRetentionScheduler,
+  startWorker,
+} from '@mailsink/core'
 import { createDb, type DbHandle, migrate } from '@mailsink/db'
 import { startSmtpListener } from '@mailsink/smtp'
 import type { RuntimeConfig } from './config'
@@ -22,7 +27,8 @@ export interface CreateRuntimeOptions {
 }
 
 /**
- * Opens and migrates the database, then starts the SMTP listener and the job worker.
+ * Opens and migrates the database, then starts the SMTP listener, the job worker and the
+ * retention scheduler.
  * Called once per process by boot.ts. On failure, whatever was opened is closed again.
  */
 export async function createRuntime(
@@ -56,10 +62,24 @@ export async function createRuntime(
       },
     })
 
+    // Job queue (D5): handlers join here (deliver_webhook with #33); kinds without a
+    // handler stay in the table untouched.
+    const runJobs = createJobRunner({
+      db: db.db,
+      handlers: { simulate_delivery: simulateDeliveryHandler() },
+      log,
+    })
     const worker = startWorker({
       intervalMs: config.workerIntervalMs,
-      tick: async () => {},
+      tick: async (signal) => {
+        await runJobs(signal)
+      },
       onError: (error) => log.error('[mailsink] worker tick failed', error),
+    })
+    const retention = startRetentionScheduler({
+      db: db.db,
+      intervalMs: config.retentionIntervalMs ?? 60_000,
+      log,
     })
 
     return {
@@ -67,9 +87,10 @@ export async function createRuntime(
       db,
       smtpPort: smtp.port,
       async stop() {
-        // Stop accepting mail, drain the worker that would process it, then close the db.
+        // Stop accepting mail, drain the worker that would process it and the retention
+        // pass in flight, then close the db.
         await smtp.close()
-        await worker.stop()
+        await Promise.all([worker.stop(), retention.stop()])
         await db.close()
       },
     }

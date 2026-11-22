@@ -24,6 +24,12 @@ const Env = z.object({
   MAILSINK_ADMIN_KEY: z.string().optional(),
   MAILSINK_SMTP_HOST: z.string().default('0.0.0.0'),
   MAILSINK_SMTP_PORT: Port.default(1025),
+  MAILSINK_RETENTION_INTERVAL_SECONDS: z.coerce
+    .number({ error: 'must be a number of seconds (1-86400)' })
+    .int('must be a number of seconds (1-86400)')
+    .min(1, 'must be a number of seconds (1-86400)')
+    .max(86_400, 'must be a number of seconds (1-86400)')
+    .default(60),
 })
 
 export type RuntimeConfig = {
@@ -33,6 +39,11 @@ export type RuntimeConfig = {
   smtpHost: string
   smtpPort: number
   workerIntervalMs: number
+  /**
+   * Period of the retention scheduler (#17). Always set by readRuntimeConfig; optional so
+   * hand-built test configs need not list it (the container defaults it to 60 s).
+   */
+  retentionIntervalMs?: number
 }
 
 type EnvSource = Record<string, string | undefined>
@@ -53,5 +64,6 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     smtpHost: e.MAILSINK_SMTP_HOST,
     smtpPort: e.MAILSINK_SMTP_PORT,
     workerIntervalMs: 1000,
+    retentionIntervalMs: e.MAILSINK_RETENTION_INTERVAL_SECONDS * 1000,
   }
 }
