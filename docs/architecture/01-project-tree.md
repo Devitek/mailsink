@@ -9,21 +9,31 @@ mailsink/
 ├── apps/
 │   └── mailsink/                         # TanStack Start app: UI + every HTTP surface (D1)
 │       ├── vite.config.ts                # tanstackStart() + nitro() + react + tailwind
-│       ├── nitro.config.ts               # registers runtime/nitro-plugin.ts (D3)
+│       ├── nitro.config.ts               # registers runtime/nitro-plugin.ts (D3), copies
+│       │                                 # packages/db/migrations into .output/server (D42)
 │       ├── src/
-│       │   ├── server.ts                 # custom server entry: waits for runtime, request id (D3)
+│       │   ├── server.ts                 # custom server entry: waits for the runtime (D3)
 │       │   ├── router.tsx                # router + QueryClient (SSR dehydrate/hydrate)
 │       │   ├── runtime/
-│       │   │   ├── nitro-plugin.ts       # boots at process start, stops on Nitro `close` (D3)
+│       │   │   ├── nitro-plugin.ts       # boots at process start (exit 1 on failure, D28),
+│       │   │   │                         # stops on Nitro `close` (D3)
 │       │   │   ├── boot.ts               # idempotent start/stop
 │       │   │   ├── slot.ts               # globalThis slot (HMR, two bundles), whenRuntimeReady()
-│       │   │   ├── config.ts             # runtime env (until the Zod config lands)
-│       │   │   ├── container.ts          # builds db, services, bus, stores once
-│       │   │   └── shutdown.ts           # SIGTERM/SIGINT: stop SMTP, drain workers, close db
+│       │   │   ├── config.ts             # env validated by Zod at boot (D29)
+│       │   │   ├── container.ts          # opens + migrates the db, starts SMTP and workers once;
+│       │   │   │                         # bus and stores join later
+│       │   │   ├── migrations.ts         # migrations folder of the build (D42)
+│       │   │   └── shutdown.ts           # SIGTERM/SIGINT: wait for the srvx HTTP drain and the
+│       │   │                             # close hook (SMTP, workers, db), exit 0 (D3)
 │       │   ├── http/                     # thin adapters shared by server routes
-│       │   │   ├── handler.ts            # defineApi(): parse -> auth -> rate limit -> log
-│       │   │   ├── auth.ts               # admin key, msk_/mskw_ keys, Brevo api-key header
-│       │   │   ├── errors.ts             # DomainError -> per-dialect error body
+│       │   │   ├── handler.ts            # defineApi(): request id -> auth -> extensions ->
+│       │   │   │                         # parse (Zod) -> handler (D39)
+│       │   │   ├── extensions.ts         # ApiExtension hooks: rate limit, activity, request log
+│       │   │   ├── auth.ts               # admin key, msk_/mskw_ keys, Brevo api-key header (D41)
+│       │   │   ├── errors.ts             # DomainError -> error body (ErrorFormatter per dialect)
+│       │   │   ├── validation.ts         # Zod issues -> validation_error details, query, JSON body
+│       │   │   ├── health.ts             # GET /healthz: liveness + database readiness (D42)
+│       │   │   ├── test-fixtures.ts      # test-only: runtime in the slot, seeded keys
 │       │   │   ├── rate-limit-headers.ts
 │       │   │   ├── sse.ts                # ReadableStream SSE helper (heartbeat, Last-Event-ID)
 │       │   │   └── request-log.ts        # api_logs writer (redaction, truncation)
@@ -78,7 +88,10 @@ mailsink/
 │       │   │   └── realtime/              # useWorkspaceStream(): EventSource -> invalidate
 │       │   ├── i18n/                      # Lingui (D17, D18)
 │       │   │   ├── lingui.ts              # i18n instance, dynamic catalog loading
-│       │   │   ├── locale.server.ts       # cookie > Accept-Language > en, SSR activation
+│       │   │   ├── locales.ts             # supported locales, source locale, cookie name
+│       │   │   ├── resolve-locale.ts      # cookie > Accept-Language > en (pure)
+│       │   │   ├── locale.server.ts       # reads the request, writes the cookie (D37)
+│       │   │   ├── locale-fns.ts          # server functions for loaders and the switcher
 │       │   │   └── locale-switcher.tsx
 │       │   ├── locales/
 │       │   │   ├── en/messages.po         # source locale
@@ -89,7 +102,7 @@ mailsink/
 ├── packages/
 │   ├── contracts/                         # Zod, shared end to end (doc 03)
 │   │   └── src/
-│   │       ├── common.ts   address.ts   status.ts   ids.ts
+│   │       ├── common.ts   address.ts   status.ts   ids.ts   errors.ts (ErrorCode, ApiErrorBody)
 │   │       ├── admin.ts    native.ts    resend.ts   brevo.ts
 │   │       ├── capture.ts  override.ts  webhook.ts  events.ts
 │   │       ├── settings.ts              # retention, rate limit, simulation defaults
@@ -108,10 +121,12 @@ mailsink/
 │   │       ├── migrate.ts               # migrate(handle), advisory-locked on Postgres
 │   │       ├── ids.ts                   # newId(prefix): prefixed UUIDv7 (D25, D27)
 │   │       ├── testing/                 # describeDb() harness (@mailsink/db/testing)
-│   │       └── repositories/            # one file per aggregate, typed queries only
+│   │       └── repositories/            # one file per aggregate, typed queries only:
+│   │                                        # jobs.ts, api-keys.ts (key lookup by hash, D11)
 │   ├── core/                              # domain services, no HTTP, no React
 │   │   └── src/
-│   │       ├── clock.ts  errors.ts  crypto.ts (keys, scrypt, hmac)   # ids: db (D27)
+│   │       ├── clock.ts  errors.ts (DomainError, status per code, D40)
+│   │       ├── crypto.ts (key hash, constant-time compare; scrypt, hmac later)  # ids: db (D27)
 │   │       ├── workspaces/   provision.ts activity.ts expiry.ts
 │   │       ├── connections/  credentials.ts resolve.ts
 │   │       ├── ingestion/    pipeline.ts normalize.ts compose-eml.ts links.ts idempotency.ts
@@ -159,12 +174,19 @@ node .output/server/index.mjs
  └─ schedulers (retention, ephemeral GC)─┘  start (boot.ts), share container
 ```
 
+Boot order: config, database and migrations, SMTP listener, worker; any failure exits 1
+(D28). Stop order on SIGTERM: HTTP drain (srvx), SMTP, worker, database (D3).
+
 ## Configuration (env, validated by Zod at boot)
+
+`src/runtime/config.ts` validates `DATABASE_URL`, `MAILSINK_ADMIN_KEY`, `MAILSINK_SMTP_HOST`
+and `MAILSINK_SMTP_PORT` today; the other variables join the schema with their feature. An
+invalid value stops the boot with exit code 1 (D28). Empty values count as unset.
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `DATABASE_URL` | `pglite://./data` | `postgres://…` or `pglite://<dir>` / `pglite://memory` |
-| `MAILSINK_ADMIN_KEY` | required outside local mode | Admin API and UI login |
+| `MAILSINK_ADMIN_KEY` | unset: Admin key disabled, warning at boot (D41) | Admin API and UI login |
 | `PORT` / `MAILSINK_SMTP_PORT` | `3000` / `1025` | Listeners (`PORT` is read by Nitro) |
 | `MAILSINK_SMTP_HOST` | `0.0.0.0` | SMTP bind address |
 | `MAILSINK_SMTP_TLS_CERT` / `_KEY` | unset | Optional STARTTLS |
