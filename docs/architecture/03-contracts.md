@@ -22,7 +22,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `GET /capture/messages/:id` | workspace scope | capture | Full detail |
 | `GET /capture/messages/:id/raw` | workspace scope | capture | `message/rfc822` |
 | `GET /capture/messages/:id/attachments/:attId` | workspace scope | capture | Binary |
-| `POST /capture/messages/:id/events` | workspace scope | capture | Force opened/clicked |
+| `POST /capture/messages/:id/events` | workspace scope | capture | Force opened/clicked or a simulated status |
 | `DELETE /capture/messages` | workspace scope | capture | Purge messages and logs |
 | `GET /capture/override` · `POST /capture/override` | workspace scope | capture | Read / activate |
 | `POST /capture/override/reset` | workspace scope | capture | Back to defaults |
@@ -31,6 +31,8 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `GET /capture/webhooks/deliveries[?endpointId=&payloadFormat=]` · `GET …/:id` | workspace scope | capture | Delivery log |
 | `POST /capture/webhooks/deliveries/:id/replay` | workspace scope | capture | Replay (`exact` or `resign`) |
 | `POST /capture/webhooks/preview` | workspace scope | capture | Sample payload + headers for a format |
+| `POST /capture/webhooks/:id/test` | workspace scope | capture | Send a signed sample event to one endpoint (logged as a delivery) |
+| `POST /capture/demo` | workspace scope | capture | Seed the workspace with demo messages through the ingestion pipeline (#62) |
 | `GET /capture/stream` | workspace scope | capture | SSE |
 | `POST|GET|DELETE /mcp` | workspace scope | mcp | MCP Streamable HTTP |
 
@@ -417,7 +419,13 @@ export const TriggerEventRequest = z.discriminatedUnion('type', [
     userAgent: z.string().optional() }),
   z.object({ type: z.literal('clicked'), url: z.url(), recipient: z.email().optional(),
     userAgent: z.string().optional() }),
-])   // 202 { event, webhookDeliveries: [{ id, endpointId }] }
+  // Forced simulated status (owner arbitration 22/11, design brand-1, implemented in #34):
+  // updates the recipient status (all recipients when omitted), the message aggregate,
+  // the suppression list (hard_bounce, complained) and fans out webhooks like a drawn status.
+  z.object({ type: z.literal('status'),
+    status: z.enum(['delivered', 'deferred', 'soft_bounce', 'hard_bounce', 'complained', 'failed']),
+    recipient: z.email().optional(), reason: z.string().max(500).optional() }),
+])   // 202 { events, webhookDeliveries: [{ id, endpointId }] }
 
 export const PurgeQuery = z.object({ connectionId: ConnectionId.optional(),
   before: IsoDateTime.optional(), includeLogs: QueryBool.default(true) })

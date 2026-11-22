@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f5f5f3}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}
+</style>
+</helmet>
+<div style="min-height:100vh;background:{{ t.bg }};color:{{ t.tx }};font-family:Geist,ui-sans-serif,system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s">
+
+<div style="position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px clamp(16px,4vw,56px);background:{{ t.panel }};border-bottom:1px solid {{ t.bd }}">
+  <div style="display:flex;align-items:center;gap:8px">
+    <svg width="20" height="20" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.on }}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.on }}" stroke-width="6.5" stroke-linecap="round"></path></svg>
+    <span style="font-weight:600;letter-spacing:-.03em">mailsink</span>
+    <span style="color:{{ t.fa }}">/</span><span style="color:{{ t.mu }}">Charte graphique</span>
+  </div>
+  <span style="flex:1"></span>
+  <div style="display:flex;padding:3px;border-radius:8px;background:{{ t.raised }};border:1px solid {{ t.bd }};gap:2px">
+    <sc-for list="{{ accBtns }}" as="b" hint-placeholder-count="2"><button onClick="{{ b.pick }}" style="height:28px;display:flex;align-items:center;gap:7px;padding:0 11px;border:0;border-radius:6px;background:{{ b.bg }};color:{{ b.c }};font:500 12.5px Geist,sans-serif;cursor:pointer"><span style="width:10px;height:10px;border-radius:3px;background:{{ b.sw }}"></span>{{ b.label }}</button></sc-for>
+  </div>
+  <div style="display:flex;padding:3px;border-radius:8px;background:{{ t.raised }};border:1px solid {{ t.bd }};gap:2px">
+    <sc-for list="{{ modeBtns }}" as="b" hint-placeholder-count="2"><button onClick="{{ b.pick }}" style="height:28px;padding:0 11px;border:0;border-radius:6px;background:{{ b.bg }};color:{{ b.c }};font:500 12.5px Geist,sans-serif;cursor:pointer">{{ b.label }}</button></sc-for>
+  </div>
+</div>
+
+<div style="padding:56px clamp(20px,5vw,72px) 96px;display:flex;flex-direction:column;gap:80px;max-width:1280px;margin:0 auto">
+
+<section data-screen-label="Couverture" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:40px;align-items:center">
+  <div style="display:flex;flex-direction:column;gap:22px">
+    <div style="font:500 12px 'JetBrains Mono',monospace;color:{{ t.mu }};letter-spacing:.04em">CHARTE · {{ accName }} · {{ modeName }}</div>
+    <h1 style="margin:0;font-size:clamp(40px,6vw,72px);font-weight:600;letter-spacing:-.04em;line-height:1">Tout arrive.<br><span style="color:{{ t.at }}">Rien ne part.</span></h1>
+    <p style="margin:0;color:{{ t.mu }};font-size:16px;max-width:520px;text-wrap:pretty">Le bac à sable de vos emails transactionnels. Branchez Resend, Brevo ou SMTP, changez une URL : chaque message est capturé, inspecté, jamais délivré.</p>
+  </div>
+  <div style="aspect-ratio:1/1;max-width:440px;width:100%;justify-self:center;border-radius:28px;background:{{ t.ac }};display:grid;place-items:center">
+    <svg width="46%" viewBox="0 0 64 64"><path d="M32 8v28M20.5 25 32 36.5 43.5 25" fill="none" stroke="{{ t.on }}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 38v8a8 8 0 0 0 8 8h32a8 8 0 0 0 8-8v-8" fill="none" stroke="{{ t.on }}" stroke-width="5" stroke-linecap="round"></path></svg>
+  </div>
+</section>
+
+<section data-screen-label="Logo" style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-top:1px solid {{ t.bd }};padding-top:20px"><span style="font:500 12px 'JetBrains Mono',monospace;color:{{ t.at }}">01</span><h2 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-.025em">Logo</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px">
+    <div style="height:200px;border-radius:14px;border:1px solid {{ t.bd }};background:{{ t.panel }};display:flex;flex-direction:column">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:12px">
+        <svg width="48" height="48" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.on }}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.on }}" stroke-width="5.5" stroke-linecap="round"></path></svg>
+        <span style="font-size:34px;font-weight:600;letter-spacing:-.04em">mailsink</span>
+      </div>
+      <div style="padding:10px 14px;font-size:12px;color:{{ t.mu }}">Principal — sur fond du thème</div>
+    </div>
+    <div style="height:200px;border-radius:14px;background:{{ t.ac }};color:{{ t.on }};display:flex;flex-direction:column">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:12px">
+        <svg width="48" height="48" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.on }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.ac }}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.ac }}" stroke-width="5.5" stroke-linecap="round"></path></svg>
+        <span style="font-size:34px;font-weight:600;letter-spacing:-.04em">mailsink</span>
+      </div>
+      <div style="padding:10px 14px;font-size:12px;opacity:.8">Inversé — sur aplat accent</div>
+    </div>
+    <div style="height:200px;border-radius:14px;background:{{ inv.bg }};color:{{ inv.tx }};display:flex;flex-direction:column;border:1px solid {{ inv.bd }}">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:12px">
+        <svg width="48" height="48" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ inv.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ inv.on }}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ inv.on }}" stroke-width="5.5" stroke-linecap="round"></path></svg>
+        <span style="font-size:34px;font-weight:600;letter-spacing:-.04em">mailsink</span>
+      </div>
+      <div style="padding:10px 14px;font-size:12px;color:{{ inv.mu }}">Principal — thème opposé</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px">
+    <div style="border-radius:14px;border:1px solid {{ t.bd }};padding:22px;display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.on }}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.on }}" stroke-width="7" stroke-linecap="round"></path></svg><span style="font:11px 'JetBrains Mono',monospace;color:{{ t.mu }}">16</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><svg width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.on }}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.on }}" stroke-width="6" stroke-linecap="round"></path></svg><span style="font:11px 'JetBrains Mono',monospace;color:{{ t.mu }}">24</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><svg width="40" height="40" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.on }}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.on }}" stroke-width="5.5" stroke-linecap="round"></path></svg><span style="font:11px 'JetBrains Mono',monospace;color:{{ t.mu }}">40</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><svg width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.on }}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.on }}" stroke-width="5.5" stroke-linecap="round"></path></svg><span style="font:11px 'JetBrains Mono',monospace;color:{{ t.mu }}">64</span></div>
+    </div>
+    <div style="border-radius:14px;border:1px solid {{ t.bd }};padding:22px;display:flex;align-items:center;gap:16px">
+      <div style="width:64px;height:64px;border-radius:15px;background:{{ t.tx }};display:grid;place-items:center;flex:none"><svg width="40" height="40" viewBox="0 0 64 64"><path d="M32 8v28M20.5 25 32 36.5 43.5 25" fill="none" stroke="{{ t.bg }}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 38v8a8 8 0 0 0 8 8h32a8 8 0 0 0 8-8v-8" fill="none" stroke="{{ t.bg }}" stroke-width="6" stroke-linecap="round"></path></svg></div>
+      <div style="font-size:13px;color:{{ t.mu }};text-wrap:pretty"><span style="color:{{ t.tx }};font-weight:500">Monochrome.</span> Pour les supports une couleur (gravure, tampon, fax de 1998). Symbole seul, sans tuile si l'espace manque.</div>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="Couleurs" style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-top:1px solid {{ t.bd }};padding-top:20px"><span style="font:500 12px 'JetBrains Mono',monospace;color:{{ t.at }}">02</span><h2 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-.025em">Couleurs</h2><span style="color:{{ t.mu }}">{{ accNote }}</span></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px">
+    <sc-for list="{{ brand }}" as="s" hint-placeholder-count="5">
+      <div style="border:1px solid {{ t.bd }};border-radius:12px;overflow:hidden;background:{{ t.panel }}">
+        <div style="height:110px;background:{{ s.v }};border-bottom:1px solid {{ t.bd }};display:flex;align-items:flex-end;padding:10px 12px;color:{{ s.ink }};font-size:22px;font-weight:600;letter-spacing:-.02em">Aa</div>
+        <div style="padding:11px 13px;display:flex;flex-direction:column;gap:2px"><span style="font-weight:600">{{ s.n }}</span><span style="font:11.5px 'JetBrains Mono',monospace;color:{{ t.mu }}">{{ s.tok }}</span><span style="font:11.5px 'JetBrains Mono',monospace;color:{{ t.fa }}">{{ s.code }}</span></div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px">
+    <div style="border:1px solid {{ t.bd }};border-radius:12px;overflow:hidden;background:{{ t.panel }}">
+      <sc-for list="{{ surfaces }}" as="s" hint-placeholder-count="9">
+        <div style="display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:7px 12px;border-bottom:1px solid {{ t.bd }}"><div style="height:24px;border-radius:5px;background:{{ s.v }};border:1px solid {{ t.bd2 }}"></div><span style="font:12.5px 'JetBrains Mono',monospace">{{ s.n }}</span><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">{{ s.v }}</span></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="border:1px solid {{ t.bd }};border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:8px;background:{{ t.panel }}">
+        <sc-for list="{{ statuses }}" as="s" hint-placeholder-count="7"><span style="height:24px;display:inline-flex;align-items:center;gap:6px;padding:0 9px;border-radius:6px;font:500 12px 'JetBrains Mono',monospace;color:{{ s.c }};background:{{ s.soft }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ s.c }}"></span>{{ s.n }}</span></sc-for>
+      </div>
+      <div style="border:1px solid {{ t.bd }};border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:16px;background:{{ t.panel }}">
+        <sc-for list="{{ conns }}" as="s" hint-placeholder-count="3"><span style="display:inline-flex;align-items:center;gap:8px;font-size:13px"><span style="width:10px;height:10px;border-radius:3px;background:{{ s.c }}"></span>{{ s.n }}</span></sc-for>
+      </div>
+      <div style="font-size:12.5px;color:{{ t.mu }};text-wrap:pretty">L'accent ne porte jamais de sens de statut. Il signale la marque, la sélection, l'action principale et le focus.</div>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="Typographie" style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-top:1px solid {{ t.bd }};padding-top:20px"><span style="font:500 12px 'JetBrains Mono',monospace;color:{{ t.at }}">03</span><h2 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-.025em">Typographie</h2><span style="color:{{ t.mu }}">Geist pour l'interface, JetBrains Mono pour tout ce qui se copie-colle.</span></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px">
+    <div style="border:1px solid {{ t.bd }};border-radius:14px;padding:24px;background:{{ t.panel }};display:flex;flex-direction:column;gap:8px"><span style="font-size:88px;font-weight:600;letter-spacing:-.05em;line-height:1">Aa</span><span style="font-weight:600">Geist</span><span style="font-size:13px;color:{{ t.mu }}">400 · 500 · 600 — titres, UI, texte courant</span></div>
+    <div style="border:1px solid {{ t.bd }};border-radius:14px;padding:24px;background:{{ t.panel }};display:flex;flex-direction:column;gap:8px"><span style="font:500 80px/1 'JetBrains Mono',monospace;letter-spacing:-.05em;color:{{ t.at }}">{ }</span><span style="font-weight:600">JetBrains Mono</span><span style="font-size:13px;color:{{ t.mu }}">400 · 500 — slugs, IDs, payloads, labels</span></div>
+  </div>
+  <div style="border:1px solid {{ t.bd }};border-radius:12px;overflow:hidden;background:{{ t.panel }}">
+    <div style="display:grid;grid-template-columns:100px minmax(0,1fr);gap:14px;align-items:baseline;padding:14px 16px;border-bottom:1px solid {{ t.bd }}"><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">display 48</span><span style="font-size:48px;font-weight:600;letter-spacing:-.04em;line-height:1">Rien ne part.</span></div>
+    <div style="display:grid;grid-template-columns:100px minmax(0,1fr);gap:14px;align-items:baseline;padding:14px 16px;border-bottom:1px solid {{ t.bd }}"><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">title 22</span><span style="font-size:22px;font-weight:600;letter-spacing:-.02em">Endpoints webhook</span></div>
+    <div style="display:grid;grid-template-columns:100px minmax(0,1fr);gap:14px;align-items:baseline;padding:14px 16px;border-bottom:1px solid {{ t.bd }}"><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">heading 15</span><span style="font-size:15px;font-weight:600">Override des paramètres</span></div>
+    <div style="display:grid;grid-template-columns:100px minmax(0,1fr);gap:14px;align-items:baseline;padding:14px 16px;border-bottom:1px solid {{ t.bd }}"><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">body 13</span><span style="font-size:13px">Les emails envoyés via une connexion apparaissent ici en temps réel.</span></div>
+    <div style="display:grid;grid-template-columns:100px minmax(0,1fr);gap:14px;align-items:baseline;padding:14px 16px;border-bottom:1px solid {{ t.bd }}"><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">mono 12.5</span><span style="font:12.5px 'JetBrains Mono',monospace">live-the-wod-staging</span></div>
+    <div style="display:grid;grid-template-columns:100px minmax(0,1fr);gap:14px;align-items:baseline;padding:14px 16px"><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">label 11</span><span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.mu }};font-weight:500">Rate limit</span></div>
+  </div>
+</section>
+
+<section data-screen-label="Composants" style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-top:1px solid {{ t.bd }};padding-top:20px"><span style="font:500 12px 'JetBrains Mono',monospace;color:{{ t.at }}">04</span><h2 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-.025em">Composants</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px">
+    <div style="border:1px solid {{ t.bd }};border-radius:14px;padding:20px;background:{{ t.panel }};display:flex;flex-direction:column;gap:16px">
+      <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.mu }};font-weight:500">Boutons</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span style="height:32px;display:inline-flex;align-items:center;padding:0 14px;border-radius:7px;background:{{ t.ac }};color:{{ t.on }};font-size:13px;font-weight:600">Simuler un envoi</span>
+        <span style="height:32px;display:inline-flex;align-items:center;padding:0 14px;border-radius:7px;border:1px solid {{ t.bd2 }};background:{{ t.raised }};font-size:13px;font-weight:500">Exporter</span>
+        <span style="height:32px;display:inline-flex;align-items:center;padding:0 10px;border-radius:7px;color:{{ t.at }};font-size:13px;font-weight:500">Voir les logs →</span>
+      </div>
+      <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.mu }};font-weight:500">Champ · focus</span>
+      <div style="height:34px;display:flex;align-items:center;padding:0 11px;border-radius:7px;border:1px solid {{ t.ring }};box-shadow:0 0 0 3px {{ t.ringSoft }};background:{{ t.bg }};font:12.5px 'JetBrains Mono',monospace">https://hooks.acme.dev/mail<span style="width:1.5px;height:15px;background:{{ t.tx }};margin-left:1px"></span></div>
+      <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.mu }};font-weight:500">Segmenté · toggle</span>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="display:inline-flex;padding:3px;border-radius:8px;background:{{ t.raised }};border:1px solid {{ t.bd }};gap:2px"><span style="height:26px;display:inline-flex;align-items:center;padding:0 10px;border-radius:6px;background:{{ t.hover }};font-size:12.5px;font-weight:500">HTML</span><span style="height:26px;display:inline-flex;align-items:center;padding:0 10px;font-size:12.5px;color:{{ t.mu }}">Texte</span><span style="height:26px;display:inline-flex;align-items:center;padding:0 10px;font-size:12.5px;color:{{ t.mu }}">Source</span></div>
+        <div style="width:36px;height:20px;border-radius:10px;background:{{ t.ac }};position:relative"><div style="position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:{{ t.on }}"></div></div>
+        <div style="width:36px;height:20px;border-radius:10px;background:{{ t.bd2 }};position:relative"><div style="position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:{{ t.mu }}"></div></div>
+      </div>
+    </div>
+    <div style="border:1px solid {{ t.bd }};border-radius:14px;background:{{ t.panel }};display:flex;flex-direction:column;overflow:hidden">
+      <div style="padding:14px 16px 10px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.mu }};font-weight:500">Liste de messages</div>
+      <div style="display:flex;gap:10px;padding:10px 16px;background:{{ t.acSoft }};border-top:1px solid {{ t.bd }}">
+        <span style="width:7px;height:7px;border-radius:50%;background:{{ t.ac }};margin-top:6px;flex:none"></span>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><div style="display:flex;gap:8px"><span style="font-weight:600;flex:1;font-size:13px">Confirmez votre adresse email</span><span style="font:11px 'JetBrains Mono',monospace;color:{{ t.mu }}">12:04</span></div><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">alex@acme.test</span></div>
+      </div>
+      <div style="display:flex;gap:10px;padding:10px 16px;border-top:1px solid {{ t.bd }}">
+        <span style="width:7px;flex:none"></span>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><div style="display:flex;gap:8px"><span style="flex:1;font-size:13px">Votre reçu Live The WOD</span><span style="font:11px 'JetBrains Mono',monospace;color:{{ t.mu }}">11:52</span></div><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">sam@acme.test</span></div>
+      </div>
+      <div style="display:flex;gap:10px;padding:10px 16px;border-top:1px solid {{ t.bd }}">
+        <span style="width:7px;flex:none"></span>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><div style="display:flex;gap:8px"><span style="flex:1;font-size:13px">Réinitialisation du mot de passe</span><span style="font:11px 'JetBrains Mono',monospace;color:{{ t.mu }}">11:30</span></div><span style="font:12px 'JetBrains Mono',monospace;color:{{ t.mu }}">kim@acme.test</span></div>
+      </div>
+    </div>
+    <div style="border:1px solid {{ t.bd }};border-radius:14px;padding:20px;background:{{ t.panel }};display:flex;flex-direction:column;gap:14px">
+      <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.mu }};font-weight:500">Override actif</span>
+      <div style="display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:7px;background:{{ t.ovSoft }};border:1px solid {{ t.ovLine }};color:{{ t.ov }};font:500 12px 'JetBrains Mono',monospace;align-self:flex-start"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.ov }}"></span>errorRate 25 % · 2 règles</div>
+      <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.mu }};font-weight:500">Badge webhook</span>
+      <span style="height:22px;display:inline-flex;align-items:center;padding:0 8px;border-radius:5px;border:1px solid {{ t.bd2 }};font:500 11.5px 'JetBrains Mono',monospace;color:{{ t.mu }};align-self:flex-start">Format: Unified · X-Mailsink-Signature</span>
+      <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.mu }};font-weight:500">Toast</span>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:{{ t.raised }};border:1px solid {{ t.bd2 }};box-shadow:0 8px 24px rgba(0,0,0,.18)"><span style="width:18px;height:18px;border-radius:5px;background:{{ t.ac }};color:{{ t.on }};display:grid;place-items:center;font-size:11px;font-weight:700;flex:none">↓</span><span style="font-size:13px;flex:1">Nouveau message capturé</span><span style="font-size:12.5px;color:{{ t.at }};font-weight:500">Ouvrir</span></div>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="Applications" style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-top:1px solid {{ t.bd }};padding-top:20px"><span style="font:500 12px 'JetBrains Mono',monospace;color:{{ t.at }}">05</span><h2 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-.025em">Applications</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:14px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="aspect-ratio:1200/630;border-radius:14px;background:{{ t.panel }};border:1px solid {{ t.bd }};padding:6%;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px"><svg width="30" height="30" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.on }}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.on }}" stroke-width="5.5" stroke-linecap="round"></path></svg><span style="font-size:20px;font-weight:600;letter-spacing:-.04em">mailsink</span></div>
+        <div style="font-size:clamp(26px,3.4vw,40px);font-weight:600;letter-spacing:-.04em;line-height:1.02">Tout arrive.<br><span style="color:{{ t.at }}">Rien ne part.</span></div>
+        <div style="font:12.5px 'JetBrains Mono',monospace;color:{{ t.mu }}">mailsink.dev</div>
+      </div>
+      <span style="font-size:12px;color:{{ t.mu }}">Carte de partage · 1200 × 630</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="border-radius:14px;border:1px solid {{ t.bd }};background:{{ t.panel }};overflow:hidden;display:flex;flex-direction:column;height:100%">
+        <div style="height:44px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid {{ t.bd }}">
+          <svg width="20" height="20" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="{{ t.ac }}"></rect><path d="M32 13v21M23.5 26 32 34.5 40.5 26" fill="none" stroke="{{ t.on }}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15 37v6a6 6 0 0 0 6 6h22a6 6 0 0 0 6-6v-6" fill="none" stroke="{{ t.on }}" stroke-width="6.5" stroke-linecap="round"></path></svg>
+          <span style="color:{{ t.fa }}">/</span>
+          <span style="height:26px;display:inline-flex;align-items:center;padding:0 9px;border-radius:6px;border:1px solid {{ t.bd }};background:{{ t.raised }};font:12px 'JetBrains Mono',monospace">live-the-wod-staging</span>
+          <span style="flex:1"></span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:{{ t.mu }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.live }}"></span>Live</span>
+        </div>
+        <div style="flex:1;display:grid;place-items:center;padding:28px 20px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+            <div style="width:44px;height:44px;border-radius:11px;background:{{ t.acSoft }};display:grid;place-items:center"><svg width="24" height="24" viewBox="0 0 64 64"><path d="M32 8v28M20.5 25 32 36.5 43.5 25" fill="none" stroke="{{ t.at }}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 38v8a8 8 0 0 0 8 8h32a8 8 0 0 0 8-8v-8" fill="none" stroke="{{ t.at }}" stroke-width="6" stroke-linecap="round"></path></svg></div>
+            <span style="font-weight:600;font-size:15px">Boîte vide</span>
+            <span style="font-size:13px;color:{{ t.mu }};max-width:280px">Les emails envoyés via une connexion de ce workspace apparaissent ici.</span>
+            <span style="height:30px;display:inline-flex;align-items:center;padding:0 12px;border-radius:7px;background:{{ t.ac }};color:{{ t.on }};font-size:12.5px;font-weight:600">Simuler un envoi</span>
+          </div>
+        </div>
+      </div>
+      <span style="font-size:12px;color:{{ t.mu }}">En-tête + état vide de l'app</span>
+    </div>
+  </div>
+</section>
+
+<section data-screen-label="Tokens" style="display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-top:1px solid {{ t.bd }};padding-top:20px"><span style="font:500 12px 'JetBrains Mono',monospace;color:{{ t.at }}">06</span><h2 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-.025em">tokens.css</h2><span style="color:{{ t.mu }}">Les deux modes pour l'accent sélectionné.</span></div>
+  <pre style="margin:0;padding:18px 20px;border:1px solid {{ t.bd }};border-radius:12px;background:{{ t.panel }};font:12.5px/1.7 'JetBrains Mono',monospace;color:{{ t.mu }};white-space:pre-wrap;overflow:auto">{{ css }}</pre>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;jaune&quot;,&quot;indigo&quot;],&quot;default&quot;:&quot;jaune&quot;,&quot;tsType&quot;:&quot;'indigo'|'jaune'&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;}}">
+class Component extends DCLogic {
+  state = { accent: this.props.accent ?? 'jaune', mode: this.props.mode ?? 'light' };
+  componentDidUpdate(pp) {
+    if (pp.accent !== this.props.accent && this.props.accent) this.setState({ accent: this.props.accent });
+    if (pp.mode !== this.props.mode && this.props.mode) this.setState({ mode: this.props.mode });
+  }
+  theme(acc, mode) {
+    const N = mode === 'dark'
+      ? { bg:'#0b0c0e', panel:'#111214', raised:'#16171a', hover:'#1d1f23', bd:'#222429', bd2:'#2d3036', tx:'#e7e8ea', mu:'#8d9199', fa:'#5f636b' }
+      : { bg:'#f5f5f3', panel:'#ffffff', raised:'#fafaf9', hover:'#efefec', bd:'#e5e5e1', bd2:'#d4d4cf', tx:'#16171a', mu:'#5d6067', fa:'#989ba1' };
+    const A = {
+      indigo: {
+        dark:  { ac:'oklch(0.62 0.19 275)', on:'#ffffff', at:'oklch(0.75 0.13 275)', ov:'oklch(0.82 0.14 75)' },
+        light: { ac:'oklch(0.50 0.20 275)', on:'#ffffff', at:'oklch(0.48 0.20 275)', ov:'oklch(0.56 0.14 65)' } },
+      jaune: {
+        dark:  { ac:'oklch(0.87 0.16 92)', on:'#0b0c0e', at:'oklch(0.87 0.16 92)', ov:'oklch(0.74 0.17 45)' },
+        light: { ac:'oklch(0.86 0.16 92)', on:'#16171a', at:'oklch(0.50 0.11 80)', ov:'oklch(0.58 0.17 45)' } }
+    }[acc][mode];
+    const t = { ...N, ...A };
+    const mix = (c, p, b) => `color-mix(in oklch, ${c} ${p}%, ${b})`;
+    t.acSoft = mix(t.ac, mode === 'dark' ? 13 : 16, t.panel);
+    t.ring = acc === 'jaune' && mode === 'light' ? t.at : t.ac;
+    t.ringSoft = mix(t.ring, 25, 'transparent');
+    t.ovSoft = mix(t.ov, 14, 'transparent');
+    t.ovLine = mix(t.ov, 35, 'transparent');
+    t.live = mode === 'dark' ? 'oklch(0.76 0.15 155)' : 'oklch(0.52 0.14 155)';
+    return t;
+  }
+  renderVals() {
+    const { accent, mode } = this.state;
+    const t = this.theme(accent, mode);
+    const inv = this.theme(accent, mode === 'dark' ? 'light' : 'dark');
+    const dark = mode === 'dark';
+    const codes = {
+      indigo: { ac:'oklch(.62 .19 275) · ≈ #6366f1', at: dark ? 'oklch(.75 .13 275)' : 'oklch(.48 .20 275)' },
+      jaune:  { ac:'oklch(.87 .16 92) · ≈ #f2cf3a', at: dark ? 'oklch(.87 .16 92)' : 'oklch(.50 .11 80) · ocre' }
+    }[accent];
+    const mix = (c) => `color-mix(in oklch, ${c} 14%, transparent)`;
+    const S = dark
+      ? [['delivered','oklch(0.76 0.15 155)'],['soft_bounce','oklch(0.80 0.14 70)'],['hard_bounce','oklch(0.70 0.18 25)'],['complained','oklch(0.74 0.14 320)'],['deferred','oklch(0.76 0.11 220)'],['failed','oklch(0.66 0.20 10)'],['suppressed','#868a92']]
+      : [['delivered','oklch(0.52 0.14 155)'],['soft_bounce','oklch(0.57 0.14 60)'],['hard_bounce','oklch(0.54 0.19 25)'],['complained','oklch(0.52 0.16 320)'],['deferred','oklch(0.52 0.12 225)'],['failed','oklch(0.50 0.20 15)'],['suppressed','#787b82']];
+    const pick = (k, v) => () => this.setState({ [k]: v });
+    const seg = (on) => ({ bg: on ? t.hover : 'transparent', c: on ? t.tx : t.mu });
+    const css = (() => {
+      const block = (sel, x) => `${sel} {\n  --ms-accent: ${x.ac};  --ms-on-accent: ${x.on};\n  --ms-accent-text: ${x.at};  --ms-override: ${x.ov};\n  --ms-bg: ${x.bg};  --ms-panel: ${x.panel};  --ms-raised: ${x.raised};  --ms-hover: ${x.hover};\n  --ms-border: ${x.bd};  --ms-border-strong: ${x.bd2};\n  --ms-text: ${x.tx};  --ms-text-muted: ${x.mu};  --ms-text-faint: ${x.fa};\n}`;
+      const d = this.theme(accent, 'dark'), l = this.theme(accent, 'light');
+      return `${block(':root, [data-theme="dark"]', d)}\n${block('[data-theme="light"]', l)}\n:root {\n  --ms-font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;\n  --ms-font-mono: "JetBrains Mono", ui-monospace, monospace;\n  --ms-radius-xs: 4px; --ms-radius-sm: 6px; --ms-radius-md: 8px; --ms-radius-lg: 10px; --ms-radius-xl: 14px;\n  --ms-space: 4px;  --ms-dur-fast: 120ms;  --ms-dur-base: 200ms;\n}`;
+    })();
+    return {
+      t, inv, css,
+      accName: accent === 'indigo' ? 'ENCRE INDIGO' : 'JAUNE POSTE',
+      modeName: dark ? 'SOMBRE' : 'CLAIR',
+      accNote: accent === 'indigo'
+        ? "Indigo pour la marque ; ambre conservé pour l'override ; deferred décalé vers le bleu-cyan pour s'en distinguer."
+        : "Jaune pour la marque ; l'override passe à l'orange pour ne pas se confondre ; en clair, texte accent en ocre.",
+      accBtns: [
+        { label:'Encre Indigo', sw:'oklch(0.62 0.19 275)', pick: pick('accent','indigo'), ...seg(accent === 'indigo') },
+        { label:'Jaune Poste', sw:'oklch(0.87 0.16 92)', pick: pick('accent','jaune'), ...seg(accent === 'jaune') }
+      ],
+      modeBtns: [
+        { label:'Sombre', pick: pick('mode','dark'), ...seg(dark) },
+        { label:'Clair', pick: pick('mode','light'), ...seg(!dark) }
+      ],
+      brand: [
+        { n:'Accent', v:t.ac, ink:t.on, tok:'--ms-accent', code:codes.ac },
+        { n:'Accent texte', v:t.at, ink:t.on, tok:'--ms-accent-text', code:codes.at },
+        { n:'Override', v:t.ov, ink:dark ? '#0b0c0e' : '#ffffff', tok:'--ms-override', code:t.ov },
+        { n:'Fond', v:t.bg, ink:t.tx, tok:'--ms-bg', code:t.bg },
+        { n:'Texte', v:t.tx, ink:t.bg, tok:'--ms-text', code:t.tx }
+      ],
+      surfaces: [['bg',t.bg],['panel',t.panel],['raised',t.raised],['hover',t.hover],['border',t.bd],['border-strong',t.bd2],['text',t.tx],['text-muted',t.mu],['text-faint',t.fa]].map(([n,v]) => ({ n, v })),
+      statuses: S.map(([n,c]) => ({ n, c, soft: mix(c) })),
+      conns: [
+        { n:'Resend', c: dark ? '#d6d8dc' : '#2a2c30' },
+        { n:'Brevo', c: dark ? 'oklch(0.78 0.11 165)' : 'oklch(0.50 0.11 165)' },
+        { n:'SMTP', c: dark ? 'oklch(0.76 0.10 300)' : 'oklch(0.50 0.12 300)' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
