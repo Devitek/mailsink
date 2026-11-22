@@ -110,12 +110,14 @@ mailsink/
 │   ├── db/                                # Drizzle (doc 02)
 │   │   ├── drizzle.config.ts
 │   │   ├── migrations/                    # drizzle-kit output (0000_init.sql…)
-│   │   ├── test/                          # every DB test runs on PGlite and Postgres
+│   │   ├── test/                          # every DB test runs on PGlite and Postgres:
+│   │   │                                  # cascade, constraints, indexes, jobs, journal, migrate…
 │   │   └── src/
 │   │       ├── schema/  enums.ts workspaces.ts connections.ts keys.ts overrides.ts
 │   │       │            messages.ts attachments.ts blobs.ts events.ts suppressions.ts
 │   │       │            webhooks.ts webhook-deliveries.ts logs.ts templates.ts
-│   │       │            idempotency.ts jobs.ts columns.ts json-types.ts index.ts
+│   │       │            idempotency.ts jobs.ts columns.ts index.ts
+│   │       │            json-types.ts            # TranscriptLine only; JSON columns use contracts types
 │   │       ├── url.ts                   # DATABASE_URL parsing
 │   │       ├── client.ts                # createDb(url): node-postgres | PGlite
 │   │       ├── migrate.ts               # migrate(handle), advisory-locked on Postgres
@@ -162,6 +164,7 @@ mailsink/
 ├── AGENTS.md  README.md  CONTRIBUTING.md  LICENSE
 ├── lingui.config.ts                       # locales [en, fr], sourceLocale en, catalogs path
 ├── biome.json  pnpm-workspace.yaml  tsconfig.base.json
+├── tsconfig.json                          # typechecks root files (lingui.config.ts, vitest.config.ts)
 ```
 
 ## Runtime topology (D3)
@@ -191,7 +194,7 @@ invalid value stops the boot with exit code 1 (D28). Empty values count as unset
 | `MAILSINK_ADMIN_KEY` | unset: Admin key disabled, warning at boot (D41) | Admin API and UI login |
 | `PORT` / `MAILSINK_SMTP_PORT` | `3000` / `1025` | Listeners (`PORT` is read by Nitro) |
 | `MAILSINK_SMTP_HOST` | `0.0.0.0` | SMTP bind address |
-| `MAILSINK_RETENTION_INTERVAL_SECONDS` | `60` | Period of the retention pass (1 to 86400, D45) |
+| `MAILSINK_RETENTION_INTERVAL_SECONDS` | `60` | Period of the retention pass (1 to 86400, D49) |
 | `MAILSINK_SMTP_TLS_CERT` / `_KEY` | unset | Optional STARTTLS |
 | `MAILSINK_UI_AUTH` | `admin-key` | `none` for local/CI |
 | `MAILSINK_SESSION_SECRET` | derived from admin key | Cookie signing |

@@ -1,0 +1,18 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: de\n"
+
+# Test-only community locale (e2e fallback scenario, never shipped): one entry is
+# translated, the others are left empty or absent and must fall back to English.
+
+#: apps/mailsink/src/routes/index.tsx
+msgid "Catch every email your app sends, without delivering a single one."
+msgstr ""
+
+#: apps/mailsink/src/i18n/locale-switcher.tsx
+msgid "Language"
+msgstr "Sprache"

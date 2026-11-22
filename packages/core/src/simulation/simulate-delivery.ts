@@ -2,9 +2,9 @@ import type { DeliveryStatus } from '@mailsink/contracts'
 import {
   type Database,
   insertMessageEvents,
-  listRecipients,
+  listRecipientsForSimulation,
   lockMessage,
-  type MessageEventRow,
+  type NewMessageEventRow,
   newId,
   setMessageStatus,
   setRecipientsStatus,
@@ -44,13 +44,13 @@ export async function simulateDelivery(
   return db.transaction(async (tx) => {
     const message = await lockMessage(tx, messageId)
     if (!message) return { kind: 'missing' }
-    const recipients = await listRecipients(tx, messageId)
+    const recipients = await listRecipientsForSimulation(tx, messageId)
     const queued = recipients.filter((r) => r.status === 'queued')
     const outcomes = queued.length > 0 ? await planner({ message, recipients: queued }, tx) : []
 
     const byId = new Map(queued.map((r) => [r.id, r]))
     const transitions: RecipientTransition[] = []
-    const events: MessageEventRow[] = []
+    const events: NewMessageEventRow[] = []
     // Explicit, strictly increasing times (and ids) keep `sent` before the final event,
     // where the transaction-wide now() would give them the same timestamp.
     const sentAt = now()

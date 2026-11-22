@@ -2,9 +2,9 @@ import { asc, eq, inArray, sql } from 'drizzle-orm'
 import type { Executor } from '../client'
 import { messageEvents } from '../schema/events'
 import { messageRecipients, messages } from '../schema/messages'
+import type { DeliveryStatusValue } from './messages-read'
 
-export type DeliveryStatusValue = (typeof messages.$inferSelect)['status']
-export type MessageEventRow = typeof messageEvents.$inferInsert
+export type NewMessageEventRow = typeof messageEvents.$inferInsert
 
 export interface SimulatedMessage {
   id: string
@@ -42,7 +42,7 @@ export async function lockMessage(
 }
 
 /** Recipients in a stable order (insertion order of their time-sortable ids). */
-export async function listRecipients(
+export async function listRecipientsForSimulation(
   db: Executor,
   messageId: string,
 ): Promise<SimulatedRecipient[]> {
@@ -81,7 +81,7 @@ export async function setMessageStatus(
     .where(eq(messages.id, messageId))
 }
 
-export async function insertMessageEvents(db: Executor, rows: MessageEventRow[]): Promise<void> {
+export async function insertMessageEvents(db: Executor, rows: NewMessageEventRow[]): Promise<void> {
   if (rows.length === 0) return
   await db.insert(messageEvents).values(rows)
 }
