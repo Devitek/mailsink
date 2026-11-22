@@ -1,4 +1,5 @@
 import type { Runtime } from '../runtime/container'
+import { activityExtension } from './activity'
 import type { AuthFor, AuthMode } from './auth'
 
 export interface RequestContext<M extends AuthMode = AuthMode> {
@@ -31,4 +32,4 @@ export interface ApiExtension {
 }
 
 /** Extensions applied to every route; features register theirs here. */
-export const DEFAULT_EXTENSIONS: readonly ApiExtension[] = []
+export const DEFAULT_EXTENSIONS: readonly ApiExtension[] = [activityExtension]

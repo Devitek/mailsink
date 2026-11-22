@@ -33,7 +33,7 @@ export const postEmail = defineApi({
   handler: async ({ request, runtime, auth, body }) =>
     toResponse(
       await sendNativeEmail(
-        { db: runtime.db.db, maxMessageBytes: runtime.config.maxMessageBytes },
+        { db: runtime.db.db, maxMessageBytes: runtime.config.maxMessageBytes, bus: runtime.bus },
         targetOf(auth),
         body,
         readIdempotencyKey(request.headers),
@@ -49,7 +49,7 @@ export const postEmailBatch = defineApi({
   handler: async ({ request, runtime, auth, body }) =>
     toResponse(
       await sendNativeBatch(
-        { db: runtime.db.db, maxMessageBytes: runtime.config.maxMessageBytes },
+        { db: runtime.db.db, maxMessageBytes: runtime.config.maxMessageBytes, bus: runtime.bus },
         targetOf(auth),
         body,
         readIdempotencyKey(request.headers),

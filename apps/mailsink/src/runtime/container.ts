@@ -1,7 +1,12 @@
 import {
+  type ActivityTracker,
+  createActivityTracker,
+  createEventBus,
   createJobRunner,
   DEFAULT_JOB_SETTINGS,
+  type EventBus,
   simulateDeliveryHandler,
+  startEphemeralGc,
   startRetentionScheduler,
   startWorker,
 } from '@mailsink/core'
@@ -18,6 +23,10 @@ export type Logger = Pick<Console, 'info' | 'warn' | 'error'>
 export type Runtime = {
   config: RuntimeConfig
   db: DbHandle
+  /** In-process event bus (D6): SSE, wait=true, later MCP. */
+  bus: EventBus
+  /** Throttled workspace activity (D16): every surface touches it. */
+  activity: ActivityTracker
   smtpPort: number
   stop: () => Promise<void>
 }
@@ -49,6 +58,10 @@ export async function createRuntime(
     await migrate(db, { migrationsFolder: options.migrationsFolder })
     log.info(`[mailsink] database ready (${db.driver}, migrations applied)`)
 
+    const bus = createEventBus(log)
+    // HTTP surfaces touch it through the defineApi activity extension; SMTP ingestion
+    // (#31) calls activity.touch(workspaceId) once AUTH resolves the connection.
+    const activity = createActivityTracker({ db: db.db, log })
     const smtp = await startSmtpListener({
       host: config.smtpHost,
       port: config.smtpPort,
@@ -64,7 +77,7 @@ export async function createRuntime(
     const jobs = config.jobs ?? DEFAULT_JOB_SETTINGS
     const runJobs = createJobRunner({
       db: db.db,
-      handlers: { simulate_delivery: simulateDeliveryHandler() },
+      handlers: { simulate_delivery: simulateDeliveryHandler({ bus }) },
       batchSize: jobs.batchSize,
       lockSeconds: jobs.lockSeconds,
       maxAttempts: jobs.maxAttempts,
@@ -84,16 +97,20 @@ export async function createRuntime(
       failedJobRetentionSeconds: jobs.failedRetentionSeconds,
       log,
     })
+    const gc = startEphemeralGc({ db: db.db, bus, activity, log })
 
     return {
       config,
       db,
+      bus,
+      activity,
       smtpPort: smtp.port,
       async stop() {
         // Stop accepting mail, drain the worker that would process it and the retention
-        // pass in flight, then close the db.
+        // and GC passes in flight, write the pending activity, then close the db.
         await smtp.close()
-        await Promise.all([worker.stop(), retention.stop()])
+        await Promise.all([worker.stop(), retention.stop(), gc.stop()])
+        await activity.stop()
         await db.close()
       },
     }
