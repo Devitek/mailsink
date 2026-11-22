@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      # DB tests run on both drivers: this service backs the Postgres side (PGlite needs none).
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: mailsink
+          POSTGRES_PASSWORD: mailsink
+          POSTGRES_DB: mailsink_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mailsink"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://mailsink:mailsink@localhost:5432/mailsink_test
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
