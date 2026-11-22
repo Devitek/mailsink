@@ -7,7 +7,8 @@ msgstr ""
 "Language: de\n"
 
 # Test-only community locale (e2e fallback scenario, never shipped): one entry is
-# translated, the others are left empty or absent and must fall back to English.
+# translated, the others are left empty or absent and must fall back to the EN catalog
+# (whose tagline the test build overrides, see messages.ts).
 
 #: apps/mailsink/src/routes/index.tsx
 msgid "Catch every email your app sends, without delivering a single one."
