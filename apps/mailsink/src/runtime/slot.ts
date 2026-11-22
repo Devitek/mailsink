@@ -8,7 +8,12 @@ import type { Runtime } from './container'
  */
 const SLOT_KEY = Symbol.for('mailsink.runtime')
 
-export type RuntimeSlot = { booting?: Promise<Runtime>; stopping?: Promise<void> }
+export type RuntimeSlot = {
+  booting?: Promise<Runtime>
+  stopping?: Promise<void>
+  /** Waiters of the next completed stop (shutdown.ts waits for the Nitro close hook). */
+  onStopped?: Array<() => void>
+}
 
 export function runtimeSlot(): RuntimeSlot {
   const holder = globalThis as typeof globalThis & { [SLOT_KEY]?: RuntimeSlot }
@@ -25,4 +30,13 @@ export function whenRuntimeReady(): Promise<Runtime> {
     )
   }
   return booting
+}
+
+/** Resolves when the next stop of the runtime completes, whoever triggered it. */
+export function whenRuntimeStopped(): Promise<void> {
+  const slot = runtimeSlot()
+  return new Promise((resolve) => {
+    slot.onStopped ??= []
+    slot.onStopped.push(resolve)
+  })
 }
