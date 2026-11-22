@@ -9,17 +9,100 @@ export {
 } from './client'
 export { type IdPrefix, newId } from './ids'
 export { MIGRATIONS_FOLDER, type MigrateOptions, migrate } from './migrate'
-export * from './repositories/api-keys'
-export * from './repositories/blobs'
-export * from './repositories/connections'
-export * from './repositories/idempotency'
-export * from './repositories/jobs'
-export * from './repositories/messages-purge'
-export * from './repositories/messages-read'
-export * from './repositories/messages-status'
-export * from './repositories/messages-write'
-export * from './repositories/retention'
-export * from './repositories/workspaces'
+// Repositories are re-exported by name: a name clash between two of them fails the build
+// instead of `export *` silently dropping both.
+export {
+  type ActiveApiKey,
+  type ApiKey,
+  activeKeyPrefixes,
+  findActiveApiKeyByHash,
+  insertApiKeys,
+  type NewApiKey,
+} from './repositories/api-keys'
+export {
+  getBlobData,
+  putBlob,
+  type StoredBlob,
+} from './repositories/blobs'
+export {
+  type Connection,
+  insertConnections,
+  listConnections,
+  type NewConnection,
+} from './repositories/connections'
+export {
+  findIdempotencyRecord,
+  type IdempotencyRecord,
+  insertIdempotencyRecord,
+} from './repositories/idempotency'
+export {
+  type ClaimOptions,
+  claimJobs,
+  completeJob,
+  enqueueJobs,
+  FAILED_JOB_RUN_AT,
+  failJob,
+  type Job,
+  type NewJob,
+  type RetryOptions,
+  releaseJobs,
+  retryJob,
+} from './repositories/jobs'
+export {
+  type MessagePurge,
+  purgeMessages,
+} from './repositories/messages-purge'
+export {
+  type AttachmentRow,
+  type DeliveryStatusValue,
+  findAttachmentContent,
+  findRawMessage,
+  findWorkspaceMessage,
+  listAttachments,
+  listMessageEvents,
+  listRecipients,
+  type MessageEventRow,
+  type MessageListRow,
+  type MessageRow,
+  type MessageSearch,
+  type RecipientRow,
+  searchMessages,
+} from './repositories/messages-read'
+export {
+  insertMessageEvents,
+  listRecipientsForSimulation,
+  lockMessage,
+  type NewMessageEventRow,
+  type SimulatedMessage,
+  type SimulatedRecipient,
+  setMessageStatus,
+  setRecipientsStatus,
+} from './repositories/messages-status'
+export {
+  findSuppressedEmails,
+  insertMessageGraph,
+  type MessageGraph,
+  type NewAttachment,
+  type NewMessage,
+  type NewMessageEvent,
+  type NewMessageRecipient,
+} from './repositories/messages-write'
+export {
+  deleteExpiredIdempotencyKeys,
+  deleteOrphanBlobs,
+  enforceMaxMessages,
+  purgeExpiredLogs,
+  purgeExpiredMessages,
+} from './repositories/retention'
+export {
+  deleteWorkspace,
+  findWorkspaceByRef,
+  insertWorkspace,
+  type ListWorkspacesOptions,
+  listWorkspaces,
+  type NewWorkspace,
+  type Workspace,
+} from './repositories/workspaces'
 export * as schema from './schema'
 export * from './schema'
 export { type DatabaseTarget, DEFAULT_DATABASE_URL, parseDatabaseUrl } from './url'
