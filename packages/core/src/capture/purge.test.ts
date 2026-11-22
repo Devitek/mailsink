@@ -10,18 +10,18 @@ import {
   webhookDeliveries,
   webhookEndpoints,
 } from '@mailsink/db'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestWorkspaceWithConnection, describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
 import { expect, it } from 'vitest'
 import { purgeCapturedMessages } from './service'
-import { insertCapturedMessage, insertCaptureWorkspace } from './testing/fixtures'
+import { insertCapturedMessage } from './testing/fixtures'
 
 const OLD = new Date('2026-11-01T00:00:00Z')
 const NEW = new Date('2026-11-20T00:00:00Z')
 const CUTOFF = '2026-11-10T00:00:00Z'
 
 async function seed(db: Database) {
-  const { workspace, connection } = await insertCaptureWorkspace(db)
+  const { workspace, connection } = await createTestWorkspaceWithConnection(db)
   const ws = workspace.id
   const con = connection.id
   const event = { type: 'accepted' as const, origin: 'api' as const }

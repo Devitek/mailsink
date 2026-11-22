@@ -13,7 +13,71 @@ describe('readRuntimeConfig', () => {
       maxMessageBytes: 26_214_400,
       publicUrl: 'http://localhost:3000',
       defaultIdleTtlSeconds: 3600,
+      smtpPublicHost: undefined,
+      smtpPublicPort: undefined,
+      jobs: {
+        batchSize: 20,
+        lockSeconds: 30,
+        maxAttempts: 5,
+        backoffBaseSeconds: 5,
+        backoffMaxSeconds: 900,
+        failedRetentionSeconds: 604_800,
+      },
     })
+  })
+
+  it('reads the job runner settings', () => {
+    const config = readRuntimeConfig({
+      MAILSINK_JOBS_POLL_INTERVAL_MS: '250',
+      MAILSINK_JOBS_BATCH_SIZE: '50',
+      MAILSINK_JOBS_LOCK_SECONDS: '120',
+      MAILSINK_JOBS_MAX_ATTEMPTS: '8',
+      MAILSINK_JOBS_BACKOFF_BASE_SECONDS: '2',
+      MAILSINK_JOBS_BACKOFF_MAX_SECONDS: '60',
+      MAILSINK_JOBS_FAILED_RETENTION_SECONDS: '3600',
+    })
+    expect(config.workerIntervalMs).toBe(250)
+    expect(config.jobs).toEqual({
+      batchSize: 50,
+      lockSeconds: 120,
+      maxAttempts: 8,
+      backoffBaseSeconds: 2,
+      backoffMaxSeconds: 60,
+      failedRetentionSeconds: 3600,
+    })
+  })
+
+  it('rejects out-of-range job runner settings', () => {
+    for (const [name, value] of [
+      ['MAILSINK_JOBS_POLL_INTERVAL_MS', '5'],
+      ['MAILSINK_JOBS_BATCH_SIZE', '0'],
+      ['MAILSINK_JOBS_LOCK_SECONDS', 'x'],
+      ['MAILSINK_JOBS_MAX_ATTEMPTS', '0'],
+      ['MAILSINK_JOBS_FAILED_RETENTION_SECONDS', '1.5'],
+    ]) {
+      expect(() => readRuntimeConfig({ [name as string]: value })).toThrow(name)
+    }
+    expect(() =>
+      readRuntimeConfig({
+        MAILSINK_JOBS_BACKOFF_BASE_SECONDS: '60',
+        MAILSINK_JOBS_BACKOFF_MAX_SECONDS: '10',
+      }),
+    ).toThrow(/MAILSINK_JOBS_BACKOFF_MAX_SECONDS/)
+  })
+
+  it('reads the public SMTP host and port given to clients', () => {
+    expect(
+      readRuntimeConfig({
+        MAILSINK_SMTP_PUBLIC_HOST: 'smtp.example.com',
+        MAILSINK_SMTP_PUBLIC_PORT: '2525',
+      }),
+    ).toMatchObject({ smtpPublicHost: 'smtp.example.com', smtpPublicPort: 2525 })
+    expect(() => readRuntimeConfig({ MAILSINK_SMTP_PUBLIC_PORT: '0' })).toThrow(
+      /MAILSINK_SMTP_PUBLIC_PORT/,
+    )
+    expect(() => readRuntimeConfig({ MAILSINK_SMTP_PUBLIC_HOST: 'a host' })).toThrow(
+      /MAILSINK_SMTP_PUBLIC_HOST/,
+    )
   })
 
   it('reads the retention interval in seconds', () => {

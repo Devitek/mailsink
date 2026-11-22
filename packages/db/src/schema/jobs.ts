@@ -19,6 +19,9 @@ export const jobs = pgTable(
     attempts: integer('attempts').notNull().default(0),
     lockedUntil: tstz('locked_until'),
     lastError: text('last_error'),
+    // Set when the job is given up on (run_at parked at FAILED_JOB_RUN_AT): the retention
+    // pass purges it once the grace period after this instant is over.
+    failedAt: tstz('failed_at'),
   },
   (t) => [index('jobs_due_idx').on(t.runAt)],
 )
