@@ -6,6 +6,7 @@ import {
   removeWorkspace,
 } from '@mailsink/core'
 import { z } from 'zod'
+import type { Runtime } from '../../runtime/container'
 import { defineApi } from '../handler'
 import { publicEndpoints } from './public-endpoints'
 
@@ -41,20 +42,26 @@ export const getWorkspace = defineApi({
 })
 
 /**
- * `DELETE /admin/workspaces/:id`: immediate hard delete, 204. Like the ephemeral GC, it
- * publishes `workspace.deleted` so open streams and `wait=true` calls end (D97).
+ * Immediate hard delete by id or slug. Like the ephemeral GC, it publishes
+ * `workspace.deleted` so open streams and `wait=true` calls end (D97). Also used by the UI.
  */
+export async function removeWorkspaceAndNotify(runtime: Runtime, ref: string): Promise<string> {
+  const workspaceId = await removeWorkspace(runtime.db.db, ref)
+  runtime.activity.forget(workspaceId)
+  runtime.bus.publish(workspaceId, {
+    id: null,
+    connectionId: null,
+    event: { type: 'workspace.deleted', workspaceId },
+  })
+  return workspaceId
+}
+
+/** `DELETE /admin/workspaces/:id`: 204. */
 export const deleteWorkspace = defineApi({
   auth: 'admin',
   params: RefParams,
   handler: async ({ runtime, params }) => {
-    const workspaceId = await removeWorkspace(runtime.db.db, params.id)
-    runtime.activity.forget(workspaceId)
-    runtime.bus.publish(workspaceId, {
-      id: null,
-      connectionId: null,
-      event: { type: 'workspace.deleted', workspaceId },
-    })
+    await removeWorkspaceAndNotify(runtime, params.id)
     return new Response(null, { status: 204 })
   },
 })

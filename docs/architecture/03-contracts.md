@@ -14,6 +14,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `GET /admin/workspaces?includeEphemeral=` | Admin key | admin | List |
 | `GET /admin/workspaces/:id` | Admin key | admin | Detail |
 | `DELETE /admin/workspaces/:id` | Admin key | admin | Immediate hard delete |
+| `POST /admin/workspaces/:id/connections/:connectionId/rotate` | Admin key | admin | New connection secret, previous one revoked (#38) |
 | `POST /v1/emails` · `POST /v1/emails/batch` | `Bearer msk_` (any kind) | native | Native ingestion |
 | `POST /emails` · `POST /emails/batch` · `GET /emails/:id` | `Bearer msk_` (resend) | resend | Resend drop-in |
 | `POST /v3/smtp/email` | `api-key: msk_` (brevo) | brevo | Brevo drop-in |
@@ -351,6 +352,33 @@ Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connecti
   malformed cursor is a 422.
 - `GET` and `DELETE /admin/workspaces/:id` take an id or a slug; `DELETE` answers 204 and
   cascades to every workspace-owned row; an unknown workspace is a 404.
+- `POST /admin/workspaces/:id/connections/:connectionId/rotate` (#38, D172): `resend` and
+  `brevo` get a new `msk_` key and every previous key of the connection is revoked in the
+  same transaction (no grace period); `smtp` gets a new password, same username. Answers
+  200 `CreatedConnection`, the secret shown once; a connection of another workspace is a
+  404.
+
+### Workspace and connection management (`workspace-manage.ts`, #38, D170 to D174)
+
+```ts
+export const UpdateWorkspaceRequest = z.object({ name: Name.optional(),
+  description: z.string().max(500).nullable().optional(), retention: Retention.optional(),
+  rateLimit: RateLimitSettings.nullable().optional() })          // at least one key
+export const UpdateConnectionRequest = z.object({ name: Name.optional(),
+  enabled: z.boolean().optional() })                             // at least one key
+export const CreatedConnection = ConnectionView.extend({ credentials: ConnectionCredentials,
+  envSnippet: z.string() })                                      // creation or rotation
+```
+
+Core services (`core/connections/manage.ts`, `core/workspaces/update.ts`), called by the
+web UI server functions (`apps/mailsink/src/server-fns/{connections,workspaces-manage}-fns.ts`,
+session-checked, never the admin key from the browser) and by the rotation route:
+`addConnection`, `updateConnectionSettings` (rename; `enabled: false` sets `disabled_at`,
+`true` clears it), `rotateConnectionCredentials`, `removeConnection` (hard delete; keys,
+webhook endpoints and overrides cascade, messages and logs keep a null connection) and
+`updateWorkspaceSettings` (the slug never changes). The UI names workspaces by slug only
+and touches their activity on every call (D163); a taken slug or SMTP username comes back
+as a field conflict, not a failure.
 
 ## Native ingestion (`native.ts`)
 
@@ -1450,6 +1478,8 @@ export const LogsSearch = z.object({ tab: z.enum(['api', 'smtp', 'webhooks']).de
   sort: z.string().default('-createdAt'), page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(10).max(200).default(50), inspect: z.string().optional() })
 export const PickerSearch = z.object({ ephemeral: z.boolean().default(false) })
+/** `/w/$workspaceSlug/connections` (#38): connection id in the panel, or `new`. */
+export const ConnectionsSearch = z.object({ connection: z.string().max(64).optional() })
 ```
 
 ## Web UI auth (#37, propositions D160 to D164)
@@ -1461,7 +1491,7 @@ Code: `apps/mailsink/src/auth/`.
 |---|---|
 | `GET /login?redirect=` | Sign-in screen. `redirect` is kept only when it is a path of the app (not `//host`, a scheme or `/login` itself). Already signed in, or `MAILSINK_UI_AUTH=none`: redirects to `redirect`, else to the last opened workspace, else `/` |
 | `POST /login` | Exchanges the admin key for the session cookie |
-| `/`, `/w/$workspaceSlug` | Signed-in pages: without a valid session, redirect to `/login?redirect=<href>` |
+| `/`, `/w/$workspaceSlug`, `/w/$workspaceSlug/connections` | Signed-in pages: without a valid session, redirect to `/login?redirect=<href>` |
 
 `POST /login` (route server handler, not `defineApi()`, D162):
 

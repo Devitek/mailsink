@@ -1,19 +1,10 @@
 import { randomBytes } from 'node:crypto'
+import { slugify } from '@mailsink/contracts'
 
-const MAX_BASE = 56 // + "-" + 6 suffix characters = 63, the Slug maximum
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
 
-/** Lower-case ASCII, words joined by `-`; `workspace` when nothing is left. */
-export function slugify(name: string): string {
-  const base = name
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .slice(0, MAX_BASE)
-    .replace(/^-+|-+$/g, '')
-  return base || 'workspace'
-}
+// Shared with the web UI, which previews the slug as the name is typed (#38).
+export { slugify }
 
 /** `<slugified name>-<6 random characters>`, used when the request gives no slug. */
 export function generateSlug(name: string): string {

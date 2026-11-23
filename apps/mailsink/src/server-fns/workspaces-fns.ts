@@ -6,7 +6,7 @@ import { openWorkspace, readWorkspaceList } from './workspaces.server'
 // Workspace server functions of the UI. Each one checks the session itself: route guards
 // redirect first, this is the backstop for a direct call.
 
-const signedIn = createMiddleware({ type: 'function' }).server(async ({ next }) =>
+export const signedIn = createMiddleware({ type: 'function' }).server(async ({ next }) =>
   next({ context: { runtime: await requireSession() } }),
 )
 

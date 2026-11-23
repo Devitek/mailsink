@@ -17,6 +17,13 @@ export {
   verifySmtpPassword,
 } from './connections/credentials'
 export {
+  addConnection,
+  type ManageOptions,
+  removeConnection,
+  rotateConnectionCredentials,
+  updateConnectionSettings,
+} from './connections/manage'
+export {
   buildCredentials,
   type CredentialSecrets,
   envSnippet,
@@ -198,4 +205,5 @@ export {
   removeWorkspace,
 } from './workspaces/queries'
 export { generateSlug, slugify } from './workspaces/slug'
+export { updateWorkspaceSettings } from './workspaces/update'
 export { toConnectionView, toWorkspaceView, workspaceUrls } from './workspaces/views'
