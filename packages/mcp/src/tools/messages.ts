@@ -6,6 +6,7 @@ import type { McpServer } from '@modelcontextprotocol/server'
 import type { McpContext } from '../context'
 import { parseContract, runTool } from '../result'
 import { GetEmailInput, ListEmailsInput, WaitForEmailInput } from '../schemas'
+import { withAbsoluteUrls } from '../urls'
 
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const
 
@@ -39,11 +40,16 @@ export function registerMessageTools(server: McpServer, ctx: McpContext): void {
       title: 'Get one email',
       description:
         'One captured email in full: addresses, html and text bodies, headers, links, ' +
-        'attachments, per-recipient status, events and webhook deliveries.',
+        'attachments, per-recipient status, events and webhook deliveries. rawUrl and ' +
+        'attachments[].downloadUrl are absolute; get_email_source and get_email_attachment ' +
+        'return their content.',
       inputSchema: GetEmailInput,
       annotations: READ_ONLY,
     },
-    ({ id }) => runTool(() => getCapturedMessage(ctx.db, workspaceId, id)),
+    ({ id }) =>
+      runTool(async () =>
+        withAbsoluteUrls(await getCapturedMessage(ctx.db, workspaceId, id), ctx.publicUrl),
+      ),
   )
 
   server.registerTool(

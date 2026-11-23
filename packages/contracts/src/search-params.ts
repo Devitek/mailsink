@@ -40,3 +40,10 @@ export const InboxSearch = z.object({
   tab: InboxTab.optional().catch(undefined),
 })
 export type InboxSearch = z.infer<typeof InboxSearch>
+
+/**
+ * `/w/$workspaceSlug/connections`: the connection open in the side panel, by id, or `new`
+ * for the creation form (#38). Absent: the first connection.
+ */
+export const ConnectionsSearch = z.object({ connection: z.string().max(64).optional() })
+export type ConnectionsSearch = z.infer<typeof ConnectionsSearch>

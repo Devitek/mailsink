@@ -15,7 +15,12 @@ export const mcpApi = defineApi({
       request.method === 'POST'
         ? new Request(await limitBody(request, DEFAULT_MAX_BODY_BYTES), { signal: request.signal })
         : request,
-      { db: runtime.db.db, bus: runtime.bus, workspace: auth.workspace },
+      {
+        db: runtime.db.db,
+        bus: runtime.bus,
+        workspace: auth.workspace,
+        publicUrl: runtime.config.publicUrl,
+      },
       { maxBodyBytes: DEFAULT_MAX_BODY_BYTES },
     ),
 })

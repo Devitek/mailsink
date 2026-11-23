@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { useId } from 'react'
 import type { WorkspaceList, WorkspaceSummary } from '../../server-fns/workspace-types'
 import { EphemeralBadge } from './ephemeral-badge'
+import { NewWorkspaceDialog } from './new-workspace-dialog'
 
 type SectionsProps = {
   list: WorkspaceList
@@ -42,13 +43,19 @@ function Row({
       >
         {workspace.slug}
       </span>
+      {workspace.messageCount !== undefined && (
+        <span className="shrink-0 text-xs text-ms-text-faint">
+          <Trans>{workspace.messageCount} msg</Trans>
+        </span>
+      )}
       {workspace.ephemeral && <EphemeralBadge expiresAt={workspace.expiresAt} />}
     </Link>
   )
 }
 
 // Content of the workspace picker (prototype header popover, and the `/` page): persistent
-// workspaces, then the switch revealing the ephemeral ones, hidden by default.
+// workspaces, then the switch revealing the ephemeral ones, hidden by default, and the
+// « + New workspace » action (#38).
 export function WorkspaceSections({
   list,
   current,
@@ -100,6 +107,9 @@ export function WorkspaceSections({
           ))}
         </nav>
       )}
+      <div className="border-t border-ms-border p-2">
+        <NewWorkspaceDialog onDone={onPick} />
+      </div>
     </div>
   )
 }

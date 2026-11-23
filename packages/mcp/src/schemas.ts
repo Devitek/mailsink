@@ -3,6 +3,7 @@
 // the arguments again with the full contract when it holds refinements.
 import {
   ActivateOverrideRequest,
+  AttachmentId,
   ListApiLogsQuery,
   ListMessagesQuery,
   ListSmtpSessionsQuery,
@@ -60,4 +61,11 @@ export const GetDeliveryLogsInput = z.object({
 
 export const GetWebhookDeliveriesInput = ListWebhookDeliveriesQuery.extend({
   id: WebhookDeliveryId.optional().describe('One delivery (whd_…) with body and attempts'),
+})
+
+export const GetEmailSourceInput = GetEmailInput
+
+export const GetEmailAttachmentInput = z.object({
+  id: MessageId.describe('Message id (msg_…)'),
+  attachmentId: AttachmentId.describe('Attachment id (att_…), from get_email attachments[].id'),
 })

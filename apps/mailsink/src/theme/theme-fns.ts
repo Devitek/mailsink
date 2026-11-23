@@ -12,7 +12,7 @@ export const setTheme = createServerFn({ method: 'POST' })
     if (!isTheme(theme)) throw new Error('Unsupported theme')
     return theme
   })
-  .handler(({ data }) => {
-    writeThemeCookie(data)
+  .handler(async ({ data }) => {
+    await writeThemeCookie(data)
     return data
   })

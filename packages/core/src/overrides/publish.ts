@@ -1,7 +1,10 @@
-import type { OverrideState } from '@mailsink/contracts'
-import { type Database, findWorkspaceByRef, type Override } from '@mailsink/db'
+import type { ActivateOverrideRequest, EventOrigin, OverrideState } from '@mailsink/contracts'
+import { type Database, findWorkspaceByRef, type Override, type Workspace } from '@mailsink/db'
 import type { EventBus, StreamFrame } from '../events/bus'
-import { getOverrideState } from './service'
+import type { LiveDeps } from '../events/live'
+import { activateOverride, getOverrideState, resetOverride } from './service'
+
+type WorkspaceSettings = Pick<Workspace, 'id' | 'simulation' | 'rateLimit'>
 
 /**
  * `override.changed`: derived (no SSE id, never replayed, D80) and never filtered out by
@@ -38,4 +41,31 @@ export async function publishExpiredOverrides(
     const state = await getOverrideState(db, workspace, now)
     bus.publish(workspaceId, overrideChangedFrame(state, connectionId))
   }
+}
+
+/**
+ * Activation shared by `POST /capture/override` and the MCP tool `set_override_config`:
+ * every change publishes the new state (D96), recorded with its origin (`api`, `mcp`).
+ */
+export async function activateAndPublishOverride(
+  { db, bus }: LiveDeps,
+  workspace: WorkspaceSettings,
+  request: ActivateOverrideRequest,
+  via: EventOrigin,
+): Promise<OverrideState> {
+  const state = await activateOverride(db, workspace, request, via)
+  bus.publish(workspace.id, overrideChangedFrame(state, request.connectionId ?? null))
+  return state
+}
+
+/** Reset shared by `POST /capture/override/reset` and `reset_override_config`, idempotent
+ * and published even when nothing was open (D96). */
+export async function resetAndPublishOverride(
+  { db, bus }: LiveDeps,
+  workspace: WorkspaceSettings,
+  connectionId: string | undefined,
+): Promise<OverrideState> {
+  const state = await resetOverride(db, workspace, connectionId)
+  bus.publish(workspace.id, overrideChangedFrame(state, connectionId ?? null))
+  return state
 }

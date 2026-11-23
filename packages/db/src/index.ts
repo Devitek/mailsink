@@ -31,6 +31,13 @@ export {
   type NewConnection,
 } from './repositories/connections'
 export {
+  type ConnectionPatch,
+  deleteConnection,
+  findConnection,
+  revokeConnectionKeys,
+  updateConnection,
+} from './repositories/connections-write'
+export {
   findWorkspaceMessagesByIds,
   listMessageStreamEvents,
   listWorkspaceEventsAfter,
@@ -198,6 +205,7 @@ export {
   deleteExpiredWorkspaces,
   touchWorkspaceActivity,
 } from './repositories/workspace-activity'
+export { countMessagesByWorkspace } from './repositories/workspace-message-counts'
 export {
   deleteWorkspace,
   findWorkspaceByRef,
@@ -207,6 +215,7 @@ export {
   type NewWorkspace,
   type Workspace,
 } from './repositories/workspaces'
+export { updateWorkspace, type WorkspacePatch } from './repositories/workspaces-write'
 export * as schema from './schema'
 export * from './schema'
 export { type DatabaseTarget, DEFAULT_DATABASE_URL, parseDatabaseUrl } from './url'

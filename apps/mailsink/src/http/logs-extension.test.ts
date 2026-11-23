@@ -144,6 +144,22 @@ describeDb('request log extension', (ctx) => {
     expect((await detail.json()).requestHeaders.authorization).toBe('Bearer mskw_[redacted]')
   })
 
+  it('logs the forwarded address only with MAILSINK_TRUST_PROXY', async () => {
+    const forwarded = (bearer: string) => ({
+      ...json(bearer, email),
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': '203.0.113.9' },
+    })
+    const plain = await postEmail({ request: request('/v1/emails', forwarded(connectionKey)) })
+    expect((await logsOf(plain.headers.get('x-request-id')))[0]?.ip).toBeNull()
+    runtime.config.trustProxy = true
+    try {
+      const res = await postEmail({ request: request('/v1/emails', forwarded(connectionKey)) })
+      expect((await logsOf(res.headers.get('x-request-id')))[0]?.ip).toBe('203.0.113.9')
+    } finally {
+      runtime.config.trustProxy = false
+    }
+  })
+
   it('never fails the call when the write fails', async () => {
     const live = await whenRuntimeReady()
     const original = live.logs.writeApiLog

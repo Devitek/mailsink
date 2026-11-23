@@ -1,16 +1,9 @@
-// Tools that change state: trigger_email_event and purge_emails. They publish on the bus
-// like their HTTP twins (`POST /capture/messages/:id/events`, `DELETE /capture/messages`),
-// so the UI and the open SSE streams see MCP actions live (D6).
-import { PurgeQuery, type TriggerEventResponse } from '@mailsink/contracts'
-import {
-  eventFrame,
-  publishAll,
-  publishDeliveries,
-  purgeCapturedMessages,
-  statusFrame,
-  toEventView,
-  triggerMessageEvent,
-} from '@mailsink/core'
+// Tools that change state: trigger_email_event and purge_emails. They run the same core
+// services as their HTTP twins (`POST /capture/messages/:id/events`, `DELETE
+// /capture/messages`), which publish on the bus, so the UI and the open SSE streams see MCP
+// actions live (D6).
+import { PurgeQuery } from '@mailsink/contracts'
+import { purgeAndPublish, triggerAndPublishEvent } from '@mailsink/core'
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { McpContext } from '../context'
 import { runTool } from '../result'
@@ -30,24 +23,7 @@ export function registerActionTools(server: McpServer, ctx: McpContext): void {
       inputSchema: TriggerEmailEventInput,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    ({ id, event }) =>
-      runTool(async () => {
-        const result = await triggerMessageEvent(ctx.db, workspaceId, id, event, 'mcp')
-        const frames = result.events.map((row) => eventFrame(row, result.connectionId))
-        if (result.messageStatus) {
-          frames.push(statusFrame(id, result.messageStatus, result.connectionId))
-        }
-        publishAll(ctx.bus, workspaceId, frames)
-        publishDeliveries(ctx.bus, workspaceId, result.deliveries)
-        const response: TriggerEventResponse = {
-          events: result.events.map(toEventView),
-          webhookDeliveries: result.deliveries.map((d) => ({
-            id: d.delivery.id,
-            endpointId: d.delivery.endpointId,
-          })),
-        }
-        return response
-      }),
+    ({ id, event }) => runTool(() => triggerAndPublishEvent(ctx, workspaceId, id, event, 'mcp')),
   )
 
   server.registerTool(
@@ -61,15 +37,6 @@ export function registerActionTools(server: McpServer, ctx: McpContext): void {
       inputSchema: PurgeQuery,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
     },
-    (query) =>
-      runTool(async () => {
-        const purged = await purgeCapturedMessages(ctx.db, workspaceId, query)
-        ctx.bus.publish(workspaceId, {
-          id: null,
-          connectionId: query.connectionId ?? null,
-          event: { type: 'messages.purged', count: purged.count },
-        })
-        return purged
-      }),
+    (query) => runTool(() => purgeAndPublish(ctx, workspaceId, query)),
   )
 }
