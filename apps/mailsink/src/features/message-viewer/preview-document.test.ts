@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dataUrl, PREVIEW_CSP, previewDocument } from './preview-document'
+import { dataUrl, PREVIEW_CSP, previewCsp, previewDocument } from './preview-document'
 
 const HEAD = '<meta name="color-scheme" content="dark"><base target="_blank">'
 
@@ -36,5 +36,13 @@ describe('preview document', () => {
     expect(PREVIEW_CSP.startsWith("sandbox; default-src 'none'")).toBe(true)
     expect(PREVIEW_CSP).not.toMatch(/script-src|allow-/)
     expect(dataUrl('image/png', new Uint8Array([0, 1]))).toBe('data:image/png;base64,AAE=')
+  })
+
+  it('blocks every remote resource when asked (tracking pixels, #106)', () => {
+    expect(previewCsp({ blockRemote: false })).toBe(PREVIEW_CSP)
+    const blocked = previewCsp({ blockRemote: true })
+    expect(blocked.startsWith("sandbox; default-src 'none'")).toBe(true)
+    expect(blocked).toContain('img-src data:')
+    expect(blocked).not.toMatch(/https?:/)
   })
 })

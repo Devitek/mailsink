@@ -1,9 +1,10 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { Button, cn } from '@mailsink/ui'
-import { useState } from 'react'
+import { Button, cn, Switch } from '@mailsink/ui'
+import { useId, useState } from 'react'
 import type { ViewerMessage } from '../../server-fns/messages-types'
 import { Segmented } from '../inbox/segmented'
 import { inboxPaths, type PreviewScheme } from '../inbox/ui-paths'
+import { useStoredFlag } from './use-stored-flag'
 
 type Device = 'desktop' | 'mobile'
 
@@ -19,6 +20,9 @@ export function PreviewTab({
   const { t } = useLingui()
   const [device, setDevice] = useState<Device>('desktop')
   const [scheme, setScheme] = useState<PreviewScheme>('light')
+  // Remembered in this browser; the frame waits for it so no pixel loads before (#105).
+  const [blockRemote, setBlockRemote] = useStoredFlag('mailsink:block-remote-images')
+  const switchId = useId()
   const mobile = device === 'mobile'
 
   if (message.html === null) {
@@ -35,7 +39,7 @@ export function PreviewTab({
       </div>
     )
   }
-  const src = inboxPaths.html(slug, message.id, scheme)
+  const src = inboxPaths.html(slug, message.id, scheme, blockRemote)
   return (
     <div className="flex h-full min-h-[420px] flex-col">
       <div className="flex flex-wrap items-center gap-2.5 border-b border-ms-border px-6 py-3.5">
@@ -57,6 +61,17 @@ export function PreviewTab({
             { value: 'dark', label: t`Dark background` },
           ]}
         />
+        <span className="flex items-center gap-2 text-xs text-ms-text-muted">
+          <Switch
+            aria-labelledby={switchId}
+            checked={blockRemote === true}
+            onCheckedChange={setBlockRemote}
+            disabled={blockRemote === undefined}
+          />
+          <span id={switchId}>
+            <Trans>Block remote images</Trans>
+          </span>
+        </span>
         <span className="ml-auto font-mono text-label text-ms-text-faint">
           {mobile ? (
             <Trans>iframe sandbox · scripts blocked · 375 px</Trans>
@@ -66,18 +81,20 @@ export function PreviewTab({
         </span>
       </div>
       <div className="flex flex-1 justify-center bg-[repeating-linear-gradient(45deg,var(--ms-bg)_0_8px,var(--ms-raised)_8px_9px)] p-6">
-        <iframe
-          key={src}
-          src={src}
-          sandbox=""
-          referrerPolicy="no-referrer"
-          title={t`Email preview`}
-          data-theme={scheme}
-          className={cn(
-            'h-full min-h-[520px] max-w-full border border-ms-border-strong bg-ms-bg shadow-popover transition-[width] duration-base ease-ms',
-            mobile ? 'w-[375px] rounded-xl' : 'w-full rounded-md',
-          )}
-        />
+        {blockRemote !== undefined && (
+          <iframe
+            key={src}
+            src={src}
+            sandbox=""
+            referrerPolicy="no-referrer"
+            title={t`Email preview`}
+            data-theme={scheme}
+            className={cn(
+              'h-full min-h-[520px] max-w-full border border-ms-border-strong bg-ms-bg shadow-popover transition-[width] duration-base ease-ms',
+              mobile ? 'w-[375px] rounded-xl' : 'w-full rounded-md',
+            )}
+          />
+        )}
       </div>
     </div>
   )
