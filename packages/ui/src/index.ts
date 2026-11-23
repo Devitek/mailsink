@@ -45,6 +45,7 @@ export {
   type SegmentedControlProps,
   type SegmentedOption,
 } from './components/segmented-control'
+export { Select, type SelectOption, type SelectProps } from './components/select'
 export {
   Sheet,
   SheetBody,
@@ -62,4 +63,5 @@ export {
 export { StatusBadge, type StatusBadgeProps, statusColorVar } from './components/status-badge'
 export { Switch } from './components/switch'
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs'
+export { Textarea } from './components/textarea'
 export { cn } from './lib/cn'
