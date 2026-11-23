@@ -2,6 +2,13 @@ export { createDbBlobStore } from './blobs/db-store'
 export type { BlobRef, BlobStore } from './blobs/store'
 export * from './capture'
 export {
+  type ChaosHttpCode,
+  type ChaosSmtpCode,
+  type ChaosSurface,
+  drawChaos,
+} from './chaos/draw'
+export { chaosSmtpReply, type SmtpReply } from './chaos/smtp-reply'
+export {
   type GeneratedKey,
   generateKey,
   generateSmtpPassword,
@@ -56,8 +63,23 @@ export {
   type OverrideExpirySchedulerOptions,
   startOverrideExpiryScheduler,
 } from './overrides/expiry'
+export { overrideChangedFrame, publishExpiredOverrides } from './overrides/publish'
 export { activateOverride, getOverrideState, resetOverride } from './overrides/service'
 export { toOverrideView } from './overrides/views'
+export {
+  type GuardInput,
+  type GuardRejection,
+  type GuardVerdict,
+  guardRequest,
+  smtpGuardReply,
+} from './rate-limit/request-guard'
+export { rateLimitSmtpReply } from './rate-limit/smtp-reply'
+export {
+  createRateLimiter,
+  type RateLimitDecision,
+  type RateLimiter,
+  type RateLimiterOptions,
+} from './rate-limit/token-bucket'
 export {
   type RetentionOptions,
   type RetentionReport,

@@ -3,7 +3,7 @@ import {
   addSuppressions,
   type Executor,
   insertMessageEvents,
-  type NewMessageEventRow,
+  type MessageEventRow,
   type NewSuppression,
   newId,
   type SimulatedMessage,
@@ -34,12 +34,14 @@ const SUPPRESSING = new Set(['hard_bounce', 'complained'])
  */
 export function createRecorder(tx: Executor, message: SimulatedMessage, now: number) {
   let clock = now
-  const events: NewMessageEventRow[] = []
+  const events: MessageEventRow[] = []
   const suppressions: NewSuppression[] = []
   const transitions: RecipientTransition[] = []
 
   return {
     transitions,
+    /** The `message_events` rows of the run, in write order (published as they are, D95). */
+    events,
     async record(
       recipient: SimulatedRecipient,
       status: RecipientTransition['status'],

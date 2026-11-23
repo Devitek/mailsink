@@ -1,0 +1,235 @@
+# End-to-end testing with Mailsink
+
+This guide shows how to test the emails of your application in an end-to-end suite
+(Playwright here, the same calls work from any runner): every worker gets its own
+ephemeral workspace, the application sends as it does in production, the test waits for
+the captured message, forces bounces with an override, and everything is cleaned up.
+
+The recipe is executable: `apps/mailsink/tests/e2e/recipe/` in this repository runs it in
+CI against the production build (see [Running the example](#running-the-example)).
+
+## 1. Principle
+
+- **One ephemeral workspace per Playwright worker.** Workers run in parallel; tests inside
+  one worker run one after the other. A workspace per worker isolates parallel tests
+  without paying a workspace per test.
+- **The application under test sends with the connection key** of that workspace, through
+  its usual channel (native API today; the Resend and Brevo dialects and SMTP follow with
+  Phase 3). Nothing in the application knows it is being tested, apart from its
+  configuration.
+- **The test asserts with the Capture API** and the workspace key: `GET
+  /capture/messages?wait=true` long polls until a matching message exists.
+- **Overrides change the simulated outcome** for the next sends (bounces, delays) without
+  touching the workspace settings.
+- **Reset before each test, delete at the end.** The idle TTL of the ephemeral workspace is
+  the safety net when a worker dies before its teardown.
+
+## 2. Server
+
+Run Mailsink (`docker compose up`, or `pnpm build && pnpm start` from a checkout) with an
+admin key, which the Admin API requires:
+
+```sh
+MAILSINK_ADMIN_KEY=change-me-in-ci
+```
+
+Give the key to the test runner only (for instance `MAILSINK_ADMIN_KEY` and
+`MAILSINK_URL` in its environment). The application under test never sees it: it receives
+the connection key of the workspace created for its worker.
+
+Simulation jobs are polled every second by default; `MAILSINK_JOBS_POLL_INTERVAL_MS=100`
+makes delivery statuses land faster in a test environment.
+
+## 3. The fixture
+
+`POST /admin/workspaces` creates the workspace with one connection and returns its secrets
+once: the workspace key (`mskw_…`, Capture API) and, per connection, its credentials
+(`msk_…` API key, or SMTP user and password) plus an `.env` snippet.
+
+```ts
+// tests/mailsink.ts
+import { type APIRequestContext, test as base } from '@playwright/test'
+
+const MAILSINK_URL = process.env.MAILSINK_URL ?? 'http://localhost:3000'
+const bearer = (key: string) => ({ authorization: `Bearer ${key}` })
+
+type Mailsink = { id: string; connectionKey: string; capture: APIRequestContext }
+
+export const test = base.extend<{ mailsink: Mailsink }, { workerMailsink: Mailsink }>({
+  workerMailsink: [
+    async ({ playwright }, use, workerInfo) => {
+      const admin = await playwright.request.newContext({
+        baseURL: MAILSINK_URL,
+        extraHTTPHeaders: bearer(process.env.MAILSINK_ADMIN_KEY ?? ''),
+      })
+      const res = await admin.post('/admin/workspaces', {
+        data: {
+          name: `e2e-${workerInfo.workerIndex}`,
+          ephemeral: true,
+          idleTtlSeconds: 600, // deleted 10 min after its last call if the teardown never runs
+          connections: [{ kind: 'resend', name: 'app' }],
+        },
+      })
+      if (res.status() !== 201) throw new Error(await res.text())
+      const created = await res.json()
+      const capture = await playwright.request.newContext({
+        baseURL: MAILSINK_URL,
+        extraHTTPHeaders: bearer(created.workspaceKey),
+      })
+      await use({
+        id: created.workspace.id,
+        connectionKey: created.connections[0].credentials.apiKey,
+        capture,
+      })
+      await capture.dispose()
+      await admin.delete(`/admin/workspaces/${created.workspace.id}`)
+      await admin.dispose()
+    },
+    { scope: 'worker' },
+  ],
+  // Test-scoped: resets the worker's workspace before each test (section 7).
+  mailsink: async ({ workerMailsink }, use) => {
+    await reset(workerMailsink.capture)
+    await use(workerMailsink)
+  },
+})
+
+export { expect } from '@playwright/test'
+```
+
+Hand `connectionKey` to the application under test the way it reads its provider key:
+an environment variable of the server process started per worker, a header your test
+build forwards, a seeded tenant setting. The repository example plays the application
+itself and posts to `POST /v1/emails` with the key.
+
+## 4. Sending with the application under test
+
+Drive the application as a user would (sign up, reset a password...). For the assertion
+to be exact, take the time **before** the action:
+
+```ts
+test('sign-up sends a welcome email', async ({ page, mailsink }) => {
+  const since = new Date().toISOString()
+  await page.goto('/sign-up')
+  await page.getByLabel('Email').fill('jane@example.com')
+  await page.getByRole('button', { name: 'Create account' }).click()
+  // ...assertions below
+})
+```
+
+## 5. Asserting with `wait=true`
+
+`GET /capture/messages?wait=true` answers as soon as at least one message matches the
+filters, or `408 wait_timeout` after `timeout` milliseconds (5 000 by default, at most
+30 000). Every filter of the list works: `to`, `from`, `subject`, `tag`, `status`,
+`connectionId`, `since`, `until`, `q`.
+
+```ts
+const res = await mailsink.capture.get('/capture/messages', {
+  params: { wait: true, since, to: 'jane@example.com', subject: 'Welcome', timeout: 10_000 },
+})
+expect(res.status()).toBe(200)
+const [message] = (await res.json()).data
+
+const detail = await (await mailsink.capture.get(`/capture/messages/${message.id}`)).json()
+expect(detail.links.map((l: { url: string }) => l.url)).toContain('https://app.test/confirm')
+```
+
+- **Always pass `since`.** Without it, `since` is the time the request arrives: a message
+  your application committed a few milliseconds earlier would not count, and the call
+  would time out. With `since` taken before the action, a message already there answers
+  at once and a later one wakes the call.
+- **Wait on a status** to assert the simulated delivery: `status=delivered`, or
+  `status=hard_bounce` (comma-separated or repeated for several). The call wakes when the
+  simulation changes a status, not only on new messages.
+- **Full text search (`q`)** covers the subject and bodies, but only the first 100 000
+  characters of each message: assert on a large email with `subject`, `to` or a `tag`, or
+  read its detail.
+- The detail (`GET /capture/messages/:id`) has the bodies, headers, links, attachments,
+  recipients with their status, and the event history (`accepted`, `sent`, then the
+  final status); `GET /capture/messages/:id/raw` is the MIME source.
+
+## 6. Forcing a bounce with an override
+
+An override replaces the simulation settings of the workspace (or of one connection) for
+the next sends, until it is reset or its `ttl` runs out. A recipient rule makes the
+outcome deterministic per address: here, every `+bounce` address hard bounces.
+
+```ts
+await mailsink.capture.post('/capture/override', {
+  data: {
+    config: { rules: [{ match: '*+bounce@*', status: 'hard_bounce' }] },
+    ttl: '10m',
+  },
+})
+const since = new Date().toISOString()
+// ...the application sends to jane+bounce@example.com
+const res = await mailsink.capture.get('/capture/messages', {
+  params: { wait: true, since, status: 'hard_bounce', timeout: 10_000 },
+})
+```
+
+- Globs match the whole address, case-insensitive: `*` any run (`@` included), `?` one
+  character. The first matching rule wins; other recipients keep the drawn status
+  (`delivered` with the default settings).
+- A rule can also set `delayMs` (the bounce arrives later) and `smtpCode`. `rates`
+  (percentages per status), `latency` and `chaos` are the other override fields.
+- `hard_bounce` and `complained` add the address to the suppression list
+  (`GET /capture/suppressions`): later sends to it are `suppressed` at once, as with a
+  real provider. The reset below empties it.
+- The response of `POST /capture/override` is the `OverrideState`, with the effective
+  settings of every connection: assert on it when the test is about the override itself.
+
+## 7. Reset between tests
+
+Tests of one worker share its workspace. Reset it before each test (the `mailsink`
+fixture above):
+
+```ts
+async function reset(capture: APIRequestContext) {
+  await Promise.all([
+    capture.delete('/capture/messages'), // messages and their logs
+    capture.post('/capture/override/reset', { data: {} }), // workspace-wide override
+    capture.delete('/capture/suppressions'), // whole suppression list
+  ])
+}
+```
+
+`POST /capture/override/reset` with `{ connectionId }` resets a connection-scoped
+override; both resets are idempotent.
+
+## 8. Cleanup
+
+- **`DELETE /admin/workspaces/:id`** (worker teardown) deletes the workspace and
+  everything it owns at once; open streams receive `workspace.deleted` and pending
+  `wait=true` calls answer 404.
+- **Idle TTL** (`idleTtlSeconds`, 60 s to 30 days, `MAILSINK_DEFAULT_IDLE_TTL` when
+  omitted): every authenticated call (sending, Capture API) pushes the expiry back; once
+  a workspace has been idle that long, the ephemeral GC (every 30 s) deletes it. It
+  catches the workspaces of crashed or killed runs. An open SSE stream alone does not
+  count as activity.
+- Ephemeral workspaces stay out of `GET /admin/workspaces` unless `includeEphemeral=true`.
+
+## 9. Real time (optional)
+
+`GET /capture/stream` (Server-Sent Events, workspace key) carries `message.created`,
+`message.event` (each stored event, replayable with `Last-Event-ID`), `message.status`
+(aggregated status after a simulation run), `override.changed`, `messages.purged` and
+`workspace.deleted` (last frame). Filters: `types=message.created,message.status`,
+`connectionId=…`. `wait=true` covers most assertions; the stream suits tests about live
+UI updates. `tests/e2e/recipe/realtime.spec.ts` reads it with `fetch`.
+
+## Running the example
+
+The repository suite starts the production build with a fixed, non-secret admin key
+(`E2E_ADMIN_KEY` overrides it) and creates one workspace per worker
+(`tests/e2e/recipe/fixtures.ts`):
+
+```sh
+pnpm build
+pnpm --filter @mailsink/app exec playwright install --with-deps chromium   # once
+pnpm --filter @mailsink/app exec playwright test tests/e2e/recipe
+```
+
+See [CONTRIBUTING.md](../../CONTRIBUTING.md#end-to-end-tests) for ports and for running
+Playwright in its Docker image.

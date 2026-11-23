@@ -7,6 +7,8 @@ import type { PlaywrightTestConfig } from '@playwright/test'
 export const HTTP_PORT = Number(process.env.E2E_HTTP_PORT ?? 3506)
 export const SMTP_PORT = Number(process.env.E2E_SMTP_PORT ?? 2906)
 export const BASE_URL = `http://127.0.0.1:${HTTP_PORT}`
+/** Admin key of the server under test: the recipe fixture creates its workspaces with it. */
+export const ADMIN_KEY = process.env.E2E_ADMIN_KEY ?? 'e2e-admin-key-not-a-secret'
 
 const appRoot = fileURLToPath(new URL('../..', import.meta.url))
 const ci = Boolean(process.env.CI)
@@ -20,7 +22,13 @@ export function webServer({ entry, build }: { entry: string; build?: string }): 
     command: build ? `${build} && ${serve}` : serve,
     cwd: appRoot,
     url: `${BASE_URL}/healthz`,
-    env: { PORT: String(HTTP_PORT), MAILSINK_SMTP_PORT: String(SMTP_PORT) },
+    env: {
+      PORT: String(HTTP_PORT),
+      MAILSINK_SMTP_PORT: String(SMTP_PORT),
+      MAILSINK_ADMIN_KEY: ADMIN_KEY,
+      // Simulation jobs are picked up within 100 ms, so assertions wait less.
+      MAILSINK_JOBS_POLL_INTERVAL_MS: '100',
+    },
     reuseExistingServer: false,
     timeout: 180_000,
     stdout: 'pipe',

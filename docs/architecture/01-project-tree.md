@@ -22,8 +22,10 @@ mailsink/
 │       │   │   │                         # (debounce 500 ms, D3)
 │       │   │   ├── slot.ts               # globalThis slot (HMR, two bundles), whenRuntimeReady()
 │       │   │   ├── config.ts             # env validated by Zod at boot (D29, « Configuration »)
-│       │   │   ├── container.ts          # opens + migrates the db, starts SMTP, the job worker
-│       │   │   │                         # and the retention scheduler once; bus and stores later
+│       │   │   ├── container.ts          # opens + migrates the db, builds the event bus and the
+│       │   │   │                         # activity tracker, starts SMTP, the job worker, the
+│       │   │   │                         # retention scheduler, the ephemeral GC and the override
+│       │   │   │                         # expiry (publishes override.changed, D96) once
 │       │   │   ├── migrations.ts         # migrations folder of the build (D42)
 │       │   │   └── shutdown.ts           # SIGTERM/SIGINT: wait for the srvx HTTP drain and the
 │       │   │                             # close hook (SMTP, workers, db), exit 0 (D3)
@@ -36,16 +38,22 @@ mailsink/
 │       │   │   ├── validation.ts         # Zod issues -> validation_error details, query, JSON body
 │       │   │   ├── body-limit.ts         # request body cap (MAILSINK_MAX_MESSAGE_BYTES)
 │       │   │   ├── health.ts             # GET /healthz: liveness + database readiness (D42)
-│       │   │   ├── test-fixtures.ts      # test-only: runtime in the slot, seeded keys (rows from
+│       │   │   ├── test-fixtures.ts      # test-only: runtime in the slot (event bus and activity
+│       │   │   │                         # tracker included), seeded keys (rows from
 │       │   │   │                         # @mailsink/db/testing)
-│       │   │   ├── admin/                # workspaces.ts (Admin API), public-endpoints.ts (URLs
+│       │   │   ├── admin/                # workspaces.ts (Admin API; DELETE publishes
+│       │   │   │                         # workspace.deleted, D97), public-endpoints.ts (URLs
 │       │   │   │                         # and SMTP host/port written in credentials)
-│       │   │   ├── native/               # emails.ts: POST /v1/emails, /v1/emails/batch
+│       │   │   ├── native/               # emails.ts: POST /v1/emails, /v1/emails/batch (passes
+│       │   │   │                         # the event bus to ingestion, #26)
 │       │   │   ├── activity.ts           # afterAuth extension: workspace activity touch (#20)
-│       │   │   ├── capture/              # api.ts (list, wait=true, detail, purge), download.ts
-│       │   │   │                         # (raw EML, attachments, D60), stream.ts (GET
-│       │   │   │                         # /capture/stream), stream-sse.ts (ReadableStream SSE:
-│       │   │   │                         # heartbeat, Last-Event-ID replay, filters)
+│       │   │   ├── capture/              # api.ts (list, wait=true, detail, purge publishing
+│       │   │   │                         # messages.purged), download.ts (raw EML, attachments,
+│       │   │   │                         # D60), override.ts (GET, activate, reset; publishes
+│       │   │   │                         # override.changed, D96), suppressions.ts (D75),
+│       │   │   │                         # stream.ts (GET /capture/stream), stream-sse.ts
+│       │   │   │                         # (ReadableStream SSE: heartbeat, Last-Event-ID
+│       │   │   │                         # replay, filters)
 │       │   │   ├── rate-limit-headers.ts
 │       │   │   └── request-log.ts        # api_logs writer (redaction, truncation)
 │       │   ├── routes/
@@ -108,14 +116,30 @@ mailsink/
 │       │   │   ├── en/messages.po         # source locale
 │       │   │   └── fr/messages.po
 │       │   ├── lib/query-keys.ts
-│       │   └── styles/app.css
-│       └── tests/e2e/                     # Playwright (UI + SDK drop-in scenarios)
+│       │   ├── theme/                     # light/dark theme: themes.ts, theme-context.tsx,
+│       │   │                              # theme-toggle.tsx, theme-fns.ts, theme.server.ts
+│       │   └── styles/app.css             # Tailwind entry, imports @mailsink/ui tokens
+│       ├── public/                        # brand assets: favicon.svg, mark-*.png, maskable-*.png,
+│       │                                  # apple-touch-icon-180.png, og-image, manifest.webmanifest
+│       └── tests/e2e/                     # Playwright against the production build
+│           ├── web-server.ts              # shared config: ports, admin key, webServer
+│           ├── serve.ts                   # node <entry> on a throwaway PGlite directory
+│           ├── smoke.spec.ts  smoke-theme.spec.ts  locale.spec.ts
+│           ├── recipe/                    # docs/guides/e2e.md: fixtures.ts (ephemeral workspace
+│           │                              # per worker, reset, cleanup), recipe.spec.ts (send,
+│           │                              # wait=true, bounce override), realtime.spec.ts (SSE
+│           │                              # stream, wait=true on the built server)
+│           └── fallback/                  # own build with a test-only `de` locale (D64):
+│                                          # playwright.config.ts, vite.config.ts,
+│                                          # lingui.config.ts, de.po, fallback.spec.ts,
+│                                          # messages.ts (test-only EN tagline of that build)
 ├── packages/
 │   ├── contracts/                         # Zod, shared end to end (doc 03)
 │   │   └── src/
 │   │       ├── common.ts   address.ts   status.ts   ids.ts   errors.ts (ErrorCode, ApiErrorBody)
 │   │       ├── admin.ts    native.ts    resend.ts   brevo.ts
-│   │       ├── capture.ts  override.ts  webhook.ts  events.ts
+│   │       ├── capture.ts  override.ts  stream.ts (SSE events, D80)  suppression.ts
+│   │       ├── webhook.ts  events.ts      # later (#33)
 │   │       ├── settings.ts              # retention, rate limit, simulation defaults
 │   │       └── search-params.ts         # UI search params (filters, tabs)
 │   ├── db/                                # Drizzle (doc 02)
@@ -138,9 +162,11 @@ mailsink/
 │   │       │                            # direct-insert fixtures shared by every package (D68)
 │   │       └── repositories/            # one file per aggregate, typed queries only, re-exported
 │   │                                        # by name from index.ts (D68): api-keys, blobs,
-│   │                                        # connections, idempotency, jobs, messages-read,
-│   │                                        # messages-write, messages-status, messages-purge,
-│   │                                        # retention, workspaces
+│   │                                        # connections, events-stream (replay reads),
+│   │                                        # idempotency, jobs, messages-read, messages-write,
+│   │                                        # messages-status, messages-purge, overrides,
+│   │                                        # retention, suppressions, workspace-activity
+│   │                                        # (throttled touch), workspaces
 │   ├── core/                              # domain services, no HTTP, no React; depends on
 │   │   │                                  # @mailsink/contracts, @mailsink/db, drizzle-orm (query
 │   │   │                                  # builders in services) and nodemailer (EML composer)
@@ -153,35 +179,44 @@ mailsink/
 │   │       │                 links.ts idempotency.ts stream-frames.ts testing/fixtures.ts
 │   │       ├── dialects/     resend.ts brevo.ts native.ts smtp.ts  # to/from NormalizedEmail
 │   │       ├── templates/    render.ts                             # Brevo {{ params.x }}
-│   │       ├── simulation/   settings-resolver.ts rules.ts draw.ts latency.ts chaos.ts
 │   │       ├── rate-limit/   token-bucket.ts
 │   │       ├── suppression/  service.ts
-│       │   ├── events/       bus.ts frames.ts filter.ts replay.ts  # D6, D80 to D84
-│       │   ├── webhooks/     endpoints.ts fanout.ts dispatcher.ts backoff.ts replay.ts
-│       │   │   └── formatters/            # Strategy, one per payloadFormat (D20, D21)
-│       │   │       types.ts events-map.ts unified.ts resend.ts brevo.ts index.ts
+│   │       ├── overrides/    service.ts views.ts expiry.ts publish.ts (override.changed, D96)
+│   │       ├── events/       bus.ts frames.ts filter.ts replay.ts  # D6, D80 to D84
+│   │       ├── webhooks/     endpoints.ts fanout.ts dispatcher.ts backoff.ts replay.ts
+│   │       │   └── formatters/            # Strategy, one per payloadFormat (D20, D21)
+│   │       │       types.ts events-map.ts unified.ts resend.ts brevo.ts index.ts
 │   │       ├── capture/      service.ts query.ts cursor.ts views.ts wait.ts
 │   │       │                 testing/fixtures.ts (@mailsink/core/capture-testing)
 │   │       ├── blobs/        store.ts db-store.ts
-│   │       ├── simulation/   simulate-delivery.ts planner.ts aggregate.ts testing/fixtures.ts
+│   │       ├── simulation/   simulate-delivery.ts (one run, D70) planner.ts settings-planner.ts
+│   │       │                 load-settings.ts settings-resolver.ts decide.ts rules.ts draw.ts
+│   │       │                 rng.ts recorder.ts aggregate.ts snapshot.ts testing/fixtures.ts
+│   │       │                 (doc 04, « Simulation files »)
 │   │       ├── retention/    run.ts scheduler.ts (also purges and reports failed jobs, D65)
 │   │       └── jobs/         queue.ts worker.ts backoff.ts settings.ts (DEFAULT_JOB_SETTINGS)
-│   │                         handlers/{simulate,simulate-publish,webhook,expiry}.ts
+│   │                         handlers/{simulate,simulate-publish}.ts (webhook later, #33)
 │   ├── smtp/                              # smtp-server + mailparser adapter
 │   │   └── src/ server.ts auth.ts transcript.ts on-data.ts
 │   ├── mcp/                               # McpServer factory + tools, transport-agnostic
 │   │   └── src/ server.ts tools/{list,get,wait,trigger,override,purge,logs}.ts
-│   ├── ui/                                # shadcn/ui on Base UI + tokens (Claude Design later)
+│   ├── ui/                                # shadcn/ui on Base UI + design tokens
+│   │   └── src/ index.ts  components/ (brand, button, input, sheet, status-badge, switch, tabs)
+│   │            lib/cn.ts  styles/ (tokens.css, tokens-ext.css, theme.css, index.css,
+│   │            css-declarations.ts)
 │   └── cli/                               # `mailsink` bin: migrate, mcp (stdio proxy, D14)
 │                                          # built by tsdown into dist/bin.mjs (+ migrations)
 ├── docker/
-│   ├── Dockerfile                         # multi-stage: deps -> build -> node:24-slim runtime
+│   ├── Dockerfile                         # multi-stage: pnpm-spec (pnpm version from
+│   │                                      # package.json) -> base -> deps -> build ->
+│   │                                      # node:24-slim runtime
 │   ├── docker-compose.yml                 # mailsink + postgres (PGlite profile without pg,
 │   │                                      # named volume pglite-data)
 │   └── smoke-test.sh                      # built image: healthy, /healthz 200, SMTP 220, CLI
 ├── .dockerignore
 ├── docs/
 │   ├── architecture/
+│   ├── guides/e2e.md                      # E2E recipe: workspace per worker, wait=true, overrides
 │   └── contributing/translations.md       # how to add or fix a locale (D17)
 ├── .github/ workflows/ci.yml             # lint, typecheck, test (PGlite + Postgres), build, e2e
 │            workflows/docker.yml         # image build + docker/smoke-test.sh
@@ -201,7 +236,8 @@ node .output/server/index.mjs
  │     └─ server routes: /admin, /v1, /emails, /v3, /capture, /mcp, /healthz
  ├─ SMTP :1025 (smtp-server)            ─┐
  ├─ job worker (simulate, webhook)       ├─ started by runtime/nitro-plugin.ts at process
- └─ schedulers (retention, ephemeral GC)─┘  start (boot.ts), share container
+ └─ schedulers (retention, ephemeral GC,─┘  start (boot.ts), share container
+    override expiry)
 ```
 
 Boot order: config, database and migrations, SMTP listener, worker; any failure exits 1
