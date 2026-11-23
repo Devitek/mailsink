@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { BASE_URL } from './web-server'
 
 test('GET /healthz reports the database as ok', async ({ request }) => {
   const response = await request.get('/healthz')
@@ -23,4 +24,27 @@ test('the brand assets are served', async ({ request }) => {
   const manifest = await (await request.get('/manifest.webmanifest')).json()
   expect(manifest.icons).toContainEqual(expect.objectContaining({ purpose: 'maskable' }))
   expect((await request.get(manifest.icons[0].src)).status()).toBe(200)
+})
+
+test('each page has its own localized title and Open Graph image (#36, #99)', async ({
+  page,
+  context,
+  request,
+}) => {
+  await page.goto('/login')
+  await expect(page).toHaveTitle('Sign in · Mailsink')
+  const image = page.locator('meta[property="og:image"]')
+  await expect(image).toHaveAttribute('content', `${BASE_URL}/og-image-en-1200x630.png`)
+
+  await context.addCookies([{ name: 'mailsink_locale', value: 'fr', url: BASE_URL }])
+  await page.goto('/login')
+  await expect(page).toHaveTitle('Se connecter · Mailsink')
+  await expect(image).toHaveAttribute('content', `${BASE_URL}/og-image-fr-1200x630.png`)
+  await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute('content', 'fr_FR')
+
+  for (const locale of ['en', 'fr']) {
+    const png = await request.get(`/og-image-${locale}-1200x630.png`)
+    expect(png.status(), locale).toBe(200)
+    expect(png.headers()['content-type']).toBe('image/png')
+  }
 })
