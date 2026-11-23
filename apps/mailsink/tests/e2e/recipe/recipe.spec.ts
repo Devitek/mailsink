@@ -1,68 +1,99 @@
-import { expect, test } from './fixtures'
+import { BASE_URL } from '../web-server'
+import { expect, getCode, openLink, test } from './fixtures'
 
-// The executable example of docs/guides/e2e.md: send with the app, assert with wait=true,
-// force a bounce with an override rule.
+// The executable example of docs/guides/e2e.md: the app sends, `expectEmail` waits for the
+// email since the start of the test, matchers check it, links open in the page, overrides
+// force bounces and are reset after the test.
 
-const email = (to: string, subject: string) => ({
-  from: 'App <app@example.com>',
-  to,
-  subject,
-  text: `Hello ${to}`,
+test('a sent email is captured, then delivered by the simulation', async ({
+  app,
+  expectEmail,
+  mailsink,
+}) => {
+  const id = await app.send({
+    to: 'jane@example.com',
+    subject: 'Welcome to Acme',
+    text: 'Hello Jane',
+    attachments: [{ filename: 'terms.pdf', content: Buffer.from('%PDF-1.4').toString('base64') }],
+  })
+
+  const email = await expectEmail({ to: 'jane@example.com', subject: 'Welcome' })
+  expect(email).toMatchObject({ id, text: 'Hello Jane', source: 'resend' })
+  expect(email).toHaveAttachment({ filename: 'terms.pdf', contentType: 'application/pdf' })
+  // Waits for the delivery simulation (the email was answered as soon as it was stored).
+  await expect(email).toHaveStatus('delivered')
+
+  const events = (await mailsink.messages.get(id)).events.map((e) => e.type)
+  expect(events).toEqual(['accepted', 'sent', 'delivered'])
 })
 
-test('a sent email is captured and delivered', async ({ mailsink }) => {
-  // `since` before the action: wait=true then also finds a message committed before the
-  // call arrives (without it, only messages created after the call count).
-  const since = new Date().toISOString()
-  const id = await mailsink.send(email('jane@example.com', 'Welcome'))
-
-  const res = await mailsink.capture.get('/capture/messages', {
-    params: { wait: true, since, to: 'jane@example.com', status: 'delivered', timeout: 10_000 },
+test('a magic link opens in the page, a one-time code is read', async ({
+  app,
+  expectEmail,
+  page,
+}) => {
+  // The application under test writes its own URL in the email: here, a page of the
+  // server under test stands for it.
+  await app.send({
+    to: 'jane@example.com',
+    subject: 'Your sign-in link',
+    html:
+      `<p>Your code is <b>482913</b>.</p>` +
+      `<a href="${BASE_URL}/login?redirect=%2F&amp;source=email">Sign in</a>`,
   })
-  expect(res.status()).toBe(200)
-  const { data } = await res.json()
-  expect(data).toEqual([expect.objectContaining({ id, subject: 'Welcome', status: 'delivered' })])
 
-  const detail = await (await mailsink.capture.get(`/capture/messages/${id}`)).json()
-  expect(detail.text).toBe('Hello jane@example.com')
-  expect(detail.events.map((e: { type: string }) => e.type)).toEqual([
-    'accepted',
-    'sent',
-    'delivered',
-  ])
+  const email = await expectEmail({ to: 'jane@example.com', subject: 'sign-in link' })
+  expect(email).toHaveLink('/login?redirect=')
+  expect(email).not.toHaveLink(/reset-password/)
+  expect(getCode(email)).toBe('482913')
+
+  const { url } = await openLink(page, email, '/login')
+  expect(url).toBe(`${BASE_URL}/login?redirect=%2F&source=email`)
+  await expect(page.getByRole('heading', { name: 'Sign in to this instance' })).toBeVisible()
 })
 
-test('an override rule forces a bounce on matching recipients only', async ({ mailsink }) => {
-  const override = await mailsink.capture.post('/capture/override', {
-    data: { config: { rules: [{ match: '*+bounce@*', status: 'hard_bounce' }] }, ttl: '10m' },
-  })
-  expect(override.status()).toBe(200)
+test('an override forces a bounce on matching recipients only', async ({
+  app,
+  expectEmail,
+  mailsink,
+}) => {
+  // Reset when the test ends, whatever happens.
+  await mailsink.withOverride({ rules: [{ match: '*+bounce@*', status: 'hard_bounce' }] })
 
-  const since = new Date().toISOString()
-  const bounced = await mailsink.send(email('jane+bounce@example.com', 'Reset password'))
-  const delivered = await mailsink.send(email('bob@example.com', 'Reset password'))
+  const bounced = await app.send({ to: 'jane+bounce@example.com', subject: 'Reset', text: 'x' })
+  const delivered = await app.send({ to: 'bob@example.com', subject: 'Reset', text: 'x' })
 
-  const res = await mailsink.capture.get('/capture/messages', {
-    params: { wait: true, since, status: 'hard_bounce', timeout: 10_000 },
-  })
-  const { data } = await res.json()
-  expect(data.map((m: { id: string }) => m.id)).toEqual([bounced])
+  expect((await expectEmail({ status: 'hard_bounce' })).id).toBe(bounced)
+  const other = await expectEmail({ to: 'bob@example.com' })
+  expect(other.id).toBe(delivered)
+  await expect(other).toHaveStatus('delivered')
 
-  const other = await mailsink.capture.get('/capture/messages', {
-    params: { wait: true, since, status: 'delivered', timeout: 10_000 },
-  })
-  expect((await other.json()).data.map((m: { id: string }) => m.id)).toEqual([delivered])
-
-  // The hard bounce joined the suppression list (emptied again by the fixture reset).
-  const suppressions = await (await mailsink.capture.get('/capture/suppressions')).json()
+  // The hard bounce joined the suppression list (emptied before the next test).
+  const suppressions = await mailsink.suppressions.list()
   expect(suppressions.data).toEqual([
     expect.objectContaining({ email: 'jane+bounce@example.com', reason: 'hard_bounce' }),
   ])
 })
 
+test.describe('with an override for every test of the group', () => {
+  test.use({ mailsinkOverride: { rates: { failed: 100 } } })
+
+  test('every send fails', async ({ app, expectEmail }) => {
+    await app.send({ to: 'jane@example.com', subject: 'Receipt', text: 'x' })
+    const email = await expectEmail({ to: 'jane@example.com', status: 'failed' })
+    await expect(email).toHaveStatus('failed')
+  })
+})
+
 test('each test starts from a blank workspace', async ({ mailsink }) => {
-  const list = await (await mailsink.capture.get('/capture/messages')).json()
-  expect(list.data).toEqual([])
-  const state = await (await mailsink.capture.get('/capture/override')).json()
-  expect(state).toMatchObject({ workspace: null, connections: [] })
+  expect((await mailsink.messages.list()).data).toEqual([])
+  expect(await mailsink.overrides.get()).toMatchObject({ workspace: null, connections: [] })
+  expect((await mailsink.suppressions.list()).data).toEqual([])
+})
+
+test('a missing email fails with what arrived instead', async ({ app, expectEmail }) => {
+  await app.send({ to: 'bob@example.com', subject: 'Invoice', text: 'x' })
+  const error = await expectEmail({ to: 'jane@example.com' }, { timeout: 500 }).catch((e) => e)
+  expect(String(error)).toContain('no email matched {"to":"jane@example.com"} within 500 ms')
+  expect(String(error)).toContain('to bob@example.com: "Invoice"')
 })
