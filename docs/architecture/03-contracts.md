@@ -475,14 +475,46 @@ the UI or seeded through the Admin API (Phase 3).
 
 ## SMTP mapping (`dialects/smtp.ts`)
 
+Server: `packages/smtp` (smtp-server), listening on `MAILSINK_SMTP_HOST:MAILSINK_SMTP_PORT`
+(1025). Replies carry their enhanced status code in the text; smtp-server's own replies
+(`530`, `503`...) carry none. Propositions D130 to D134.
+
 | Step | Behaviour |
 |---|---|
-| `AUTH PLAIN/LOGIN` | `smtp_username` -> connection; scrypt verify; fail -> `535 5.7.8` |
-| `MAIL FROM` / `RCPT TO` | Suppressed recipient accepted but marked `suppressed` (provider parity) |
+| `EHLO` | Advertises `AUTH PLAIN LOGIN`, `SIZE <MAILSINK_MAX_MESSAGE_BYTES>`, and `STARTTLS` only when `MAILSINK_SMTP_TLS_CERT` and `MAILSINK_SMTP_TLS_KEY` (PEM file paths, both or neither, read at boot) are set |
+| `AUTH PLAIN/LOGIN` | `smtp_username` -> `smtp` connection; scrypt verify, skipped when the verified-credential cache (D11) already holds this password for this stored hash; unknown user, wrong password or disabled connection -> `535 5.7.8 Authentication credentials invalid`. Allowed without TLS. Success touches workspace activity |
+| No AUTH | `MAIL FROM` -> `530` |
+| `MAIL FROM` | Effective settings of the connection, then rate limit (one token per transaction), then chaos (D92); touches activity. Nothing read nor stored when refused. A `SIZE=` over the cap -> `552` |
+| `RCPT TO` | Every address accepted; a suppressed one is accepted, then marked `suppressed` by the pipeline (provider parity) |
 | Rate limit | `451 4.7.1 Rate limit exceeded, retry in Ns` |
-| Chaos | `421`/`451`/`452`/`550` per active override |
-| `DATA` | size cap -> `552`; `mailparser` -> `NormalizedEmail` + raw EML kept as is |
-| Reply | `250 2.0.0 Ok: queued as msg_…` |
+| Chaos | `421`/`451`/`452`/`550` per active override (`smtpGuardReply`, D94); `421` closes the connection |
+| `DATA` | size cap -> `552`; `mailparser` -> `NormalizedEmail` + raw EML kept byte for byte (D9); then the shared pipeline, `source: 'smtp'`, `message.created` published once committed |
+| Reply | `250 2.0.0 Ok: queued as msg_…` (the message id, also its `providerMessageId`) |
+| Failure | Unexpected error -> `451 4.3.0 Local error in processing` (logged); a message without any sender -> `550 5.6.0` |
+
+`DATA` to `NormalizedEmail` (`fromSmtpMessage(raw, envelope)`):
+
+- Recipients come from the envelope: an `RCPT TO` address listed in `To` or `Cc` keeps that
+  kind and its display name, any other one is `bcc`; a header address absent from `RCPT TO`
+  is not a recipient. Addresses are lower-cased.
+- `from` = the `From` header, else `MAIL FROM`; `subject` = `Subject` or `''`; `html` /
+  `text` as sent (no conversion between them), `cid:` links kept.
+- `headers` = every header except `From`, `To`, `Cc`, `Bcc`, `Reply-To`, `Subject`,
+  `MIME-Version`, `Content-Type`, `Content-Transfer-Encoding`; names lower-cased, folded
+  values unfolded, repeated names joined with `, `.
+- Attachments with their filename, content type and, when inline (`related` or
+  `Content-Disposition: inline`), their content id. `tags: []`, `metadata: null`.
+
+Session transcript (`RecordSmtpSession`, written to `smtp_sessions` by #35; a no-op
+until then): one `SmtpSessionRecord` per connection, handed over after it closed, shaped
+like the `smtp_sessions` row (`id` `smtp_…`, workspace and connection once authenticated,
+`remoteAddress`, `clientHostname` = the `EHLO` name, `authUser`, `secure`, `messageIds`,
+`outcome`, `error` = the last `4xx`/`5xx` reply, `startedAt`, `endedAt`). Transcript lines
+`{ at (epoch ms), dir: 'C' | 'S', line }`: AUTH arguments and continuation lines read
+`/* secured */`, `DATA` content is one `<N bytes of DATA>` line, at most 500 lines of 1 000
+characters (then one `[mailsink] N more lines not recorded` line). Outcome: `accepted`
+when a message was stored, else `error` after a server-side failure, else `auth_failed`
+when AUTH failed and never succeeded, else `rejected`.
 
 ## Capture (`capture.ts`)
 

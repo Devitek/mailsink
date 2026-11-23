@@ -219,6 +219,48 @@ override; both resets are idempotent.
 `connectionId=…`. `wait=true` covers most assertions; the stream suits tests about live
 UI updates. `tests/e2e/recipe/realtime.spec.ts` reads it with `fetch`.
 
+## 10. Sending over SMTP
+
+An application that sends through SMTP (Nodemailer or any client) gets an `smtp`
+connection: create the workspace with `connections: [{ kind: 'smtp', name: 'app' }]` and
+read `credentials` (`smtpHost`, `smtpPort`, `smtpUser`, `smtpPass`) instead of `apiKey`.
+Point the application's SMTP settings at them; the `.env` snippet carries `SMTP_HOST`,
+`SMTP_PORT`, `SMTP_USER` and `SMTP_PASS`.
+
+```ts
+import { createTransport } from 'nodemailer'
+
+const { smtpHost, smtpPort, smtpUser, smtpPass } = created.connections[0].credentials
+const transport = createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: false, // STARTTLS only, when the server has a certificate
+  auth: { user: smtpUser, pass: smtpPass },
+})
+const info = await transport.sendMail({
+  from: 'app@example.test',
+  to: 'jane@example.com',
+  subject: 'Welcome',
+  text: 'Hello',
+})
+// info.response: "250 2.0.0 Ok: queued as msg_…", the id of GET /capture/messages/:id
+```
+
+- Assertions do not change: `wait=true`, `since`, overrides and the reset work the same
+  on SMTP messages (`source: 'smtp'`). The MIME source (`/raw`) is the message exactly as
+  the client sent it.
+- Recipients are the `RCPT TO` addresses: an address only in the envelope is a `bcc`
+  recipient, a header address never given in `RCPT TO` is not a recipient.
+- AUTH (PLAIN or LOGIN) is required. Plain-text AUTH is accepted without TLS; STARTTLS is
+  offered only when the server has `MAILSINK_SMTP_TLS_CERT` and `MAILSINK_SMTP_TLS_KEY`
+  (with a self-signed certificate, pass `tls: { rejectUnauthorized: false }`).
+- Errors arrive as SMTP replies, e.g. `535 5.7.8` (credentials), `552` (over
+  `MAILSINK_MAX_MESSAGE_BYTES`), `451 4.7.1 Rate limit exceeded, retry in Ns`, or the chaos
+  codes of an override (`421`, `451`, `452`, `550`, `(chaos injected)`). Nodemailer
+  rejects `sendMail` with `responseCode` and `response` set.
+- Behind a port mapping, set `MAILSINK_SMTP_PUBLIC_HOST` / `MAILSINK_SMTP_PUBLIC_PORT` so
+  the credentials name the reachable host and port.
+
 ## Running the example
 
 The repository suite starts the production build with a fixed, non-secret admin key
