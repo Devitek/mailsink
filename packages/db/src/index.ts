@@ -141,6 +141,17 @@ export {
   type Suppression,
 } from './repositories/suppressions'
 export {
+  deleteTemplate,
+  findTemplateByExternalId,
+  insertTemplates,
+  listTemplates,
+  maxTemplateExternalId,
+  type NewTemplate,
+  type Template,
+  type TemplateChanges,
+  updateTemplate,
+} from './repositories/templates'
+export {
   deleteWebhookEndpoint,
   findConnectionKind,
   findWebhookEndpoint,

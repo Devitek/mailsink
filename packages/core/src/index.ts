@@ -23,6 +23,12 @@ export {
   type PublicEndpoints,
 } from './connections/snippets'
 export { hashApiKey, secretsEqual } from './crypto'
+export {
+  BREVO_TAG_NAME,
+  brevoFieldError,
+  fromBrevoRequest,
+} from './dialects/brevo/normalize'
+export { sendBrevoEmail } from './dialects/brevo/send'
 export { fromNativeRequest } from './dialects/native'
 export {
   fromResendRequest,
@@ -153,6 +159,17 @@ export {
   resetSuppressions,
   toSuppressionView,
 } from './suppression/service'
+export { type RenderContext, type RenderOptions, renderTemplate } from './templates/render'
+export {
+  createTemplate,
+  getTemplateView,
+  insertTemplateInputs,
+  listTemplateViews,
+  patchTemplate,
+  removeTemplate,
+  resolveWorkspaceId,
+} from './templates/service'
+export { planTemplates, toTemplateView } from './templates/views'
 export * from './webhooks'
 export {
   ACTIVITY_THROTTLE_MS,

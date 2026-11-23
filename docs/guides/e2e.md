@@ -307,6 +307,58 @@ const info = await transport.sendMail({
 - Behind a port mapping, set `MAILSINK_SMTP_PUBLIC_HOST` / `MAILSINK_SMTP_PUBLIC_PORT` so
   the credentials name the reachable host and port.
 
+## 12. Sending with the Brevo SDK
+
+An application that sends with Brevo keeps its code: give it a `brevo` connection and point
+the official SDK at Mailsink. The fixture asks for the connection and seeds the templates
+the application uses (`templateId`), from a JSON file kept with the tests:
+
+```ts
+import { readFileSync } from 'node:fs'
+
+const templates = JSON.parse(readFileSync('tests/brevo-templates.json', 'utf8'))
+// [{ "externalId": 12, "name": "Reset", "subject": "Reset for {{ params.name }}",
+//    "html": "<a href=\"{{ params.url }}\">Reset</a>",
+//    "sender": { "email": "support@app.io", "name": "Support" } }]
+
+const res = await playwright.request.post(`${MAILSINK_URL}/admin/workspaces`, {
+  headers: bearer(ADMIN_KEY),
+  data: {
+    name: `e2e-${workerInfo.workerIndex}`,
+    ephemeral: true,
+    connections: [{ kind: 'brevo', name: 'app' }],
+    templates,
+  },
+})
+const { connections } = await res.json()
+// connections[0].credentials: { apiKey: 'msk_…', baseUrl: '<MAILSINK_URL>/v3' }
+// connections[0].envSnippet: BREVO_API_KEY=… BREVO_BASE_URL=…
+```
+
+The application builds its client from those two variables:
+
+```ts
+import { BrevoClient } from '@getbrevo/brevo'
+
+const brevo = new BrevoClient({
+  apiKey: process.env.BREVO_API_KEY,
+  baseUrl: process.env.BREVO_BASE_URL, // https://api.brevo.com/v3 in production
+})
+await brevo.transactionalEmails.sendTransacEmail({
+  templateId: 12,
+  to: [{ email: 'jane@example.com' }],
+  params: { name: 'Jane', url: 'https://app.test/reset?t=1' },
+})
+```
+
+The captured message has the rendered subject and bodies (`Reset for Jane`), its links
+(`https://app.test/reset?t=1`, ready to follow in the test) and `source: 'brevo'`; assert
+on it with `wait=true` as above. `messageVersions` store one message per version.
+Templates can also be managed after provisioning with
+`/admin/workspaces/:id/templates` (see 03-contracts, « Brevo templates »). Brevo errors
+keep Brevo's shape (`{ code, message }`, 400 for an invalid body), and overrides apply to
+the dialect like to the native API (rate limit with `x-sib-ratelimit-*` headers, chaos).
+
 ## Running the example
 
 The repository suite starts the production build with a fixed, non-secret admin key

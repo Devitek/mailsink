@@ -9,6 +9,7 @@ import {
   SimulationSettingsPatch,
 } from './settings'
 import { ConnectionKind } from './status'
+import { TemplateSeed } from './templates'
 
 const Name = z.string().trim().min(1).max(80)
 
@@ -52,6 +53,7 @@ export const CreateWorkspaceRequest = z
     simulation: SimulationSettings.optional(),
     metadata: z.record(z.string(), z.string().max(256)).optional(),
     connections: z.array(ConnectionInput).max(20).default([]),
+    templates: TemplateSeed.optional(), // Brevo templates seeded with the workspace (#30)
   })
   .refine(
     (w) => w.ephemeral || w.idleTtlSeconds === undefined,
