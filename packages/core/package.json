@@ -19,6 +19,7 @@
     "nodemailer": "^10.6.1"
   },
   "devDependencies": {
-    "@types/mailparser": "^3.9.0"
+    "@types/mailparser": "^3.9.0",
+    "svix": "^2.11.0"
   }
 }
