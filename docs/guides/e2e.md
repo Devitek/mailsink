@@ -14,8 +14,8 @@ CI against the production build (see [Running the example](#running-the-example)
   one worker run one after the other. A workspace per worker isolates parallel tests
   without paying a workspace per test.
 - **The application under test sends with the connection key** of that workspace, through
-  its usual channel (native API today; the Resend and Brevo dialects and SMTP follow with
-  Phase 3). Nothing in the application knows it is being tested, apart from its
+  its usual channel: the native API, the Resend or Brevo SDK (sections 10 and 12) or SMTP
+  (section 11). Nothing in the application knows it is being tested, apart from its
   configuration.
 - **The test asserts with the Capture API** and the workspace key: `GET
   /capture/messages?wait=true` long polls until a matching message exists.
@@ -214,8 +214,9 @@ override; both resets are idempotent.
 
 `GET /capture/stream` (Server-Sent Events, workspace key) carries `message.created`,
 `message.event` (each stored event, replayable with `Last-Event-ID`), `message.status`
-(aggregated status after a simulation run), `override.changed`, `messages.purged` and
-`workspace.deleted` (last frame). Filters: `types=message.created,message.status`,
+(aggregated status after a simulation run), `webhook.delivery` (a delivery created or
+attempted, section 13), `log.api` and `log.smtp` (section 14), `override.changed`,
+`messages.purged` and `workspace.deleted` (last frame). Filters: `types=message.created,message.status`,
 `connectionId=…`. `wait=true` covers most assertions; the stream suits tests about live
 UI updates. `tests/e2e/recipe/realtime.spec.ts` reads it with `fetch`.
 
@@ -257,8 +258,9 @@ What to know when asserting:
 - `idempotencyKey` (24 h, at most 256 characters) replays the first `id`; the same key with
   another body is `409 invalid_idempotent_request`.
 - Errors come back in Resend's shape through the SDK `error` object (`{ statusCode, name,
-  message }`): `422 missing_required_field`, `400 validation_error`, `403
-  restricted_api_key` (a key of another connection kind), `429 rate_limit_exceeded`. An
+  message }`): `422 missing_required_field`, `400 validation_error`, `401
+  missing_api_key` (no key), `403 restricted_api_key` (a key of another connection
+  kind), `429 rate_limit_exceeded`. An
   override with a rate limit or chaos (section 6) applies here too, with `ratelimit-*`
   headers next to `X-RateLimit-*`.
 - Not emulated: hosted Resend templates (`template`) and attachment `path` URLs are
@@ -301,7 +303,8 @@ const info = await transport.sendMail({
   offered only when the server has `MAILSINK_SMTP_TLS_CERT` and `MAILSINK_SMTP_TLS_KEY`
   (with a self-signed certificate, pass `tls: { rejectUnauthorized: false }`).
 - Errors arrive as SMTP replies, e.g. `535 5.7.8` (credentials), `552` (over
-  `MAILSINK_MAX_MESSAGE_BYTES`), `451 4.7.1 Rate limit exceeded, retry in Ns`, or the chaos
+  `MAILSINK_MAX_MESSAGE_BYTES`: refused at `MAIL FROM` when the client declares its size,
+  during `DATA` otherwise), `451 4.7.1 Rate limit exceeded, retry in Ns`, or the chaos
   codes of an override (`421`, `451`, `452`, `550`, `(chaos injected)`). Nodemailer
   rejects `sendMail` with `responseCode` and `response` set.
 - Behind a port mapping, set `MAILSINK_SMTP_PUBLIC_HOST` / `MAILSINK_SMTP_PUBLIC_PORT` so
@@ -358,6 +361,68 @@ Templates can also be managed after provisioning with
 `/admin/workspaces/:id/templates` (see 03-contracts, « Brevo templates »). Brevo errors
 keep Brevo's shape (`{ code, message }`, 400 for an invalid body), and overrides apply to
 the dialect like to the native API (rate limit with `x-sib-ratelimit-*` headers, chaos).
+`tests/e2e/recipe/brevo.spec.ts` runs this flow with the official SDK.
+
+## 13. Webhooks
+
+To test the webhook handler of the application, register an endpoint of the workspace
+that points at it (or at a receiver the test starts) and let the simulation post the
+events. Endpoint URLs are free by default, local addresses included; a server started with
+`MAILSINK_WEBHOOK_BLOCK_PRIVATE=true` refuses private, loopback and link-local
+destinations (`422 private_webhook_url`), so keep that option off for this setup.
+
+```ts
+const created = await mailsink.capture.post('/capture/webhooks', {
+  data: {
+    connectionId: null, // every connection of the workspace
+    url: 'http://127.0.0.1:4000/hooks/mailsink', // your handler, or a test receiver
+    events: ['email.delivered', 'email.hard_bounced'],
+    // payloadFormat: 'resend' | 'brevo' | 'unified' (default: the connection kind)
+  },
+})
+const endpoint = await created.json() // endpoint.secret (whsec_…) is shown once
+```
+
+- **Test send**: `POST /capture/webhooks/:id/test` (`{ event? }`, default
+  `email.delivered`) posts one signed sample event at once and answers the delivery with
+  its attempt (status, response code, headers sent). Use it to check the handler and its
+  signature verification before any email.
+- **Real events**: every event of the simulation (or of `POST
+  /capture/messages/:id/events`, or a send to a suppressed address) goes to the endpoints
+  whose scope and subscription match. Each delivery is retried 8 times with backoff when
+  the receiver fails.
+- **Assert on the deliveries** with `GET /capture/webhooks/deliveries?endpointId=…`
+  (or `messageId=…`), polled until the delivery is `succeeded`; `GET
+  /capture/webhooks/deliveries/:id` has the exact body and headers of every attempt, and
+  `POST …/:id/replay` sends it again (`exact` or `resign`).
+- Signatures: the `unified` format signs `X-Mailsink-Signature` (HMAC SHA-256 of
+  `<timestamp>.<body>` with the secret), `resend` signs as Svix (the `svix` package
+  verifies it), `brevo` sends the configured `Authorization`.
+
+`tests/e2e/recipe/webhooks.spec.ts` starts a receiver with `node:http`, sends a test event
+and waits for the `email.delivered` delivery of a real send.
+
+## 14. Reading the logs
+
+Every API call (refused ones included) and every SMTP session is logged, which helps when a
+test fails on the application side:
+
+- `GET /capture/logs/api` (workspace key): method, path, status, `errorCode`, duration
+  and the message ids created, filtered by `status=4xx`, `dialect`, `errorCode`, `path`,
+  `messageId`, `since`, `until`, paged with `page` and `pageSize`. `GET
+  /capture/logs/api/:id` adds the headers (credentials redacted) and the bodies
+  (attachments stripped, long bodies truncated).
+- `GET /capture/logs/smtp` and `/capture/logs/smtp/:id`: SMTP sessions with their
+  outcome and transcript (AUTH secrets redacted).
+- Calls without workspace (an unknown key, a missing header, the Admin API) are read with
+  the admin key through `GET /admin/logs/api` and `/admin/logs/api/:id`.
+
+```ts
+const logs = await mailsink.capture.get('/capture/logs/api', {
+  params: { since, status: '4xx' },
+})
+const failed = (await logs.json()).data // why the application's send was refused
+```
 
 ## Running the example
 

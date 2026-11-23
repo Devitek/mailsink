@@ -34,9 +34,12 @@ export const createWebhookApi = defineApi({
   auth: 'workspace',
   body: WebhookEndpointInput,
   handler: async ({ runtime, auth, body }) =>
-    Response.json(await createWebhookEndpoint(runtime.db.db, auth.workspace.id, body), {
-      status: 201,
-    }),
+    Response.json(
+      await createWebhookEndpoint(runtime.db.db, auth.workspace.id, body, {
+        urlGuard: runtime.webhookUrlGuard,
+      }),
+      { status: 201 },
+    ),
 })
 
 export const getWebhookApi = defineApi({
@@ -52,7 +55,9 @@ export const patchWebhookApi = defineApi({
   params: EndpointParams,
   body: WebhookEndpointPatch,
   handler: ({ runtime, auth, params, body }) =>
-    patchWebhookEndpoint(runtime.db.db, auth.workspace.id, params.id, body),
+    patchWebhookEndpoint(runtime.db.db, auth.workspace.id, params.id, body, {
+      urlGuard: runtime.webhookUrlGuard,
+    }),
 })
 
 export const deleteWebhookApi = defineApi({
@@ -77,5 +82,6 @@ export const testWebhookApi = defineApi({
   handler: ({ runtime, auth, params, body }) =>
     sendTestWebhook(runtime.db.db, auth.workspace.id, params.id, body?.event, {
       bus: runtime.bus,
+      urlGuard: runtime.webhookUrlGuard,
     }),
 })
