@@ -5,6 +5,7 @@ import type { ViewerMessage } from '../../server-fns/messages-types'
 import { inboxKey } from '../inbox/queries'
 import { type InboxFilters, matchesFilters } from '../inbox/search-query'
 import { applyLogEvent } from '../logs/apply-log-event'
+import { setOverrideState } from '../override/queries'
 
 // How one stream frame changes the TanStack Query cache of the inbox (#39). Cheap changes
 // are written in place (a new row, a status); the rest is returned as keys to invalidate,
@@ -84,6 +85,7 @@ export function applyStreamEvent(qc: QueryClient, slug: string, event: StreamEve
       effects.deleted = true
       break
     case 'override.changed':
+      setOverrideState(qc, slug, event.state)
       break
   }
   // The logs explorer (#41) keeps its own cache: log, delivery and purge frames.
