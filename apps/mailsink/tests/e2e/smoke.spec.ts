@@ -6,14 +6,13 @@ test('GET /healthz reports the database as ok', async ({ request }) => {
   expect(await response.json()).toMatchObject({ status: 'ok', checks: { database: 'ok' } })
 })
 
-test('the home page renders the branded shell', async ({ page }) => {
+test('a signed-out visitor of the home page gets the branded sign-in screen', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('banner').getByRole('link', { name: 'mailsink' })).toBeVisible()
+  await expect(page).toHaveURL('/login?redirect=%2F')
+  await expect(page.getByText('mailsink', { exact: true })).toBeVisible()
+  await expect(page.getByText('Every email caught. None delivered.')).toBeVisible()
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Every email caught. None delivered.' }),
-  ).toBeVisible()
-  await expect(
-    page.getByText('Catch every email your app sends, without delivering a single one.'),
+    page.getByRole('heading', { level: 1, name: 'Sign in to this instance' }),
   ).toBeVisible()
 })
 
