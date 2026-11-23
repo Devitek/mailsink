@@ -20,7 +20,7 @@ describe('pageTitle', () => {
     })
   })
 
-  it('reads the values carried by a msg descriptor (msg`Inbox · ${slug}`)', () => {
+  it('reads the values carried by a msg descriptor', () => {
     const matches = [root('fr', { box: 'Boîte · {slug}' })]
     expect(pageTitle(matches, { id: 'box', values: { slug: 'qa' } })).toEqual({
       title: 'Boîte · qa · Mailsink',

@@ -86,12 +86,12 @@ msgid "A new secret is generated and shown once. The current one stops working a
 msgstr "Un nouveau secret est généré et affiché une seule fois. L'actuel cesse de fonctionner immédiatement : mettez à jour chaque client qui l'utilise."
 
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "A whole number of requests per second, or empty."
 msgstr "Un nombre entier de requêtes par seconde, ou vide."
 
-#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+#: apps/mailsink/src/features/workspaces/first-connection-fields.tsx
 msgid "Add a first connection"
 msgstr "Ajouter une première connexion"
 
@@ -103,7 +103,7 @@ msgstr "Clé d'administration"
 msgid "All"
 msgstr "Tous"
 
-#: apps/mailsink/src/features/connections/new-connection-form.tsx
+#: apps/mailsink/src/features/connections/connection-kind-hint.tsx
 msgid "An msk_… key is generated on creation. Point the provider SDK at the Mailsink base URL: no application code change."
 msgstr "Une clé msk_… sera générée à la création. Pointez le SDK du provider vers l'URL de base Mailsink : aucun changement de code applicatif."
 
@@ -129,8 +129,7 @@ msgstr "Bloquer les images distantes"
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 #: apps/mailsink/src/features/message-viewer/purge-button.tsx
 #: apps/mailsink/src/features/workspaces/confirm-dialog.tsx
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
-#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+#: apps/mailsink/src/features/workspaces/form-parts.tsx
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -168,7 +167,7 @@ msgid "Connection {kind}"
 msgstr "Connexion {kind}"
 
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
-#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+#: apps/mailsink/src/features/workspaces/first-connection-fields.tsx
 msgid "Connection kind"
 msgstr "Type de connexion"
 
@@ -250,8 +249,7 @@ msgstr "URL personnalisée"
 msgid "Dark background"
 msgstr "Fond sombre"
 
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
-#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+#: apps/mailsink/src/features/workspaces/form-parts.tsx
 msgid "Default rate limit"
 msgstr "Rate limit par défaut"
 
@@ -259,16 +257,16 @@ msgstr "Rate limit par défaut"
 msgid "Default retention"
 msgstr "Rétention par défaut"
 
-#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/delete-connection.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Delete"
 msgstr "Supprimer"
 
-#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/delete-connection.tsx
 msgid "Delete the connection"
 msgstr "Supprimer la connexion"
 
-#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/delete-connection.tsx
 msgid "Delete the connection {name}?"
 msgstr "Supprimer la connexion {name} ?"
 
@@ -280,7 +278,7 @@ msgstr "Supprimer le workspace"
 msgid "Delete the workspace {slug}?"
 msgstr "Supprimer le workspace {slug} ?"
 
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 msgid "Description"
 msgstr "Description"
 
@@ -320,7 +318,7 @@ msgstr "Chaque workspace a ses propres messages, connexions et webhooks."
 msgid "Edit"
 msgstr "Modifier"
 
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 msgid "Edit the workspace"
 msgstr "Modifier le workspace"
 
@@ -390,7 +388,7 @@ msgid "From"
 msgstr "De"
 
 #: apps/mailsink/src/features/connections/connection-name.tsx
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Give it a name."
 msgstr "Donnez-lui un nom."
@@ -448,7 +446,7 @@ msgstr "Instance"
 msgid "Its connections, keys, messages, logs and webhooks are deleted at once. This cannot be undone."
 msgstr "Ses connexions, clés, messages, logs et webhooks sont supprimés immédiatement. Action irréversible."
 
-#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/delete-connection.tsx
 msgid "Its credentials stop working and its webhook endpoints are deleted. Captured messages stay in the workspace."
 msgstr "Ses credentials cessent de fonctionner et ses endpoints webhook sont supprimés. Les messages capturés restent dans le workspace."
 
@@ -523,7 +521,7 @@ msgstr "Mobile"
 
 #: apps/mailsink/src/features/connections/connection-name.tsx
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Name"
 msgstr "Nom"
@@ -712,7 +710,7 @@ msgid "Rotate the workspace key?"
 msgstr "Faire une rotation de la clé du workspace ?"
 
 #: apps/mailsink/src/features/connections/connection-name.tsx
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 msgid "Save"
 msgstr "Enregistrer"
 
@@ -815,7 +813,7 @@ msgstr "Enveloppe SMTP"
 msgid "SMTP username"
 msgstr "Utilisateur SMTP"
 
-#: apps/mailsink/src/features/connections/new-connection-form.tsx
+#: apps/mailsink/src/features/connections/connection-kind-hint.tsx
 msgid "SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS are generated on creation. Works with Nodemailer, Symfony Mailer, Django…"
 msgstr "SMTP_HOST, SMTP_PORT, SMTP_USER et SMTP_PASS seront générés à la création. Compatible Nodemailer, Symfony Mailer, Django…"
 
@@ -860,7 +858,7 @@ msgstr "La clé mskw_ actuelle cesse de fonctionner immédiatement : chaque job 
 msgid "The key is never stored in your browser: it is exchanged for a session cookie."
 msgstr "La clé n'est jamais stockée dans le navigateur : elle est échangée contre un cookie de session."
 
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 msgid "The slug /w/{slug} does not change."
 msgstr "Le slug /w/{slug} ne change pas."
 
@@ -868,7 +866,7 @@ msgstr "Le slug /w/{slug} ne change pas."
 msgid "The workspace could not be created. Try again."
 msgstr "Le workspace n'a pas pu être créé. Réessayez."
 
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 msgid "The workspace could not be saved. Try again."
 msgstr "Le workspace n'a pas pu être enregistré. Réessayez."
 
@@ -916,8 +914,7 @@ msgstr "Réessayer dans {countdown}"
 msgid "Type the slug to confirm"
 msgstr "Saisissez le slug pour confirmer"
 
-#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
-#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+#: apps/mailsink/src/features/workspaces/form-parts.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "unlimited"
 msgstr "illimité"
