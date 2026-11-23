@@ -17,6 +17,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `POST /v1/emails` · `POST /v1/emails/batch` | `Bearer msk_` (any kind) | native | Native ingestion |
 | `POST /emails` · `POST /emails/batch` · `GET /emails/:id` | `Bearer msk_` (resend) | resend | Resend drop-in |
 | `POST /v3/smtp/email` | `api-key: msk_` (brevo) | brevo | Brevo drop-in |
+| `GET|POST /admin/workspaces/:id/templates` · `GET|PATCH|DELETE …/:templateId` | Admin key | admin | Brevo templates (numeric `templateId`) |
 | SMTP `:1025` | `AUTH PLAIN/LOGIN` (smtp) | smtp | Nodemailer / any client |
 | `GET /capture/messages` | workspace scope (D12) | capture | Search, `wait=true` |
 | `GET /capture/messages/:id` | workspace scope | capture | Full detail |
@@ -268,6 +269,7 @@ export const CreateWorkspaceRequest = z.object({
   simulation: SimulationSettings.optional(),
   metadata: z.record(z.string(), z.string().max(256)).optional(),
   connections: z.array(ConnectionInput).max(20).default([]),
+  templates: TemplateSeed.optional(),               // Brevo templates seed (#30)
 }).refine((w) => w.ephemeral || w.idleTtlSeconds === undefined,
   issue('idle_ttl_requires_ephemeral', 'idleTtlSeconds requires ephemeral: true',
     ['idleTtlSeconds']))
@@ -443,35 +445,132 @@ Resend batch is all-or-nothing (provider parity); the native batch is partial.
 
 ## Brevo dialect (`brevo.ts`)
 
+`POST /v3/smtp/email` mirrors `SendTransacEmailRequest` of the official SDK
+(`@getbrevo/brevo` 6.x, which posts to `<baseUrl>/smtp/email` with the `api-key` header;
+`BREVO_BASE_URL` = `MAILSINK_PUBLIC_URL/v3`). Checked against developers.brevo.com on
+23/11/2026: `subject` is required without `templateId`, versions may override `htmlContent`,
+`textContent` and `replyTo`, a version holds at most 99 recipients and a request 2000,
+`batchId` exists, `name` is only required with base64 `content`.
+
 ```ts
-const BrevoAddr = z.object({ email: z.email(), name: z.string().optional() })
+export const BrevoAddress = z.object({ email: Email, name: z.string().max(70).optional() })
+const Recipients = z.array(BrevoAddress).max(99)
+export const BrevoMessageVersion = z.object({ to: Recipients.min(1),
+  cc: Recipients.optional(), bcc: Recipients.optional(), replyTo: BrevoAddress.optional(),
+  subject: z.string().max(998).optional(), htmlContent: z.string().optional(),
+  textContent: z.string().optional(), params: z.record(z.string(), z.unknown()).optional() })
 export const BrevoSendRequest = z.object({
-  sender: BrevoAddr.optional(), to: z.array(BrevoAddr).min(1).optional(),
-  cc: z.array(BrevoAddr).optional(), bcc: z.array(BrevoAddr).optional(),
-  replyTo: BrevoAddr.optional(), subject: z.string().optional(),
+  sender: BrevoAddress.optional(),                  // `sender.id` is not supported
+  to: Recipients.optional(), cc: Recipients.optional(), bcc: Recipients.optional(),
+  replyTo: BrevoAddress.optional(), subject: z.string().max(998).optional(),
   htmlContent: z.string().optional(), textContent: z.string().optional(),
-  templateId: z.number().int().positive().optional(),
+  templateId: TemplateExternalId.optional(),        // positive 32-bit integer
   params: z.record(z.string(), z.unknown()).optional(),        // {{ params.x }} injection
-  headers: z.record(z.string(), z.string()).optional(),
+  headers: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   attachment: z.array(z.object({ content: z.base64().optional(), url: z.url().optional(),
-    name: z.string() })).optional(),
-  tags: z.array(z.string()).optional(),
-  scheduledAt: z.string().optional(),
-  messageVersions: z.array(z.object({ to: z.array(BrevoAddr),
-    params: z.record(z.string(), z.unknown()).optional(), subject: z.string().optional(),
-    cc: z.array(BrevoAddr).optional(), bcc: z.array(BrevoAddr).optional(),
-  })).max(1000).optional(),
-}).refine((b) => b.templateId || b.htmlContent || b.textContent, 'content_required')
-  .refine((b) => b.templateId || b.sender, 'sender_required')
+    name: z.string().min(1).max(255).optional() })).max(100).optional(), // content or url
+  tags: z.array(z.string().min(1).max(256)).max(50).optional(),
+  scheduledAt: IsoDateTime.optional(),              // stored in metadata, not delayed
+  batchId: z.uuid().optional(),                     // stored in metadata
+  messageVersions: z.array(BrevoMessageVersion).min(1).max(1000).optional(),
+}) // refinements (stable codes): to_required (without messageVersions), content_required,
+   // sender_required, subject_required (each unless templateId), too_many_recipients (2000)
 export const BrevoSendResponse = z.union([
-  z.object({ messageId: z.string() }),                         // "<20261122…@smtp-relay.mailin.fr>"
-  z.object({ messageIds: z.array(z.string()) }),               // with messageVersions
-])                                                             // 201
-export const BrevoError = z.object({ code: z.string(), message: z.string() })
+  z.object({ messageId: z.string() }),              // "<msg_…@mailsink>" = Message-ID header
+  z.object({ messageIds: z.array(z.string()) }),    // with messageVersions, in version order
+])                                                  // 201
+export const BrevoError = z.object({ code: BrevoErrorCode, message: z.string() })
 ```
 
-Unknown `templateId` returns `400 { code: "invalid_parameter" }`. Templates are managed in
-the UI or seeded through the Admin API (Phase 3).
+Behaviour (#29, propositions D125 to D127):
+
+- Auth: `api-key: msk_…` (or a bearer) of a **brevo** connection; another connection kind,
+  a workspace key or the Admin key answer 403. The message records the connection and
+  `source: 'brevo'`. Rate limit and chaos run first (`INGESTION_EXTENSIONS`, D92); the body
+  is read under `MAILSINK_MAX_MESSAGE_BYTES`.
+- One message per message version (one message without `messageVersions`), all stored in
+  one transaction through the shared pipeline. A version takes `to`, and overrides `cc`,
+  `bcc`, `replyTo`, `subject`, `htmlContent`, `textContent`; its `params` are merged over the
+  global ones. The global `to` is ignored with `messageVersions`, as Brevo does.
+- `templateId`: the workspace template with that `externalId` (below). Its html and text
+  replace the request bodies; its subject and sender apply unless the request sets them.
+  An unknown id answers `400 invalid_parameter` (`Template ID N does not exist`). The
+  message keeps `templateRef { templateId, params }`.
+- Rendering (`core/templates/render.ts`, D126): subject, html and text, with or without a
+  template, go through a safe renderer. `{{ params.a.b }}` reads `params` (own properties of
+  plain objects, numeric indexes of arrays, nothing inherited); `{{ contact.EMAIL }}` is the
+  first `to` address of the message, other contact attributes render empty (Mailsink keeps
+  no contacts). Unknown variables render empty. Filters: `default: "x"`, `upper`, `lower`,
+  `safe`. Values are HTML-escaped in the html body unless `safe`; objects print as JSON.
+  Other tags (`{{ unsubscribe }}`, `{% if %}` blocks, expressions) are left verbatim.
+- Mapping: each tag string becomes the tag `{ name: 'tag', value }`; base64 attachments are
+  stored, `url` attachments are never fetched and are listed in
+  `metadata.brevo.attachmentUrls` with `scheduledAt` and `batchId`; header values are
+  stringified and kept.
+- Idempotency: the `Idempotency-Key` HTTP header, else an `IdempotencyKey` (or
+  `Idempotency-Key`) entry of the `headers` body field, with the native semantics (D53).
+- Rate limit headers: `X-RateLimit-*` (D91) plus Brevo's `x-sib-ratelimit-limit`,
+  `x-sib-ratelimit-remaining`, `x-sib-ratelimit-reset` with the same values.
+
+Errors (`http/dialects/brevo/errors.ts`, D127): body `{ code, message }`, no `requestId`
+(the `X-Request-Id` header stays). Every invalid body answers **400** (never 422); the
+message names the first failing field (`sender: sender is required when templateId is
+absent`).
+
+| Mailsink code | Status | Brevo `code` |
+|---|---|---|
+| `validation_error` | 400 | `missing_parameter` (absent field, `*_required`), `out_of_range` (bounds, `too_many_recipients`), else `invalid_parameter` (unreadable JSON included) |
+| `unauthorized` | 401 | `unauthorized` |
+| `forbidden` | 403 | `permission_denied` |
+| `not_found` | 404 | `document_not_found` |
+| `conflict` / `idempotency_mismatch` | 409 | `duplicate_parameter` / `duplicate_request` |
+| `payload_too_large` | 413 | `out_of_range` |
+| `rate_limited` | 429 | `too_many_requests` (Brevo documents the status, not the code) |
+| `chaos_injected` | drawn | `chaos_injected` (D93) |
+| `internal_error`, `wait_timeout` | 500, 408 | `internal_error` |
+
+The official SDK only types `400` (`Brevo.BadRequestError`); every other status reaches the
+caller as a `BrevoError` with `statusCode` and this `body`. Contract tests:
+`apps/mailsink/src/http/dialects/brevo/sdk.contract.test.ts`.
+
+## Brevo templates (`templates.ts`, Admin API)
+
+```ts
+export const TemplateExternalId = z.coerce.number().int().positive().max(2_147_483_647)
+export const TemplateInput = z.object({
+  externalId: TemplateExternalId.optional(),        // next free id of the workspace if absent
+  name: z.string().trim().min(1).max(200), subject: z.string().max(998),
+  html: z.string().max(1_000_000).nullable().optional(),
+  text: z.string().max(1_000_000).nullable().optional(),
+  sender: Address.nullable().optional(),            // default sender of the template
+}).refine((t) => Boolean(t.html || t.text), issue('html_or_text_required', …, ['html']))
+export const TemplatePatch = /* same fields but externalId, all optional; at least one
+                                 (empty_patch) */
+export const TemplateView = z.object({ id: TemplateId, externalId: z.number().int(),
+  name: z.string(), subject: z.string(), html: z.string().nullable(),
+  text: z.string().nullable(), sender: AddressOut.nullable(),
+  createdAt: IsoDateTime, updatedAt: IsoDateTime })
+export const ListTemplatesQuery = z.object({ cursor: TemplateExternalId.optional(),
+  limit: PageLimit })
+export const ListTemplatesResponse = Page(TemplateView)
+export const TemplateSeed = z.array(TemplateInput).max(500)  // CreateWorkspaceRequest.templates
+```
+
+Routes (#30, Admin key only, `:id` an id or a slug, `:templateId` the numeric `externalId`,
+D128):
+
+- `GET /admin/workspaces/:id/templates?cursor=&limit=`: ascending `externalId`,
+  `nextCursor` = the `externalId` of the last row.
+- `POST /admin/workspaces/:id/templates`: 201 `TemplateView`; without `externalId` the
+  next id after the highest of the workspace; a taken id answers 409 `conflict`.
+- `GET`, `PATCH`, `DELETE /admin/workspaces/:id/templates/:templateId`: 200, 200 (absent
+  fields kept, a template left without html nor text is a 422 `html_or_text_required`),
+  204. An unknown workspace or template is a 404; a non numeric `:templateId` a 422.
+- Seed at provisioning (D129): `POST /admin/workspaces` accepts `templates` (at most 500),
+  typically the content of a JSON file kept next to the test suite. They are inserted in the
+  workspace transaction (explicit ids first, the others numbered after them in order); two
+  entries with the same `externalId` answer 409 and nothing is created.
+- The web UI screen comes with Phase 4.
 
 ## SMTP mapping (`dialects/smtp.ts`)
 
