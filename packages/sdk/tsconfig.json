@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The SDK runs in Node and in browsers: no Node typings in the sources.
+    "types": []
+  },
+  "include": ["src"]
+}
