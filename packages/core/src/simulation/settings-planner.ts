@@ -1,7 +1,18 @@
+import { type RecipientRule, RecipientRules } from '@mailsink/contracts'
 import { decideRecipient } from './decide'
 import { loadEffectiveSettings } from './load-settings'
 import type { DeliveryPlanner } from './planner'
 import { recipientRandom } from './rng'
+
+/**
+ * Rules carried by the message itself (`messages.simulation.rules`, written at ingestion by
+ * the demo seeder, #62): a temporary rule set that only this message sees, ahead of the
+ * stored layers. Anything else there is ignored.
+ */
+export function messageRules(simulation: Record<string, unknown> | null): RecipientRule[] {
+  const parsed = RecipientRules.safeParse(simulation?.rules)
+  return parsed.success ? parsed.data : []
+}
 
 /**
  * Planner of #21: resolves the effective settings of the message connection (4 layers,
@@ -16,8 +27,10 @@ export const settingsPlanner: DeliveryPlanner = async ({ message, recipients, se
     new Date(now),
   )
   if (!settings) return { outcomes: [] }
+  const own = messageRules(message.simulation)
+  const decided = own.length > 0 ? { ...settings, rules: [...own, ...settings.rules] } : settings
   const outcomes = recipients.map((r) => {
-    const d = decideRecipient(settings, r.email, recipientRandom(seed, r.email, r.attempt))
+    const d = decideRecipient(decided, r.email, recipientRandom(seed, r.email, r.attempt))
     return {
       recipientId: r.id,
       status: d.status,
