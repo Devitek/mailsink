@@ -3,8 +3,11 @@ import {
   createActivityTracker,
   createEventBus,
   createJobRunner,
+  createRateLimiter,
   DEFAULT_JOB_SETTINGS,
   type EventBus,
+  type Random,
+  type RateLimiter,
   simulateDeliveryHandler,
   startEphemeralGc,
   startOverrideExpiryScheduler,
@@ -28,6 +31,10 @@ export type Runtime = {
   bus: EventBus
   /** Throttled workspace activity (D16): every surface touches it. */
   activity: ActivityTracker
+  /** In-memory token buckets per connection (D7): HTTP ingestion now, SMTP with #31. */
+  rateLimiter: RateLimiter
+  /** Source of the request-level chaos draws (#25), injectable in tests. */
+  chaosRandom: Random
   smtpPort: number
   stop: () => Promise<void>
 }
@@ -107,6 +114,8 @@ export async function createRuntime(
       db,
       bus,
       activity,
+      rateLimiter: createRateLimiter(),
+      chaosRandom: Math.random,
       smtpPort: smtp.port,
       async stop() {
         // Stop accepting mail, drain the worker that would process it and the retention
