@@ -211,6 +211,7 @@ export {
 } from './repositories/workspace-activity'
 export { countMessagesByWorkspace } from './repositories/workspace-message-counts'
 export {
+  countEphemeralWorkspaces,
   deleteWorkspace,
   findWorkspaceByRef,
   insertWorkspace,
