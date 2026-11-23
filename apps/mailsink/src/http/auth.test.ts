@@ -51,7 +51,11 @@ describeDb('defineApi authentication', (ctx) => {
       const res = await call('workspace', { bearer })
       expect(res.status).toBe(401)
       expect(res.body).toEqual({
-        error: { code: 'unauthorized', message: 'Missing or invalid API key' },
+        error: {
+          code: 'unauthorized',
+          message: 'Missing or invalid API key',
+          details: { credential: bearer === undefined ? 'missing' : 'invalid' },
+        },
         requestId: res.headers.get('x-request-id'),
       })
       expect(res.headers.get('www-authenticate')).toBe('Bearer')

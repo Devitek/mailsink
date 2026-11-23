@@ -6,6 +6,7 @@ import {
   messageIdsOf,
   redactHeaders,
 } from '@mailsink/core'
+import { bufferedBodyOf } from './body-limit'
 import type { ApiExtension, RequestContext } from './extensions'
 import { isLoggableType, parseJson, readCapped } from './logs-body'
 
@@ -27,16 +28,32 @@ export function dialectOf(pathname: string): ApiDialect | null {
 
 /**
  * Calls that are not logged (D145): reading the logs (a log of every log read would feed
- * itself through `log.api` and the UI refetching), and the SSE stream (long-lived).
+ * itself through `log.api` and the UI refetching), on the workspace and the Admin side
+ * (D151), and the SSE stream (long-lived).
  */
 export function isLoggedCall(method: string, pathname: string): boolean {
   if (dialectOf(pathname) === null) return false
   if (method !== 'GET') return true
-  return !pathname.startsWith('/capture/logs') && pathname !== '/capture/stream'
+  if (pathname.startsWith('/capture/logs') || pathname.startsWith('/admin/logs')) return false
+  return pathname !== '/capture/stream'
 }
 
-/** Request body being read in the background, per request in flight. */
-const requestBodies = new WeakMap<Request, Promise<string | null>>()
+/** Authenticated logged requests whose body is to be logged (anonymous ones never are). */
+const wantedBodies = new WeakSet<Request>()
+
+/**
+ * The logged request body, read once (D157): the bytes the handler already buffered
+ * (limitBody), else the body itself when nothing consumed it (a call refused by rate limit
+ * or chaos before parsing). A body cut by the 413 cap is neither, and logs null.
+ */
+function requestText(request: Request, maxBytes: number): Promise<string | null> {
+  if (!wantedBodies.has(request)) return Promise.resolve(null)
+  const bytes = bufferedBodyOf(request)
+  if (bytes)
+    return Promise.resolve(bytes.byteLength > 0 ? Buffer.from(bytes).toString('utf8') : null)
+  if (request.bodyUsed || !request.body) return Promise.resolve(null)
+  return readCapped(request.body, maxBytes)
+}
 
 type ResponseCtx = Parameters<NonNullable<ApiExtension['onResponse']>>[0]
 
@@ -48,16 +65,14 @@ function errorCodeOf(error: unknown): string | null {
 async function buildEntry(
   ctx: ResponseCtx,
   dialect: ApiDialect,
-  response: { status: number; text: Promise<string | null> },
+  bodies: { request: Promise<string | null>; response: Promise<string | null> },
+  status: number,
   error: unknown,
   durationMs: number,
 ): Promise<ApiLogEntry> {
   const { request, auth } = ctx
   const url = new URL(request.url)
-  const [requestText, responseText] = await Promise.all([
-    requestBodies.get(request) ?? Promise.resolve(null),
-    response.text,
-  ])
+  const [requestBody, responseText] = await Promise.all([bodies.request, bodies.response])
   const workspace = auth?.kind === 'workspace' ? auth : undefined
   return {
     id: ctx.requestId,
@@ -66,10 +81,10 @@ async function buildEntry(
     dialect,
     method: request.method,
     path: `${url.pathname}${url.search}`,
-    statusCode: response.status,
+    statusCode: status,
     durationMs,
     requestHeaders: redactHeaders(request.headers),
-    requestBody: logBody(requestText),
+    requestBody: logBody(requestBody),
     responseBody: logBody(responseText),
     messageIds: INGESTION.has(dialect) ? messageIdsOf(parseJson(responseText)) : [],
     errorCode: errorCodeOf(error),
@@ -80,18 +95,19 @@ async function buildEntry(
 /**
  * Request log (#35, D145 to D147): one `api_logs` row per call of a logged surface,
  * refused ones included (`rate_limited`, `chaos_injected`, auth failures). Runs first among
- * the extensions: its `afterAuth` starts reading a clone of the body (only once the
- * caller is authenticated, so anonymous bodies are never read), its `onResponse` clones a
- * JSON response and hands the row to `runtime.logs`, which writes it after the response
- * left. Nothing here can fail or delay the call beyond the clones.
+ * the extensions: its `afterAuth` marks the body as wanted (only once the caller is
+ * authenticated, so anonymous bodies are never read), its `onResponse` takes the request
+ * body without a second read (requestText), clones a JSON response and hands the row to
+ * `runtime.logs`, which writes it after the response left. Nothing here can fail or delay
+ * the call beyond the response clone.
  */
 export const requestLogExtension: ApiExtension = {
   name: 'request-log',
-  afterAuth: ({ request, runtime }: RequestContext) => {
+  afterAuth: ({ request }: RequestContext) => {
     const { pathname } = new URL(request.url)
     if (!isLoggedCall(request.method, pathname) || !request.body) return
     if (!isLoggableType(request.headers.get('content-type'))) return
-    requestBodies.set(request, readCapped(request.clone().body, runtime.config.maxMessageBytes))
+    wantedBodies.add(request)
   },
   onResponse: (ctx, response, error) => {
     const { pathname } = new URL(ctx.request.url)
@@ -102,8 +118,12 @@ export const requestLogExtension: ApiExtension = {
       isLoggableType(response.headers.get('content-type')) && response.body
         ? readCapped(response.clone().body, LOG_RESPONSE_READ_MAX_BYTES)
         : Promise.resolve(null)
+    const bodies = {
+      request: requestText(ctx.request, ctx.runtime.config.maxMessageBytes),
+      response: text,
+    }
     ctx.runtime.logs.writeApiLog(
-      buildEntry(ctx, dialect, { status: response.status, text }, error, durationMs),
+      buildEntry(ctx, dialect, bodies, response.status, error, durationMs),
     )
   },
 }

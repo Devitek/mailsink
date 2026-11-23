@@ -55,6 +55,11 @@ PGlite volume takes about 10 seconds. The `mailsink` CLI is available in the ima
 example `docker compose -f docker/docker-compose.yml --profile postgres exec
 mailsink-postgres mailsink migrate`.
 
+STARTTLS on SMTP is optional: put the PEM certificate and key in a host directory readable
+by uid 1001, then set `MAILSINK_SMTP_TLS_DIR` (mounted read-only on `/app/tls`, relative
+paths start from `docker/`), `MAILSINK_SMTP_TLS_CERT=/app/tls/cert.pem` and
+`MAILSINK_SMTP_TLS_KEY=/app/tls/key.pem`.
+
 Without Compose:
 
 ```sh
@@ -101,7 +106,8 @@ per test worker, reset between tests, forced bounces through overrides.
 - Simulation: status rates, deterministic per-recipient rules, latency, chaos errors,
   rate limits, temporary overrides with reset, automatic suppression list.
 - Webhooks signed with HMAC-SHA256 and Svix-compatible headers, retries and replay.
-- Capture API, SSE stream and an MCP server for AI agents.
+- Capture API, SSE stream and an MCP server for AI agents (HTTP and stdio, see the
+  [MCP guide](docs/guides/mcp.md)).
 - Web UI in English and French.
 
 ## Documentation
@@ -114,6 +120,7 @@ per test worker, reset between tests, forced bounces through overrides.
   [Roadmap](docs/architecture/05-roadmap.md)
 - [Design deliveries and brand](docs/design/README.md)
 - [Testing your app with Mailsink (E2E guide)](docs/guides/e2e.md)
+- [Driving Mailsink from an AI agent (MCP guide)](docs/guides/mcp.md)
 - [Translating the web UI](docs/contributing/translations.md)
 
 ## Contributing

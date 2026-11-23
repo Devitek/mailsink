@@ -95,6 +95,7 @@ const Env = z
       .default(604_800),
     MAILSINK_UI_LOGIN_MAX_ATTEMPTS: Int(1, 1000, 'a number of attempts').default(5),
     MAILSINK_UI_LOGIN_LOCK_SECONDS: Int(1, 86_400, 'a number of seconds').default(60),
+    MAILSINK_WEBHOOK_BLOCK_PRIVATE: z.stringbool({ error: 'must be true or false' }).default(false),
   })
   .refine(
     (e) => (e.MAILSINK_SMTP_TLS_CERT === undefined) === (e.MAILSINK_SMTP_TLS_KEY === undefined),
@@ -138,6 +139,11 @@ export type RuntimeConfig = {
   publicUrl: string
   /** Idle TTL of ephemeral workspaces created without `idleTtlSeconds` (#19). */
   defaultIdleTtlSeconds: number
+  /**
+   * `MAILSINK_WEBHOOK_BLOCK_PRIVATE` (D150): refuse webhook URLs resolving to private,
+   * loopback or link-local addresses, at creation and at send time. Off when unset.
+   */
+  webhookBlockPrivate?: boolean
   /**
    * Web UI sign-in (#37, D13). Always set by readRuntimeConfig; optional so hand-built test
    * configs need not list it (UI_AUTH_DEFAULTS applies).
@@ -199,6 +205,7 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
       loginMaxAttempts: e.MAILSINK_UI_LOGIN_MAX_ATTEMPTS,
       loginLockSeconds: e.MAILSINK_UI_LOGIN_LOCK_SECONDS,
     },
+    webhookBlockPrivate: e.MAILSINK_WEBHOOK_BLOCK_PRIVATE,
     jobs: {
       batchSize: e.MAILSINK_JOBS_BATCH_SIZE,
       lockSeconds: e.MAILSINK_JOBS_LOCK_SECONDS,

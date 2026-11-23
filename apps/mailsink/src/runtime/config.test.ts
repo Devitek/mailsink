@@ -13,6 +13,7 @@ describe('readRuntimeConfig', () => {
       maxMessageBytes: 26_214_400,
       publicUrl: 'http://localhost:3000',
       defaultIdleTtlSeconds: 3600,
+      webhookBlockPrivate: false,
       smtpPublicHost: undefined,
       smtpPublicPort: undefined,
       jobs: {
@@ -161,6 +162,18 @@ describe('readRuntimeConfig', () => {
     )
     expect(() => readRuntimeConfig({ MAILSINK_DEFAULT_IDLE_TTL: '10' })).toThrow(
       /MAILSINK_DEFAULT_IDLE_TTL/,
+    )
+  })
+
+  it('reads MAILSINK_WEBHOOK_BLOCK_PRIVATE as a boolean', () => {
+    expect(readRuntimeConfig({ MAILSINK_WEBHOOK_BLOCK_PRIVATE: 'true' }).webhookBlockPrivate).toBe(
+      true,
+    )
+    expect(readRuntimeConfig({ MAILSINK_WEBHOOK_BLOCK_PRIVATE: 'false' }).webhookBlockPrivate).toBe(
+      false,
+    )
+    expect(() => readRuntimeConfig({ MAILSINK_WEBHOOK_BLOCK_PRIVATE: 'maybe' })).toThrow(
+      /MAILSINK_WEBHOOK_BLOCK_PRIVATE: must be true or false/,
     )
   })
 

@@ -1,45 +1,28 @@
-import type { Database } from '@mailsink/db'
 import { type EventBus, publishAll } from '../../events/bus'
 import { eventFrame } from '../../events/frames'
-import { type EngagementOptions, recordEngagement } from '../../events-api/engagement'
 import type { SimulationResult } from '../../simulation/simulate-delivery'
-import { fanOutEvents } from '../../webhooks/fanout'
 import { publishDeliveries } from '../../webhooks/publish'
 
 export interface SimulationWebhookOptions {
   bus?: EventBus
-  engagement?: EngagementOptions
 }
 
 /**
- * After a committed simulation run: automatic opened / clicked events (#34), then the
- * webhook fan-out of every event the run wrote plus those (#33), in one transaction.
- * A crash before it commits loses these deliveries (the run itself is not replayed).
+ * After a committed simulation run: publishes the automatic opened / clicked events (#34)
+ * and the webhook deliveries (#33) the run wrote in its own transaction (D152).
  */
-export async function fanOutSimulation(
-  db: Database,
+export function publishRunFanOut(
   workspaceId: string,
   result: SimulationResult,
   options: SimulationWebhookOptions = {},
-): Promise<void> {
-  if (result.kind !== 'done' || result.events.length === 0) return
-  const { engagement, deliveries } = await db.transaction(async (tx) => {
-    const engagement = await recordEngagement(
-      tx,
-      workspaceId,
-      result.connectionId,
-      result.events,
-      options.engagement,
-    )
-    const deliveries = await fanOutEvents(tx, workspaceId, [...result.events, ...engagement])
-    return { engagement, deliveries }
-  })
-  if (options.bus?.hasSubscribers(workspaceId)) {
+): void {
+  if (result.kind !== 'done') return
+  if (options.bus?.hasSubscribers(workspaceId) && result.engagement.length > 0) {
     publishAll(
       options.bus,
       workspaceId,
-      engagement.map((row) => eventFrame(row, result.connectionId)),
+      result.engagement.map((row) => eventFrame(row, result.connectionId)),
     )
   }
-  publishDeliveries(options.bus, workspaceId, deliveries)
+  publishDeliveries(options.bus, workspaceId, result.deliveries)
 }
