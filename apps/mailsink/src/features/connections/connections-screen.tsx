@@ -38,40 +38,43 @@ export function ConnectionsScreen({ page, selected }: ConnectionsScreenProps) {
     setFresh((all) => ({ ...all, [created.id]: created }))
 
   return (
-    <main className="mx-auto flex w-full max-w-[1180px] flex-col gap-[23px] px-[27px] py-[30px] max-sm:px-4">
-      <WorkspaceSummary workspace={page.workspace} />
-      <div className="flex flex-wrap items-start gap-[23px]">
-        <ConnectionList
-          slug={slug}
-          connections={connections}
-          selected={creating ? 'new' : current?.id}
-        />
-        <Panel>
-          {creating ? (
-            <NewConnectionForm
-              slug={slug}
-              onCreated={(created) => {
-                remember(created)
-                void select(created.id)
-              }}
-              onCancel={() => void select(undefined)}
-            />
-          ) : current ? (
-            <ConnectionPanel
-              key={current.id}
-              slug={slug}
-              connection={current}
-              fresh={fresh[current.id]}
-              onRotated={remember}
-              onDeleted={() => void select(undefined)}
-            />
-          ) : (
-            <p className="p-[22px] text-sm text-ms-text-muted">
-              <Trans>Select a connection.</Trans>
-            </p>
-          )}
-        </Panel>
+    // Rendered inside the workspace layout's <main>: this area scrolls on its own.
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-[23px] px-[27px] py-[30px] max-sm:px-4">
+        <WorkspaceSummary workspace={page.workspace} />
+        <div className="flex flex-wrap items-start gap-[23px]">
+          <ConnectionList
+            slug={slug}
+            connections={connections}
+            selected={creating ? 'new' : current?.id}
+          />
+          <Panel>
+            {creating ? (
+              <NewConnectionForm
+                slug={slug}
+                onCreated={(created) => {
+                  remember(created)
+                  void select(created.id)
+                }}
+                onCancel={() => void select(undefined)}
+              />
+            ) : current ? (
+              <ConnectionPanel
+                key={current.id}
+                slug={slug}
+                connection={current}
+                fresh={fresh[current.id]}
+                onRotated={remember}
+                onDeleted={() => void select(undefined)}
+              />
+            ) : (
+              <p className="p-[22px] text-sm text-ms-text-muted">
+                <Trans>Select a connection.</Trans>
+              </p>
+            )}
+          </Panel>
+        </div>
       </div>
-    </main>
+    </div>
   )
 }

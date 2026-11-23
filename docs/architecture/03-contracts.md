@@ -1471,8 +1471,12 @@ parsing and ingestion. A refused call reads no body and stores nothing.
 ## UI search params (`search-params.ts`)
 
 ```ts
-export const InboxSearch = z.object({ q: z.string().optional(), status: DeliveryStatus.optional(),
-  connectionId: z.string().optional(), tag: z.string().optional(), m: z.string().optional() })
+// Inbox (#39, #40, D177): an invalid value is dropped (`.catch(undefined)`), never an error page;
+// `urlText` also reads `?q=2026`, which the router's JSON parsing turns into a number.
+export const InboxTab = z.enum(['preview', 'text', 'links', 'headers', 'history'])
+export const InboxSearch = z.object({ q: urlText, status: DeliveryStatus.optional(),
+  connectionId: ConnectionId.optional(), tag: urlText, m: MessageId.optional(),
+  tab: InboxTab.optional() })
 export const LogsSearch = z.object({ tab: z.enum(['api', 'smtp', 'webhooks']).default('api'),
   status: z.string().optional(), connectionId: z.string().optional(),
   sort: z.string().default('-createdAt'), page: z.number().int().min(1).default(1),
@@ -1481,6 +1485,48 @@ export const PickerSearch = z.object({ ephemeral: z.boolean().default(false) })
 /** `/w/$workspaceSlug/connections` (#38): connection id in the panel, or `new`. */
 export const ConnectionsSearch = z.object({ connection: z.string().max(64).optional() })
 ```
+
+## Web UI inbox (#39, #40, propositions D175 to D179)
+
+Code: `apps/mailsink/src/features/{inbox,message-viewer,realtime}`, server functions
+`server-fns/messages-fns.ts` and `events-fns.ts` (session checked, workspace by slug, activity
+touched), core reads `listInboxRows`, `readInboxFacets`, `readMessagePreviews`
+(`core/capture/inbox.ts`, db `repositories/messages-inbox.ts`).
+
+Session routes (D175): the Capture API wants a Bearer key, which an `EventSource`, a download
+link or an iframe cannot send, so the inbox reads the same services through routes of the
+app authenticated by the UI session cookie (`MAILSINK_UI_AUTH=none`: everyone). The cookie
+never authenticates `/capture/**`.
+
+| Route | Answer |
+|---|---|
+| `GET /w/$workspaceSlug/m/stream` | The `GET /capture/stream` events of the workspace (no filter); `Last-Event-ID` header, or `?lastEventId=` when the inbox reopens the stream itself |
+| `GET /w/$workspaceSlug/m/$messageId/raw` | Raw EML, headers of the Capture downloads |
+| `GET /w/$workspaceSlug/m/$messageId/attachments/$attachmentId` | The attachment, always `Content-Disposition: attachment` |
+| `GET /w/$workspaceSlug/m/$messageId/html?scheme=light\|dark` | The document of the preview iframe (D176), 404 without HTML body |
+
+Without a valid session they answer `401 { error: { code: 'unauthorized' } }`; an unknown
+slug, another workspace's message or a missing part `404 not_found`. Each call touches the
+workspace activity (D16).
+
+Preview (D176): `<iframe sandbox="">` (no allowance: no scripts, opaque origin, no popups,
+no forms), document served with `Content-Security-Policy: sandbox; default-src 'none';
+style-src 'unsafe-inline' https: http:; img-src data: https: http:; font-src data: https:
+http:`, `nosniff`, `no-store`, `Referrer-Policy: no-referrer`. The served HTML gets
+`<meta name="color-scheme">` (light or dark mail client background) and `<base
+target="_blank">` right after `<head>`; inline `cid:` images become data: URLs (5 MB per
+message at most).
+
+Inbox (D177, D178): list of 100-row pages (`listCapturedMessages` plus a 160-character plain
+text preview), virtualized; counts over the whole inbox per status, per connection and of the
+log rows (API calls, SMTP sessions, webhook deliveries). Search box: `to:` / `from:`
+operators, a lone word with `@` searches recipients, anything else is the Capture full text
+`q`. One stream per open workspace (the layout) writes into the TanStack Query cache.
+
+Viewer (D179): `?m=` opens a message (the newest one when absent), `?tab=` its tab;
+« Simulate » Opened / Clicked / Hard Bounce call `triggerMessageEvent` with origin `ui` and
+publish like `POST /capture/messages/:id/events`; « Purge the inbox » deletes every message
+of the workspace and keeps the logs (`includeLogs: false`), then publishes `messages.purged`.
 
 ## Web UI auth (#37, propositions D160 to D164)
 

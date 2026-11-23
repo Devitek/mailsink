@@ -1,9 +1,11 @@
 import { Trans } from '@lingui/react/macro'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute, Link, notFound, Outlet } from '@tanstack/react-router'
 import { ensureSignedIn } from '../auth/guard'
+import { facetsQuery } from '../features/inbox/queries'
+import { LiveIndicator } from '../features/realtime/live-indicator'
+import { useWorkspaceStream } from '../features/realtime/use-workspace-stream'
 import { AppHeader } from '../features/shell/app-header'
-import { EphemeralBadge } from '../features/workspaces/ephemeral-badge'
 import { workspaceQuery } from '../features/workspaces/queries'
 
 export const Route = createFileRoute('/w/$workspaceSlug')({
@@ -13,30 +15,43 @@ export const Route = createFileRoute('/w/$workspaceSlug')({
       workspaceQuery(params.workspaceSlug),
     )
     if (!workspace) throw notFound()
+    await context.queryClient.ensureQueryData(facetsQuery(params.workspaceSlug))
   },
-  component: WorkspacePage,
+  component: WorkspaceLayout,
   notFoundComponent: WorkspaceNotFound,
 })
 
-// Direct access to a workspace (`/w/$workspaceSlug`). Opening it touches its activity and
-// makes it the default page after the next sign-in. The inbox replaces the placeholder
-// body in #39.
-function WorkspacePage() {
+// Layout of a workspace (`/w/$workspaceSlug/…`): header with the Messages / Logs / Settings
+// tabs and their counts, the live stream indicator, then the page (the inbox, or the pages
+// of the other Phase 4 lots). Opening it touches the workspace's activity and makes it the
+// default page after the next sign-in. One stream per open workspace feeds every page.
+function WorkspaceLayout() {
   const { workspaceSlug } = Route.useParams()
   const { data: workspace } = useSuspenseQuery(workspaceQuery(workspaceSlug))
+  const { data: facets } = useQuery(facetsQuery(workspaceSlug))
+  const { state, deleted } = useWorkspaceStream(workspaceSlug)
   if (!workspace) return null
   return (
-    <div className="flex min-h-dvh flex-col">
-      <AppHeader workspace={workspace} />
-      <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-        <h1 className="text-title font-semibold tracking-[-0.02em]">{workspace.name}</h1>
-        <p className="flex items-center gap-2 font-mono text-sm text-ms-text-muted">
-          {workspace.slug}
-          {workspace.ephemeral && <EphemeralBadge expiresAt={workspace.expiresAt} withLabel />}
+    <div className="flex h-dvh flex-col">
+      <AppHeader
+        workspace={workspace}
+        counts={{ messages: facets?.total, logs: facets?.logs }}
+        status={<LiveIndicator state={state} />}
+      />
+      <h1 className="sr-only">{workspace.name}</h1>
+      {deleted && (
+        <p
+          role="alert"
+          className="flex flex-wrap items-center gap-3 border-b border-ms-border bg-[color-mix(in_oklch,var(--ms-danger)_8%,var(--ms-panel))] px-[19px] py-3 text-sm"
+        >
+          <Trans>This workspace was deleted (expired or removed through the Admin API).</Trans>
+          <Link to="/" className="text-ms-accent-text underline-offset-4 hover:underline">
+            <Trans>Choose a workspace</Trans>
+          </Link>
         </p>
-        <p className="max-w-[420px] text-body text-ms-text-muted">
-          <Trans>The message list of this workspace is not available yet.</Trans>
-        </p>
+      )}
+      <main className="flex min-h-0 flex-1 flex-col">
+        <Outlet />
       </main>
     </div>
   )
