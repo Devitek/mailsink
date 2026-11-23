@@ -34,6 +34,22 @@ msgstr "{count, plural, one {# créé via l'API Admin (CI / E2E)} other {# cré�
 msgid "{kind} · created {created}"
 msgstr "{kind} · créée le {created}"
 
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "{transport} · <0>{file}</0>"
+msgstr "{transport} · <0>{file}</0>"
+
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "{transport} · command line"
+msgstr "{transport} · ligne de commande"
+
+#: apps/mailsink/src/features/settings/retention-section.tsx
+msgid "{used} / {total} used"
+msgstr "{used} / {total} utilisés"
+
+#: apps/mailsink/src/features/settings/retention-section.tsx
+msgid "{used} messages kept"
+msgstr "{used} messages conservés"
+
 #: apps/mailsink/src/features/inbox/inbox-page.tsx
 msgid "← Inbox"
 msgstr "← Boîte de réception"
@@ -42,9 +58,21 @@ msgstr "← Boîte de réception"
 msgid "→ updates the status and delivers the subscribed webhooks"
 msgstr "→ met à jour le statut et livre les webhooks abonnés"
 
+#: apps/mailsink/src/features/webhooks/custom-headers-field.tsx
+msgid "+ Add a header"
+msgstr "+ Ajouter un header"
+
+#: apps/mailsink/src/features/webhooks/webhooks-section.tsx
+msgid "+ Add an endpoint"
+msgstr "+ Ajouter un endpoint"
+
 #: apps/mailsink/src/features/connections/connection-list.tsx
 msgid "+ New connection"
 msgstr "+ Nouvelle connexion"
+
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "+ New template"
+msgstr "+ Nouveau template"
 
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "<0>Key rejected.</0> Check that it matches <1>MAILSINK_ADMIN_KEY</1> on the server."
@@ -71,9 +99,33 @@ msgstr "3 à 64 lettres, chiffres, points, tirets ou underscores."
 msgid "80 characters at most."
 msgstr "80 caractères au maximum."
 
+#: apps/mailsink/src/features/templates/template-preview.tsx
+msgid "A JSON object, such as {\"name\": \"Julie\"}."
+msgstr "Un objet JSON, par exemple {\"name\": \"Julie\"}."
+
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 msgid "A new secret is generated and shown once. The current one stops working at once: update every client using it."
 msgstr "Un nouveau secret est généré et affiché une seule fois. L'actuel cesse de fonctionner immédiatement : mettez à jour chaque client qui l'utilise."
+
+#: apps/mailsink/src/features/webhooks/secret-line.tsx
+msgid "A new secret is generated and shown. Deliveries signed with the current one stop verifying at once: update the receiver."
+msgstr "Un nouveau secret est généré et affiché. Les livraisons signées avec l'actuel ne sont plus vérifiables immédiatement : mettez à jour le récepteur."
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "A number between the allowed bounds."
+msgstr "Un nombre dans les bornes autorisées."
+
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "A signing secret (whsec_…) is issued on save and shown on the card."
+msgstr "Un secret de signature (whsec_…) est émis à l'enregistrement et affiché sur la carte."
+
+#: apps/mailsink/src/features/settings/retention-section.tsx
+msgid "A whole number above 0, or empty."
+msgstr "Un nombre entier supérieur à 0, ou vide."
+
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "A whole number above 0."
+msgstr "Un nombre entier supérieur à 0."
 
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
@@ -93,6 +145,18 @@ msgstr "Clé d'administration"
 msgid "All"
 msgstr "Tous"
 
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "An address such as Shop <shop@example.test>."
+msgstr "Une adresse comme Shop <shop@example.test>."
+
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "An HTML or a text body is required."
+msgstr "Un corps HTML ou texte est requis."
+
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "An http(s) URL."
+msgstr "Une URL http(s)."
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "An msk_… key is generated on creation. Point the provider SDK at the Mailsink base URL: no application code change."
 msgstr "Une clé msk_… sera générée à la création. Pointez le SDK du provider vers l'URL de base Mailsink : aucun changement de code applicatif."
@@ -102,18 +166,45 @@ msgstr "Une clé msk_… sera générée à la création. Pointez le SDK du prov
 msgid "API key"
 msgstr "Clé API"
 
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Applied to each connection that sets none (HTTP 429, SMTP 451)."
+msgstr "Appliqué à chaque connexion qui n'en définit pas (HTTP 429, SMTP 451)."
+
 #. placeholder {0}: files.length
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "Attachments · {0}"
 msgstr "Pièces jointes · {0}"
+
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
+msgid "Auth"
+msgstr "Auth"
+
+#: apps/mailsink/src/features/webhooks/brevo-auth-fields.tsx
+msgid "Authentication sent by Brevo"
+msgstr "Authentification envoyée par Brevo"
 
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 #: apps/mailsink/src/features/connections/credentials-reveal.tsx
 msgid "Base URL"
 msgstr "URL de base"
 
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "Brevo calls sending templateId {id} are refused afterwards."
+msgstr "Les appels Brevo qui envoient templateId {id} seront ensuite refusés."
+
+#: apps/mailsink/src/features/settings/section-nav.tsx
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "Brevo templates"
+msgstr "Templates Brevo"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Burst"
+msgstr "Rafale"
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 #: apps/mailsink/src/features/message-viewer/purge-button.tsx
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
 #: apps/mailsink/src/features/workspaces/confirm-dialog.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
@@ -129,9 +220,21 @@ msgstr "Vérification…"
 msgid "Choose a workspace"
 msgstr "Choisir un workspace"
 
+#: apps/mailsink/src/features/webhooks/payload-preview.tsx
+msgid "Choose an event this format can send to preview its payload."
+msgstr "Choisissez un événement que ce format peut envoyer pour prévisualiser son payload."
+
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "Choose at least one event."
+msgstr "Choisissez au moins un événement."
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "Choose the provider to emulate"
 msgstr "Choisissez le type de provider à émuler"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Clicked"
+msgstr "Cliqué"
 
 #: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
 msgid "Clicked: choose a link"
@@ -159,6 +262,8 @@ msgid "Connection kind"
 msgstr "Type de connexion"
 
 #: apps/mailsink/src/features/connections/connection-list.tsx
+#: apps/mailsink/src/features/settings/connections-section.tsx
+#: apps/mailsink/src/features/settings/section-nav.tsx
 msgid "Connections"
 msgstr "Connexions"
 
@@ -190,6 +295,10 @@ msgstr "Copier SMTP_USER"
 msgid "Copy the .env snippet"
 msgstr "Copier le snippet .env"
 
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "Copy the {target} snippet"
+msgstr "Copier le snippet {target}"
+
 #: apps/mailsink/src/features/connections/credentials-reveal.tsx
 msgid "Copy the API key"
 msgstr "Copier la clé API"
@@ -199,9 +308,17 @@ msgstr "Copier la clé API"
 msgid "Copy the base URL"
 msgstr "Copier l'URL de base"
 
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "Copy the MCP endpoint"
+msgstr "Copier l'endpoint MCP"
+
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "Copy the secrets below now: they are shown only once."
 msgstr "Copiez les secrets ci-dessous maintenant : ils ne sont affichés qu'une fois."
+
+#: apps/mailsink/src/features/webhooks/secret-line.tsx
+msgid "Copy the signing secret"
+msgstr "Copier le secret de signature"
 
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "Copy the workspace key"
@@ -211,13 +328,33 @@ msgstr "Copier la clé du workspace"
 msgid "Copy these credentials now: they are shown only once. Mailsink keeps a hash, not the secret; rotate to get a new one."
 msgstr "Copiez ces credentials maintenant : ils ne sont affichés qu'une fois. Mailsink garde une empreinte, pas le secret ; faites une rotation pour en obtenir un nouveau."
 
+#: apps/mailsink/src/features/settings/connections-section.tsx
+msgid "Create one"
+msgstr "En créer une"
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "Create the connection"
 msgstr "Créer la connexion"
 
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "Create the endpoint"
+msgstr "Créer l'endpoint"
+
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "Create the template"
+msgstr "Créer le template"
+
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Create the workspace"
 msgstr "Créer le workspace"
+
+#: apps/mailsink/src/features/settings/connections-section.tsx
+msgid "Credentials, .env snippets, rotation and per-connection rate limits."
+msgstr "Identifiants, snippets .env, rotation et rate limits par connexion."
+
+#: apps/mailsink/src/features/webhooks/custom-headers-field.tsx
+msgid "Custom headers"
+msgstr "Headers personnalisés"
 
 #: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
 msgid "Custom URL"
@@ -227,6 +364,7 @@ msgstr "URL personnalisée"
 msgid "Dark background"
 msgstr "Fond sombre"
 
+#: apps/mailsink/src/features/settings/simulation-section.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Default rate limit"
@@ -236,10 +374,24 @@ msgstr "Rate limit par défaut"
 msgid "Default retention"
 msgstr "Rétention par défaut"
 
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "Default sender"
+msgstr "Expéditeur par défaut"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Default simulation"
+msgstr "Simulation par défaut"
+
 #: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/templates/templates-section.tsx
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Delete"
 msgstr "Supprimer"
+
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "Delete template {id}"
+msgstr "Supprimer le template {id}"
 
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 msgid "Delete the connection"
@@ -249,6 +401,14 @@ msgstr "Supprimer la connexion"
 msgid "Delete the connection {name}?"
 msgstr "Supprimer la connexion {name} ?"
 
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
+msgid "Delete the endpoint {url}?"
+msgstr "Supprimer l'endpoint {url} ?"
+
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "Delete the template {name}?"
+msgstr "Supprimer le template {name} ?"
+
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Delete the workspace"
 msgstr "Supprimer le workspace"
@@ -257,6 +417,7 @@ msgstr "Supprimer le workspace"
 msgid "Delete the workspace {slug}?"
 msgstr "Supprimer le workspace {slug} ?"
 
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 msgid "Description"
 msgstr "Description"
@@ -270,6 +431,7 @@ msgid "disabled"
 msgstr "désactivée"
 
 #: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/settings/connections-section.tsx
 msgid "Disabled"
 msgstr "Désactivée"
 
@@ -285,6 +447,10 @@ msgstr "Télécharger"
 msgid "Download .eml"
 msgstr "Télécharger le .eml"
 
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Drawn in this order for each recipient; the remainder is delivered."
+msgstr "Tirés dans cet ordre pour chaque destinataire ; le reste est délivré."
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "e.g. resend-transactional"
 msgstr "ex. resend-transactional"
@@ -293,9 +459,20 @@ msgstr "ex. resend-transactional"
 msgid "Each workspace keeps its own messages, connections and webhooks."
 msgstr "Chaque workspace a ses propres messages, connexions et webhooks."
 
+#: apps/mailsink/src/features/templates/templates-section.tsx
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 msgid "Edit"
 msgstr "Modifier"
+
+#: apps/mailsink/src/features/templates/template-editor.tsx
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "Edit template {id}"
+msgstr "Modifier le template {id}"
+
+#: apps/mailsink/src/features/webhooks/endpoint-dialog.tsx
+msgid "Edit the endpoint"
+msgstr "Modifier l'endpoint"
 
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 msgid "Edit the workspace"
@@ -313,7 +490,12 @@ msgstr "Les emails envoyés via une connexion de ce workspace apparaissent ici e
 msgid "Empty inbox for <0>{slug}</0>"
 msgstr "Boîte vide pour <0>{slug}</0>"
 
+#: apps/mailsink/src/features/webhooks/test-send.tsx
+msgid "Enable the endpoint to test it"
+msgstr "Activez l'endpoint pour le tester"
+
 #: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
 msgid "Enabled"
 msgstr "Activée"
 
@@ -337,9 +519,21 @@ msgstr "Équivalent éphémère (CI / E2E), masqué par défaut, supprimé aprè
 msgid "Ephemeral workspaces"
 msgstr "Workspaces éphémères"
 
+#: apps/mailsink/src/features/webhooks/event-picker.tsx
+msgid "Event {name}"
+msgstr "Événement {name}"
+
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "Events"
+msgstr "Événements"
+
 #: apps/mailsink/src/features/message-viewer/use-simulate.ts
 msgid "Events recorded: {events}. Webhook deliveries queued: {deliveries}."
 msgstr "Événements enregistrés : {events}. Livraisons webhook en file : {deliveries}."
+
+#: apps/mailsink/src/features/webhooks/scope-format-fields.tsx
+msgid "every connection"
+msgstr "toutes les connexions"
 
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "Every email caught. None delivered."
@@ -354,11 +548,21 @@ msgstr "Premiers 512 Ko sur {0} : téléchargez le fichier pour la source compl�
 msgid "For staging / QA. Ephemeral workspaces are created through the Admin API."
 msgstr "Pour staging / QA. Les workspaces éphémères se créent via l'API Admin."
 
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
+#: apps/mailsink/src/features/webhooks/scope-format-fields.tsx
+msgid "Format"
+msgstr "Format"
+
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
+msgid "Format: {shortName} · {signature}"
+msgstr "Format : {shortName} · {signature}"
+
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "From"
 msgstr "De"
 
 #: apps/mailsink/src/features/connections/connection-name.tsx
+#: apps/mailsink/src/features/templates/template-form-view.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Give it a name."
@@ -367,6 +571,14 @@ msgstr "Donnez-lui un nom."
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "GTFS Manager - Staging"
 msgstr "GTFS Manager - Staging"
+
+#: apps/mailsink/src/features/webhooks/custom-headers-field.tsx
+msgid "Header name {row}"
+msgstr "Nom du header {row}"
+
+#: apps/mailsink/src/features/webhooks/custom-headers-field.tsx
+msgid "Header value {row}"
+msgstr "Valeur du header {row}"
 
 #. placeholder {0}: headers.length
 #: apps/mailsink/src/features/message-viewer/headers-tab.tsx
@@ -378,6 +590,7 @@ msgid "Headers & MIME"
 msgstr "Headers & MIME"
 
 #: apps/mailsink/src/features/login/key-field.tsx
+#: apps/mailsink/src/features/webhooks/secret-line.tsx
 msgid "Hide"
 msgstr "Masquer"
 
@@ -401,9 +614,21 @@ msgstr "iframe sandbox · scripts bloqués · fluide"
 msgid "Inbox"
 msgstr "Boîte de réception"
 
+#: apps/mailsink/src/features/webhooks/scope-format-fields.tsx
+msgid "Inherited from the connection · {signature}"
+msgstr "Hérité de la connexion · {signature}"
+
 #: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Instance"
 msgstr "Instance"
+
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "Invalid header name."
+msgstr "Nom de header invalide."
+
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
+msgid "It stops receiving events at once. Its delivery log is deleted with it."
+msgstr "Il ne reçoit plus d'événements immédiatement. Son journal de livraisons est supprimé avec lui."
 
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Its connections, keys, messages, logs and webhooks are deleted at once. This cannot be undone."
@@ -421,6 +646,22 @@ msgstr "Langue"
 #: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Language and session"
 msgstr "Langue et session"
+
+#: apps/mailsink/src/features/webhooks/last-delivery.tsx
+msgid "Last delivery"
+msgstr "Dernière livraison"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Latency max"
+msgstr "Latence max"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Latency min"
+msgstr "Latence min"
+
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "Let an AI agent read, wait for and simulate the emails of this workspace."
+msgstr "Laissez un agent IA lire, attendre et simuler les emails de ce workspace."
 
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Light background"
@@ -468,6 +709,23 @@ msgstr "Logs"
 msgid "Manage connections →"
 msgstr "Gérer les connexions →"
 
+#: apps/mailsink/src/features/settings/connections-section.tsx
+msgid "Manage the connections →"
+msgstr "Gérer les connexions →"
+
+#: apps/mailsink/src/features/settings/retention-section.tsx
+msgid "Maximum messages"
+msgstr "Quota max de messages"
+
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+#: apps/mailsink/src/features/settings/section-nav.tsx
+msgid "MCP"
+msgstr "MCP"
+
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "MCP client"
+msgstr "Client MCP"
+
 #: apps/mailsink/src/features/inbox/inbox-page.tsx
 msgid "Message"
 msgstr "Message"
@@ -487,10 +745,16 @@ msgstr "Mobile"
 
 #: apps/mailsink/src/features/connections/connection-name.tsx
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+#: apps/mailsink/src/features/templates/templates-section.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Name"
 msgstr "Nom"
+
+#: apps/mailsink/src/features/templates/template-editor.tsx
+msgid "New Brevo template"
+msgstr "Nouveau template Brevo"
 
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "New connection"
@@ -500,9 +764,17 @@ msgstr "Nouvelle connexion"
 msgid "New persistent workspace"
 msgstr "Nouveau workspace persistant"
 
+#: apps/mailsink/src/features/webhooks/endpoint-dialog.tsx
+msgid "New webhook endpoint"
+msgstr "Nouvel endpoint webhook"
+
 #: apps/mailsink/src/features/workspaces/new-workspace-dialog.tsx
 msgid "New workspace"
 msgstr "Nouveau workspace"
+
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "next free id"
+msgstr "prochain id libre"
 
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "No attachment."
@@ -511,6 +783,10 @@ msgstr "Aucune pièce jointe."
 #: apps/mailsink/src/features/connections/connection-list.tsx
 msgid "No connection yet: create one to receive mail from Resend, Brevo or SMTP clients."
 msgstr "Aucune connexion pour l'instant : créez-en une pour recevoir les mails de Resend, Brevo ou de clients SMTP."
+
+#: apps/mailsink/src/features/settings/connections-section.tsx
+msgid "No connection yet."
+msgstr "Aucune connexion pour l'instant."
 
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "No link."
@@ -532,17 +808,53 @@ msgstr "Aucune source MIME n'a été conservée pour ce message."
 msgid "No persistent workspace yet."
 msgstr "Aucun workspace persistant pour l'instant."
 
+#: apps/mailsink/src/features/templates/template-preview.tsx
+msgid "No subject"
+msgstr "Pas de sujet"
+
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "No template yet."
+msgstr "Aucun template pour l'instant."
+
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "No webhook delivery for this message."
 msgstr "Aucune livraison webhook pour ce message."
+
+#: apps/mailsink/src/features/webhooks/webhooks-section.tsx
+msgid "No webhook endpoint yet: add one to receive delivery events."
+msgstr "Aucun endpoint webhook pour l'instant : ajoutez-en un pour recevoir les événements de livraison."
 
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 msgstr "Aucun workspace ne s'appelle <0>{workspaceSlug}</0>. Il a peut-être expiré."
 
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
+msgid "none"
+msgstr "aucune"
+
+#: apps/mailsink/src/features/webhooks/brevo-auth-fields.tsx
+msgid "None"
+msgstr "Aucune"
+
+#: apps/mailsink/src/features/webhooks/last-delivery.tsx
+msgid "none yet"
+msgstr "aucune pour l'instant"
+
+#: apps/mailsink/src/features/webhooks/event-list.tsx
+msgid "Not representable in this format, never sent: <0>{list}</0>"
+msgstr "Non représentables dans ce format, jamais envoyés : <0>{list}</0>"
+
 #: apps/mailsink/src/features/inbox/relative-time.tsx
 msgid "now"
 msgstr "à l'instant"
+
+#: apps/mailsink/src/features/settings/retention-section.tsx
+msgid "Older messages and logs are purged automatically."
+msgstr "Les messages et logs plus anciens sont purgés automatiquement."
+
+#: apps/mailsink/src/features/settings/retention-section.tsx
+msgid "oldest first beyond"
+msgstr "FIFO au-delà"
 
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "Open its connections"
@@ -552,6 +864,10 @@ msgstr "Ouvrir ses connexions"
 msgid "Open the workspace"
 msgstr "Ouvrir le workspace"
 
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Opened"
+msgstr "Ouvert"
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "Optional, else the workspace value."
 msgstr "Optionnel, sinon la valeur du workspace."
@@ -560,21 +876,51 @@ msgstr "Optionnel, sinon la valeur du workspace."
 msgid "Optional: generated from the workspace slug."
 msgstr "Optionnel : généré à partir du slug du workspace."
 
+#: apps/mailsink/src/features/webhooks/webhooks-section.tsx
+msgid "Outgoing HTTP notifications, in the provider's native format or unified."
+msgstr "Notifications HTTP sortantes au format natif du fournisseur ou unifié."
+
+#: apps/mailsink/src/features/webhooks/brevo-auth-fields.tsx
+msgid "Password"
+msgstr "Mot de passe"
+
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Paste"
 msgstr "Coller"
+
+#: apps/mailsink/src/features/webhooks/payload-preview.tsx
+msgid "Payload preview"
+msgstr "Aperçu du payload"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "per window"
+msgstr "par fenêtre"
 
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Persistent workspaces"
 msgstr "Workspaces persistants"
 
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "Plain text"
+msgstr "Texte brut"
+
 #: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+#: apps/mailsink/src/features/templates/template-preview.tsx
+#: apps/mailsink/src/features/webhooks/payload-preview.tsx
 msgid "Preview"
 msgstr "Aperçu"
 
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Preview background"
 msgstr "Fond de l'aperçu"
+
+#: apps/mailsink/src/features/templates/template-preview.tsx
+msgid "Preview body"
+msgstr "Corps de l'aperçu"
+
+#: apps/mailsink/src/features/webhooks/payload-preview.tsx
+msgid "Preview event"
+msgstr "Événement de l'aperçu"
 
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Preview width"
@@ -608,6 +954,10 @@ msgstr "Flux temps réel (Server-Sent Events) connecté"
 msgid "Received"
 msgstr "Reçu"
 
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Recipient rules: {rules}. They are kept as they are; the override panel changes the simulation for a while."
+msgstr "Règles par destinataire : {rules}. Elles sont conservées telles quelles ; le panneau d'override modifie la simulation pour un temps."
+
 #: apps/mailsink/src/features/realtime/live-indicator.tsx
 msgid "Reconnecting…"
 msgstr "Reconnexion…"
@@ -620,16 +970,47 @@ msgstr "Régénérer"
 msgid "Regenerate SMTP_PASS?"
 msgstr "Régénérer SMTP_PASS ?"
 
+#: apps/mailsink/src/features/webhooks/custom-headers-field.tsx
+msgid "Remove header {row}"
+msgstr "Retirer le header {row}"
+
 #. placeholder {0}: search.tag
 #: apps/mailsink/src/features/inbox/filter-bar.tsx
 msgid "Remove the tag filter {0}"
 msgstr "Retirer le filtre de tag {0}"
 
+#: apps/mailsink/src/features/templates/template-preview.tsx
+msgid "Rendered HTML"
+msgstr "HTML rendu"
+
+#: apps/mailsink/src/features/templates/template-preview.tsx
+msgid "Rendered preview"
+msgstr "Aperçu rendu"
+
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "Replace <0>{placeholder}</0> with the workspace key, shown once when the workspace was created. A connection key works too."
+msgstr "Remplacez <0>{placeholder}</0> par la clé du workspace, affichée une seule fois à sa création. Une clé de connexion fonctionne aussi."
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Requests"
+msgstr "Requêtes"
+
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "Required."
+msgstr "Requis."
+
+#: apps/mailsink/src/features/settings/retention-section.tsx
+#: apps/mailsink/src/features/settings/section-nav.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Retention"
 msgstr "Rétention"
 
+#: apps/mailsink/src/features/webhooks/secret-line.tsx
+msgid "Reveal"
+msgstr "Révéler"
+
 #: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/webhooks/secret-line.tsx
 msgid "Rotate"
 msgstr "Rotation"
 
@@ -637,10 +1018,34 @@ msgstr "Rotation"
 msgid "Rotate the API key?"
 msgstr "Faire une rotation de la clé API ?"
 
+#: apps/mailsink/src/features/webhooks/secret-line.tsx
+msgid "Rotate the signing secret?"
+msgstr "Faire tourner le secret de signature ?"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "same as the limit"
+msgstr "égale à la limite"
+
+#: apps/mailsink/src/features/templates/template-preview.tsx
+msgid "Sample params (JSON)"
+msgstr "Params d'exemple (JSON)"
+
 #: apps/mailsink/src/features/connections/connection-name.tsx
+#: apps/mailsink/src/features/settings/save-state.tsx
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 msgid "Save"
 msgstr "Enregistrer"
+
+#: apps/mailsink/src/features/settings/save-state.tsx
+msgid "Saved."
+msgstr "Enregistré."
+
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
+#: apps/mailsink/src/features/webhooks/scope-format-fields.tsx
+msgid "Scope"
+msgstr "Portée"
 
 #: apps/mailsink/src/features/inbox/filter-bar.tsx
 msgid "Search messages"
@@ -658,9 +1063,15 @@ msgstr "Voir dans l'explorateur de logs →"
 msgid "Select a connection."
 msgstr "Sélectionnez une connexion."
 
+#: apps/mailsink/src/features/settings/section-nav.tsx
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
+#: apps/mailsink/src/routes/w.$workspaceSlug.settings.tsx
 msgid "Settings"
 msgstr "Paramètres"
+
+#: apps/mailsink/src/features/settings/section-nav.tsx
+msgid "Settings sections"
+msgstr "Sections des paramètres"
 
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Show"
@@ -695,6 +1106,14 @@ msgstr "Se déconnecter"
 msgid "Sign-in failed. Check your connection and try again."
 msgstr "La connexion a échoué. Vérifiez votre réseau et réessayez."
 
+#: apps/mailsink/src/features/webhooks/scope-format-fields.tsx
+msgid "Signature: {signature}"
+msgstr "Signature : {signature}"
+
+#: apps/mailsink/src/features/webhooks/secret-line.tsx
+msgid "Signing secret"
+msgstr "Secret de signature"
+
 #: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
 msgid "Simulate"
 msgstr "Simuler"
@@ -707,6 +1126,10 @@ msgstr "Simuler un clic sur {0}"
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "Simulate click"
 msgstr "Simuler clic webhook"
+
+#: apps/mailsink/src/features/settings/section-nav.tsx
+msgid "Simulation & rate limit"
+msgstr "Simulation et rate limit"
 
 #. placeholder {0}: mutation.error.message
 #: apps/mailsink/src/features/message-viewer/use-simulate.ts
@@ -737,11 +1160,33 @@ msgstr "Statut"
 msgid "Status timeline"
 msgstr "Timeline des statuts"
 
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "stdio with the Docker image"
+msgstr "stdio avec l'image Docker"
+
+#: apps/mailsink/src/features/mcp-config/mcp-section.tsx
+msgid "Streamable HTTP endpoint"
+msgstr "Endpoint Streamable HTTP"
+
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "Subject"
+msgstr "Sujet"
+
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "Tags"
 msgstr "Tags"
 
+#: apps/mailsink/src/features/webhooks/test-send.tsx
+msgid "Test failed"
+msgstr "Échec du test"
+
+#: apps/mailsink/src/features/webhooks/test-send.tsx
+msgid "Test send"
+msgstr "Test d'envoi"
+
 #: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+#: apps/mailsink/src/features/templates/template-preview.tsx
 msgid "Text"
 msgstr "Texte"
 
@@ -753,13 +1198,53 @@ msgstr "L'opération a échoué. Réessayez."
 msgid "The connection could not be created. Try again."
 msgstr "La connexion n'a pas pu être créée. Réessayez."
 
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "The endpoint could not be saved. Try again."
+msgstr "L'endpoint n'a pas pu être enregistré. Réessayez."
+
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "The key is never stored in your browser: it is exchanged for a session cookie."
 msgstr "La clé n'est jamais stockée dans le navigateur : elle est échangée contre un cookie de session."
 
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "The maximum must be at least the minimum."
+msgstr "Le maximum doit être au moins égal au minimum."
+
+#: apps/mailsink/src/features/templates/template-editor.tsx
+msgid "The numeric id is the templateId a Brevo client sends; it cannot change afterwards."
+msgstr "L'id numérique est le templateId qu'envoie un client Brevo ; il ne peut plus changer ensuite."
+
+#: apps/mailsink/src/features/webhooks/payload-preview.tsx
+msgid "The preview is not available."
+msgstr "L'aperçu n'est pas disponible."
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "The rates add up to more than 100 %."
+msgstr "La somme des taux dépasse 100 %."
+
+#: apps/mailsink/src/features/webhooks/endpoint-dialog.tsx
+msgid "The scope picks which connections feed it; the format, what the receiver gets."
+msgstr "La portée choisit les connexions qui l'alimentent ; le format, ce que reçoit le récepteur."
+
+#: apps/mailsink/src/features/webhooks/secret-line.tsx
+msgid "The secret could not be read."
+msgstr "Le secret n'a pas pu être lu."
+
+#: apps/mailsink/src/features/settings/save-state.tsx
+msgid "The settings could not be saved. Try again."
+msgstr "Les paramètres n'ont pas pu être enregistrés. Réessayez."
+
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "The signing secret is kept: reveal or rotate it on the card."
+msgstr "Le secret de signature est conservé : révélez-le ou faites-le tourner sur la carte."
+
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 msgid "The slug /w/{slug} does not change."
 msgstr "Le slug /w/{slug} ne change pas."
+
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "The template could not be saved. Try again."
+msgstr "Le template n'a pas pu être enregistré. Réessayez."
 
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "The workspace could not be created. Try again."
@@ -772,6 +1257,10 @@ msgstr "Le workspace n'a pas pu être enregistré. Réessayez."
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "The workspace key reads this workspace through the Capture API and MCP. Mailsink keeps a hash, not the key."
 msgstr "La clé du workspace lit ce workspace via l'API Capture et MCP. Mailsink garde une empreinte, pas la clé."
+
+#: apps/mailsink/src/features/templates/template-form-view.tsx
+msgid "This id is already used in the workspace."
+msgstr "Cet id est déjà utilisé dans le workspace."
 
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "This message has no HTML body."
@@ -805,6 +1294,14 @@ msgstr "À"
 msgid "Toggle light / dark"
 msgstr "Basculer clair / sombre"
 
+#: apps/mailsink/src/features/webhooks/brevo-auth-fields.tsx
+msgid "Token"
+msgstr "Jeton"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "tokens"
+msgstr "jetons"
+
 #: apps/mailsink/src/features/login/login-form.tsx
 msgid "Try again in {countdown}"
 msgstr "Réessayer dans {countdown}"
@@ -813,18 +1310,53 @@ msgstr "Réessayer dans {countdown}"
 msgid "Type the slug to confirm"
 msgstr "Saisissez le slug pour confirmer"
 
+#: apps/mailsink/src/features/settings/retention-section.tsx
+msgid "unbounded"
+msgstr "illimité"
+
+#: apps/mailsink/src/features/webhooks/brevo-auth-fields.tsx
+msgid "unchanged"
+msgstr "inchangé"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "unlimited"
 msgstr "illimité"
 
+#: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
+msgid "URL"
+msgstr "URL"
+
+#: apps/mailsink/src/features/templates/templates-section.tsx
+msgid "Used by POST /v3/smtp/email with a templateId; {params} and {contact} placeholders are rendered."
+msgstr "Utilisés par POST /v3/smtp/email avec un templateId ; les placeholders {params} et {contact} sont rendus."
+
+#: apps/mailsink/src/features/webhooks/brevo-auth-fields.tsx
+msgid "Username"
+msgstr "Identifiant"
+
 #. placeholder {0}: deliveries.length
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "Webhook deliveries · {0}"
 msgstr "Livraisons webhook · {0}"
 
+#: apps/mailsink/src/features/webhooks/webhooks-section.tsx
+msgid "Webhook endpoints"
+msgstr "Endpoints webhook"
+
+#: apps/mailsink/src/features/settings/section-nav.tsx
+msgid "Webhooks"
+msgstr "Webhooks"
+
+#: apps/mailsink/src/features/settings/simulation-section.tsx
+msgid "Window"
+msgstr "Fenêtre"
+
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
+#: apps/mailsink/src/features/webhooks/endpoint-card.tsx
+#: apps/mailsink/src/features/webhooks/scope-format-fields.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Workspace"
 msgstr "Workspace"
