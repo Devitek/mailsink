@@ -101,6 +101,23 @@ export type LogsSearch = z.infer<typeof LogsSearch>
 export const ConnectionsSearch = z.object({ connection: z.string().max(64).optional() })
 export type ConnectionsSearch = z.infer<typeof ConnectionsSearch>
 
+/** Sections of the workspace settings page (#43, prototype « Paramètres »). */
+export const SettingsSection = z.enum([
+  'connections',
+  'webhooks',
+  'retention',
+  'simulation',
+  'templates',
+  'mcp',
+])
+export type SettingsSection = z.infer<typeof SettingsSection>
+
+/** `/w/$workspaceSlug/settings`: the open section (webhooks when absent or invalid). */
+export const SettingsSearch = z.object({
+  section: SettingsSection.optional().catch(undefined),
+})
+export type SettingsSearch = z.infer<typeof SettingsSearch>
+
 /** `/w/$workspaceSlug/suppressions`: the address filter (case-insensitive substring, #42). */
 export const SuppressionsSearch = z.object({ email: urlText })
 export type SuppressionsSearch = z.infer<typeof SuppressionsSearch>

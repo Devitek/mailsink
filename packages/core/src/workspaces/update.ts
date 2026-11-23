@@ -4,8 +4,9 @@ import { DomainError } from '../errors'
 import { toWorkspaceView } from './views'
 
 /**
- * Edits the settings of a workspace named by id or slug (#38): name, description, default
- * retention and rate limit. Ephemeral ones too; the slug and the lifetime do not change.
+ * Edits the settings of a workspace named by id or slug (#38, #43): name, description, default
+ * retention, message quota, rate limit and default simulation (replaced whole). Ephemeral
+ * ones too; the slug and the lifetime do not change.
  */
 export async function updateWorkspaceSettings(
   db: Database,
@@ -25,6 +26,8 @@ export async function updateWorkspaceSettings(
         description: patch.description,
         retentionSeconds: patch.retention,
         rateLimit: patch.rateLimit,
+        maxMessages: patch.maxMessages,
+        simulation: patch.simulation,
       },
       now,
     ))

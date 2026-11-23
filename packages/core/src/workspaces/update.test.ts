@@ -35,6 +35,31 @@ describeDb('updateWorkspaceSettings', (ctx) => {
     expect(cleared).toMatchObject({ name: 'QA', rateLimit: null, description: null })
   })
 
+  it('sets the message quota and replaces the default simulation settings whole', async () => {
+    const ws = await createTestWorkspace(ctx.db)
+    const simulation = {
+      rates: { hard_bounce: 10, soft_bounce: 5 },
+      latency: { minMs: 100, maxMs: 900 },
+      openRate: 40,
+      clickRate: 10,
+    }
+    const view = await updateWorkspaceSettings(
+      ctx.db,
+      ws.id,
+      patch({ maxMessages: 500, simulation }),
+      'https://mail.test',
+    )
+    expect(view.maxMessages).toBe(500)
+    expect(view.simulation).toEqual({ ...simulation, rules: [] })
+    const cleared = await updateWorkspaceSettings(
+      ctx.db,
+      ws.id,
+      patch({ maxMessages: null }),
+      'https://mail.test',
+    )
+    expect(cleared).toMatchObject({ maxMessages: null, simulation: { openRate: 40 } })
+  })
+
   it('answers not_found for an unknown workspace', async () => {
     await expect(
       updateWorkspaceSettings(ctx.db, 'nope', patch({ name: 'x' }), 'https://mail.test'),
