@@ -17,6 +17,9 @@ const jar = vi.hoisted(() => new Map<string, string>())
 vi.mock('@tanstack/react-start/server', () => ({
   getCookie: (name: string) => jar.get(name),
   setCookie: (name: string, value: string) => jar.set(name, value),
+  deleteCookie: (name: string) => jar.delete(name),
+  getRequest: () => new Request('http://localhost/'),
+  getRequestHeader: () => undefined,
 }))
 
 describeDb('UI workspace server functions', (ctx) => {

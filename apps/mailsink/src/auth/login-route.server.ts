@@ -8,6 +8,6 @@ export async function postLogin(request: Request): Promise<Response> {
   return handleLogin(request, {
     config: runtime.config,
     limiter: loginLimiter(runtime),
-    client: clientAddress(runtime),
+    client: await clientAddress(runtime),
   })
 }

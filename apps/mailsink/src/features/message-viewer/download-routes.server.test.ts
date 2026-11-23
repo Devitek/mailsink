@@ -13,6 +13,10 @@ import { attachmentForSession, htmlForSession, rawForSession } from './download-
 const jar = vi.hoisted(() => new Map<string, string>())
 vi.mock('@tanstack/react-start/server', () => ({
   getCookie: (name: string) => jar.get(name),
+  setCookie: () => undefined,
+  deleteCookie: () => undefined,
+  getRequest: () => new Request('http://localhost/'),
+  getRequestHeader: () => undefined,
   getRequestIP: () => '127.0.0.1',
 }))
 
