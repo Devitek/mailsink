@@ -1,4 +1,5 @@
-import { deleteCookie, getCookie, getRequestIP } from '@tanstack/react-start/server'
+import { deleteCookie, getCookie, getRequest } from '@tanstack/react-start/server'
+import { clientIp } from '../http/client-ip'
 import type { Runtime } from '../runtime/container'
 import { whenRuntimeReady } from '../runtime/slot'
 import { createLoginLimiter, type LoginLimiter } from './login-limiter'
@@ -30,10 +31,11 @@ export async function clearSession(): Promise<void> {
 }
 
 /**
- * Limiter key: the socket address. `X-Forwarded-For` is not trusted, so behind a reverse
- * proxy every visitor shares one budget (documented in 03-contracts « Web UI auth »).
+ * Limiter key: the socket address, or the address the trusted proxy forwarded with
+ * `MAILSINK_TRUST_PROXY` (D185). Off, every visitor behind a reverse proxy shares one budget.
  */
-export const clientAddress = (): string => getRequestIP() ?? 'unknown'
+export const clientAddress = (runtime: Runtime): string =>
+  clientIp(getRequest(), runtime.config.trustProxy === true) ?? 'unknown'
 
 type LimiterHolder = typeof globalThis & {
   [LIMITER_KEY]?: { limiter: LoginLimiter; settings: string }

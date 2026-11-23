@@ -7,6 +7,7 @@ import {
   redactHeaders,
 } from '@mailsink/core'
 import { bufferedBodyOf } from './body-limit'
+import { clientIp } from './client-ip'
 import type { ApiExtension, RequestContext } from './extensions'
 import { isLoggableType, parseJson, readCapped } from './logs-body'
 
@@ -88,7 +89,7 @@ async function buildEntry(
     responseBody: logBody(responseText),
     messageIds: INGESTION.has(dialect) ? messageIdsOf(parseJson(responseText)) : [],
     errorCode: errorCodeOf(error),
-    ip: (request as Request & { ip?: string }).ip ?? null,
+    ip: clientIp(request, ctx.runtime.config.trustProxy === true),
   }
 }
 

@@ -1,4 +1,9 @@
-import { findWorkspaceByRef, listWorkspaces, type Workspace } from '@mailsink/db'
+import {
+  countMessagesByWorkspace,
+  findWorkspaceByRef,
+  listWorkspaces,
+  type Workspace,
+} from '@mailsink/db'
 import { getCookie, setCookie } from '@tanstack/react-start/server'
 import type { Runtime } from '../runtime/container'
 import type { WorkspaceList, WorkspaceSummary } from './workspace-types'
@@ -27,8 +32,13 @@ export async function readWorkspaceList(
   const all = await listWorkspaces(runtime.db.db, { includeEphemeral: true, limit: PICKER_LIMIT })
   const persistent = all.filter((w) => !w.ephemeral)
   const ephemerals = all.filter((w) => w.ephemeral)
+  // Ephemeral rows show their TTL instead (prototype), so only persistent ones are counted.
+  const counts = await countMessagesByWorkspace(
+    runtime.db.db,
+    persistent.map((w) => w.id),
+  )
   return {
-    persistent: persistent.map(summary),
+    persistent: persistent.map((w) => ({ ...summary(w), messageCount: counts.get(w.id) ?? 0 })),
     ephemeral: ephemeral ? ephemerals.map(summary) : [],
     ephemeralCount: ephemerals.length,
   }

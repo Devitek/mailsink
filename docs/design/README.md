@@ -9,6 +9,7 @@ are binding for the UI issues.
 |---|---|---|
 | [`brand-1/`](brand-1/README.md) | Brand and UI kit « Jaune Poste »: logo « Le Bac », tokens, interactive prototype of the whole app | #36 |
 | [`brief-2/`](brief-2/README.md) | Admin-key sign-in screen (L1a to L1e, desktop and 390) and the header « Language and session » menu (H2a to H2d), light and dark, FR and EN copy | #63 |
+| `og/` | Open Graph images provided by the owner on 23/11 (1200 x 630, EN and FR): the app serves them per page locale (`og:image`, fr gets FR, any other locale EN); the EN one is the GitHub social preview of the repository | #36 |
 
 ## brand-1: contents
 

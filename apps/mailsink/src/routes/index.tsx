@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { PickerSearch } from '@mailsink/contracts'
 import { Card } from '@mailsink/ui'
@@ -7,6 +8,7 @@ import { ensureSignedIn } from '../auth/guard'
 import { AppHeader } from '../features/shell/app-header'
 import { workspacesQuery } from '../features/workspaces/queries'
 import { WorkspaceSections } from '../features/workspaces/workspace-sections'
+import { pageTitle } from '../seo/page-title'
 
 export const Route = createFileRoute('/')({
   validateSearch: PickerSearch,
@@ -16,6 +18,7 @@ export const Route = createFileRoute('/')({
   loaderDeps: ({ search }) => ({ ephemeral: search.ephemeral }),
   loader: ({ context, deps }) =>
     context.queryClient.ensureQueryData(workspacesQuery(deps.ephemeral)),
+  head: ({ matches }) => ({ meta: [pageTitle(matches, msg`Choose a workspace`)] }),
   component: WorkspacePickerPage,
 })
 
