@@ -1529,6 +1529,48 @@ parsing and ingestion. A refused call reads no body and stores nothing.
 - `rate_limit` columns (workspaces, connections) and `overrides.config.rateLimit` are only
   written from the parsed contract output, so `windowSeconds` is always present.
 
+## OpenAPI (`@mailsink/openapi`, #124, propositions D230 to D234)
+
+An OpenAPI 3.1 document of every public HTTP route, generated from the Zod contracts with
+`zod-openapi` (Zod 4 native JSON Schema underneath). It lives in its own package so
+`@mailsink/contracts` keeps `zod` as its only dependency (it reaches the browser bundle).
+
+- **Registry** (`packages/openapi/src/registry.ts`): one `RouteSpec` per route and method
+  (`routes/*.ts`, one file per surface): `operationId`, OpenAPI path, tag, auth mode,
+  params, query, request headers, body and success responses, all contract schemas. The
+  handlers do not declare response schemas, so the registry names them (the return types
+  of the core services). Request schemas render on the input side (what the client sends,
+  before transforms), responses on the output side.
+- **Errors** (`errors.ts`, D40): the statuses of a route are derived from its auth (`401`,
+  `403`), inputs (`404` with path params, `422`, `400` for an unreadable body or the Admin
+  key without `X-Mailsink-Workspace`, `413` with a body), ingestion (`409
+  idempotency_mismatch`, `429 rate_limited`, `chaos_injected` on `429`, `500`, `502`,
+  `503`), the codes it lists (`conflict`, `wait_timeout`) and `500 internal_error`.
+  Dialect bodies: `ApiErrorBody`, `ResendErrorBody` (an unknown key on a read is `400`),
+  `BrevoError` (every validation error is `400`).
+- **Headers**: `X-Request-Id` on every response, `WWW-Authenticate` on `401`, `Retry-After`
+  on `429`, `X-RateLimit-*` (plus `ratelimit-*` for Resend, `x-sib-ratelimit-*` for Brevo)
+  and `Idempotent-Replayed` on ingestion; `Idempotency-Key`, `x-batch-validation` and
+  `Last-Event-ID` as request headers. Response headers are `components.headers`.
+- **Security schemes** (D41): `adminKey`, `connectionKey` (`msk_`), `workspaceKey`
+  (`mskw_`), `brevoApiKey` (`api-key` header) and `workspaceHeader`
+  (`X-Mailsink-Workspace`, combined with `adminKey` for the workspace scope).
+- **Components** keep the export names of the contracts. A request schema with a
+  transform has no output form and stays inline; unused twins are pruned (`prune.ts`).
+- `GET /capture/stream` is `text/event-stream`, each `data:` being a `StreamEvent`
+  (`components.schemas.StreamEvent`); raw and attachment downloads are `message/rfc822`
+  and `*/*`. The payloads Mailsink sends to webhook endpoints are the document's
+  `webhooks` (`unified`, `resend`, `brevo`).
+- **Left out** (`UNDOCUMENTED_ROUTES`, D232): `/mcp` (described by MCP itself), `POST
+  /login` and `/w/$workspaceSlug/…` (web UI session routes). A test of the app
+  (`http/openapi-coverage.test.ts`) scans `src/routes` and fails on a server route in
+  neither list, on a registry entry no route serves, and on a stale exclusion.
+- **Served**: `GET /openapi.json`, public (D231), `servers[0]` = `MAILSINK_PUBLIC_URL`,
+  built once, `Access-Control-Allow-Origin: *`, `Cache-Control: public, max-age=300`,
+  not written to the request log.
+- **File**: `pnpm openapi [file]` writes it (default `openapi.json`, git ignored), meant to
+  be attached to each GitHub release (D234). Usage: `docs/guides/api.md`.
+
 ## UI search params (`search-params.ts`)
 
 ```ts
