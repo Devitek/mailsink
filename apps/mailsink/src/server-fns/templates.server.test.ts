@@ -64,9 +64,17 @@ describeDb('UI Brevo templates', (ctx) => {
     )
     expect(renamed.ok && renamed.template.name).toBe('Welcome v2')
 
-    expect((await listTemplates(runtime, 'tpl-ui')).map((t) => t.externalId)).toEqual([12, 13])
+    const ids = async (cursor?: number, limit?: number) => {
+      const page = await listTemplates(runtime, 'tpl-ui', cursor, limit)
+      return { ids: page.data.map((t) => t.externalId), next: page.nextCursor }
+    }
+    expect(await ids()).toEqual({ ids: [12, 13], next: null })
+    // Pages beyond the first (« Load more », no 1 000 cap any more).
+    const onePerPage = await ids(undefined, 1)
+    expect(onePerPage).toEqual({ ids: [12], next: '12' })
+    expect(await ids(Number(onePerPage.next), 1)).toEqual({ ids: [13], next: null })
     await deleteTemplate(runtime, 'tpl-ui', 13)
-    expect((await listTemplates(runtime, 'tpl-ui')).map((t) => t.externalId)).toEqual([12])
+    expect((await ids()).ids).toEqual([12])
   })
 
   it('renders a preview with sample params, html values escaped', async () => {

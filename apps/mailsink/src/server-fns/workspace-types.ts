@@ -9,6 +9,11 @@ export type WorkspaceSummary = {
   expiresAt: string | null
   /** Ephemeral workspaces only: the idle TTL that `expiresAt` restarts from. */
   idleTtlSeconds?: number | null
+  /**
+   * Opened workspace only: who created it, `metadata.createdBy` given to
+   * `POST /admin/workspaces` (« github-actions · run #8841 »); null when not given.
+   */
+  createdBy?: string | null
   /** Picker lists only: captured messages of a persistent workspace. */
   messageCount?: number
 }
