@@ -4,7 +4,10 @@ Each phase is a GitHub epic; each line below is an issue (a sub-issue of the epi
 phase ends with something usable and tested. The UI design comes from Claude Design during
 Phase 4; earlier phases only ship a functional shell.
 
-## Phase 1: Core DB and ingestion
+Status: Phases 1 to 4 are done and shipped as v0.1.0. Phase 5 (epic #122) targets v0.2.
+Ideas not planned in a phase wait in the backlog epic #123 until a phase picks them up.
+
+## Phase 1: Core DB and ingestion (done, v0.1.0)
 
 Goal: a single Docker container that accepts `POST /v1/emails`, stores it, and lets a test
 read it back with `GET /capture/messages`.
@@ -25,7 +28,7 @@ read it back with `GET /capture/messages`.
 10. Retention scheduler (duration + `maxMessages`, orphan blobs).
 11. Docker multi-stage image + `docker-compose.yml` (Postgres and PGlite profiles).
 
-## Phase 2: Ephemeral workspaces and overrides
+## Phase 2: Ephemeral workspaces and overrides (done, v0.1.0)
 
 Goal: parallel CI workers each get an isolated, self-destroying workspace with chaos knobs.
 
@@ -41,7 +44,7 @@ Goal: parallel CI workers each get an isolated, self-destroying workspace with c
 8. Event bus + `GET /capture/stream` (SSE, `Last-Event-ID`) + `wait=true` long-poll.
 9. E2E recipe docs: Playwright fixture creating one workspace per worker.
 
-## Phase 3: Provider dialects and webhooks
+## Phase 3: Provider dialects and webhooks (done, v0.1.0)
 
 Goal: point the official Resend, Brevo and Nodemailer clients at Mailsink with only a base
 URL / host change.
@@ -63,7 +66,7 @@ URL / host change.
    simulated status), auto open/click rates; webhook test send.
 8. Request logging: `api_logs` (redaction, truncation), `smtp_sessions`, log query API.
 
-## Phase 4: Web UI and MCP
+## Phase 4: Web UI and MCP (done, v0.1.0)
 
 Goal: staging teams inspect everything in the browser; AI agents drive tests through MCP.
 
@@ -87,6 +90,25 @@ Goal: staging teams inspect everything in the browser; AI agents drive tests thr
    `trigger_email_event`, `set_override_config`, `reset_override_config`,
    `purge_emails`, `get_delivery_logs`), Streamable HTTP at `/mcp`, stdio proxy CLI.
 10. Release: README, docs site pages, image publication (GHCR), v0.1.0.
+
+## Phase 5: SDK, test helpers, CLI and OpenAPI (v0.2)
+
+Goal: tests and CI pipelines drive Mailsink without hand-written HTTP calls (epic #122).
+Packages are published on npm under the `@devitek` scope, live in this monorepo and carry
+the server version (D226). The OpenAPI specification and the SDK come first (in
+parallel); the helpers, the CLI and the npm publication build on the SDK.
+
+1. OpenAPI 3.1 specification generated from the Zod contracts, served by the instance
+   and attached to each release (#124).
+2. TypeScript SDK `@devitek/mailsink` (`packages/sdk`): Admin and Capture clients,
+   `waitFor`, overrides, no server dependency, Node and browser (#125).
+3. Playwright helpers `@devitek/mailsink-playwright`: one ephemeral workspace per
+   worker, `expectEmail`, link and OTP extraction, overrides (#126).
+4. Vitest and Jest helpers: ephemeral workspace setup and `expect.extend` matchers for
+   integration tests outside the browser (#127).
+5. CLI commands for CI (`workspace create / delete`, `wait`, `override`, `purge`) on the
+   SDK (#50).
+6. npm publication of the `@devitek` packages on each release, with provenance (#128).
 
 ## Cross-cutting rules
 

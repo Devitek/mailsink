@@ -1,5 +1,5 @@
 import { BASE_URL } from '../web-server'
-import { adminContext, createWorkspace, expect, test } from './fixtures'
+import { adminContext, createWorkspace, deleteWorkspace, expect, test } from './fixtures'
 
 // Real time on the built server (#81): the SSE stream and wait=true long polling.
 
@@ -76,7 +76,7 @@ test('the SSE stream carries messages, statuses, overrides and the deletion', as
       state: { workspace: { config: { rates: { failed: 100 } } } },
     })
 
-    expect((await admin.delete(`/admin/workspaces/${ws.id}`)).status()).toBe(204)
+    expect((await deleteWorkspace(admin, ws.id)).status()).toBe(204)
     expect(await stream.next('workspace.deleted')).toEqual({
       type: 'workspace.deleted',
       workspaceId: ws.id,

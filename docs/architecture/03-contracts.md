@@ -864,7 +864,10 @@ message carries its planned outcomes as a temporary rule set in `messages.simula
 (delivered, `hard_bounce` 550, `complained`, `soft_bounce` 452, `failed`, then `*` →
 `delivered`), read by the settings planner ahead of every stored layer for that message only
 (D211), so the statuses do not depend on the workspace settings and no override is touched.
-Seeding twice adds the set twice; bounced addresses then come out `suppressed`. The web UI
+Seeding twice adds the set twice; bounced addresses then come out `suppressed`. Each message
+comes with the log line that would have created it (D228): an `api_logs` row in the dialect
+of its connection (or `native`), or an accepted `smtp_sessions` row for an SMTP connection,
+at the time of the message, so the viewer links it to the logs explorer. The web UI
 calls the same service through `loadDemoMessagesFn` (session) with the UI locale.
 
 Capture behaviour (#15, owner decisions D59 to D61 of 23/11):

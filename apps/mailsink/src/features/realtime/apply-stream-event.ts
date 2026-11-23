@@ -60,8 +60,13 @@ const SUPPRESSING = new Set<DeliveryStatus>(['hard_bounce', 'complained'])
 /**
  * An ingestion or an authenticated API call touched the workspace (D16): the idle TTL of an
  * ephemeral workspace starts over, so its banner countdown does too. Never moved back.
+ * `at` is the server time of the touch carried by the frame, not the browser clock: the
+ * stored `expires_at` may lag behind it for one activity throttle window, then reaches
+ * exactly this value (trailing write, D85), which is when the GC purges (#118).
  */
-export function refreshExpiry(qc: QueryClient, slug: string, now = Date.now()) {
+export function refreshExpiry(qc: QueryClient, slug: string, at: string) {
+  const now = Date.parse(at)
+  if (Number.isNaN(now)) return
   qc.setQueryData<WorkspaceSummary | null>(['workspace', slug], (w) => {
     if (!w?.ephemeral || !w.idleTtlSeconds || !w.expiresAt) return w
     const next = now + w.idleTtlSeconds * 1000
@@ -76,7 +81,7 @@ export function applyStreamEvent(qc: QueryClient, slug: string, event: StreamEve
       insertRow(qc, slug, { ...event.message, preview: '' }, effects)
       effects.previews.push(event.message.id)
       effects.invalidate.push(facetsKey(slug))
-      refreshExpiry(qc, slug)
+      refreshExpiry(qc, slug, event.message.createdAt)
       break
     case 'message.status':
       // Per recipient statuses arrive as message.event; this one is the aggregate.
@@ -94,7 +99,7 @@ export function applyStreamEvent(qc: QueryClient, slug: string, event: StreamEve
       effects.invalidate.push(facetsKey(slug))
       break
     case 'log.api':
-      refreshExpiry(qc, slug)
+      refreshExpiry(qc, slug, event.log.createdAt)
       effects.invalidate.push(facetsKey(slug))
       break
     case 'log.smtp':

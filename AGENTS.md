@@ -30,7 +30,9 @@ sequence and roadmap, plus the decision log (D1, D2…) in `docs/architecture/RE
 - Epics (children attached as native GitHub sub-issues), one per roadmap phase of
   `docs/architecture/05-roadmap.md`: #1 Phase 1 socle DB et ingestion, #2 Phase 2
   workspaces éphémères et overrides, #3 Phase 3 dialectes providers et webhooks, #4 Phase 4
-  interface web et MCP.
+  interface web et MCP, #122 Phase 5 SDK, helpers de test, CLI et OpenAPI (v0.2). Ideas
+  not planned in a phase are sub-issues of the backlog epic #123 (Idées non planifiées)
+  until a phase picks them up.
 - `good first issue` marks issues open to outside contributors (translations included).
 - GitHub Project « Mailsink » (owner Devitek, number 1,
   https://github.com/orgs/Devitek/projects/1): every issue gets a status (À trier, Prêt,

@@ -1,4 +1,4 @@
-import { expect, startReceiver, test } from './settings-fixtures'
+import { expect, openSettings, startReceiver, test } from './settings-fixtures'
 import { signIn } from './ui/fixtures'
 
 // Workspace settings (#43): defaults, webhook endpoints, Brevo templates and MCP snippets,
@@ -10,7 +10,7 @@ test('saves the retention quota and the default simulation', async ({
   settingsWorkspace: ws,
 }) => {
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/settings?section=retention`)
+  await openSettings(page, ws.slug, 'retention')
   await page.getByRole('radio', { name: '24h' }).click()
   await page.getByLabel('Maximum messages').fill('500')
   await page.getByRole('button', { name: 'Save' }).click()
@@ -40,7 +40,7 @@ test('creates a webhook endpoint, previews it, test-sends and deletes it', async
   const receiver = await startReceiver()
   try {
     await signIn(page)
-    await page.goto(`/w/${ws.slug}/settings?section=webhooks`)
+    await openSettings(page, ws.slug, 'webhooks')
     await page.getByRole('button', { name: '+ Add an endpoint' }).click()
     const dialog = page.getByRole('dialog', { name: 'New webhook endpoint' })
 
@@ -86,7 +86,7 @@ test('creates a webhook endpoint, previews it, test-sends and deletes it', async
 
 test('edits Brevo templates with a rendered preview', async ({ page, settingsWorkspace: ws }) => {
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/settings?section=templates`)
+  await openSettings(page, ws.slug, 'templates')
   await page.getByRole('button', { name: '+ New template' }).click()
   const dialog = page.getByRole('dialog', { name: 'New Brevo template' })
   await dialog.getByLabel('ID').fill('42')
@@ -113,7 +113,7 @@ test('edits Brevo templates with a rendered preview', async ({ page, settingsWor
 
 test('shows the MCP configuration of the workspace', async ({ page, settingsWorkspace: ws }) => {
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/settings?section=mcp`)
+  await openSettings(page, ws.slug, 'mcp')
   await expect(page.getByTestId('mcp-endpoint')).toHaveText(/\/mcp$/)
   await expect(page.getByTestId('env-snippet').first()).toContainText('claude mcp add')
   await page.getByRole('radio', { name: 'Cursor' }).click()
