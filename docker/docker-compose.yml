@@ -3,6 +3,8 @@
 #   docker compose -f docker/docker-compose.yml --profile postgres up -d   # PostgreSQL 18
 # Host ports: MAILSINK_HTTP_PORT (default 3000) and MAILSINK_SMTP_HOST_PORT (default 1025).
 # MAILSINK_ADMIN_KEY protects the Admin API; unset, every Admin API call is refused.
+# SMTP credentials and snippets give MAILSINK_SMTP_HOST_PORT as the port (D66), and
+# MAILSINK_SMTP_PUBLIC_HOST as the host when set (else the hostname of MAILSINK_PUBLIC_URL).
 
 x-mailsink: &mailsink
   image: ${MAILSINK_IMAGE:-mailsink:local}
@@ -14,14 +16,21 @@ x-mailsink: &mailsink
     - "${MAILSINK_HTTP_PORT:-3000}:3000"
     - "${MAILSINK_SMTP_HOST_PORT:-1025}:1025"
 
+# Shared by both profiles: what clients reach, not what the container binds (D66).
+x-public-env: &public-env
+  MAILSINK_ADMIN_KEY: ${MAILSINK_ADMIN_KEY:-}
+  MAILSINK_PUBLIC_URL: ${MAILSINK_PUBLIC_URL:-http://localhost:${MAILSINK_HTTP_PORT:-3000}}
+  MAILSINK_SMTP_PUBLIC_HOST: ${MAILSINK_SMTP_PUBLIC_HOST:-}
+  MAILSINK_SMTP_PUBLIC_PORT: ${MAILSINK_SMTP_HOST_PORT:-1025}
+
 services:
   # Embedded PGlite: the database lives in the `pglite-data` volume, nothing else to run.
   mailsink:
     <<: *mailsink
     profiles: [pglite]
     environment:
+      <<: *public-env
       DATABASE_URL: pglite:///app/data
-      MAILSINK_ADMIN_KEY: ${MAILSINK_ADMIN_KEY:-}
     volumes:
       - pglite-data:/app/data
 
@@ -30,8 +39,8 @@ services:
     <<: *mailsink
     profiles: [postgres]
     environment:
+      <<: *public-env
       DATABASE_URL: postgres://mailsink:${POSTGRES_PASSWORD:-mailsink}@postgres:5432/mailsink
-      MAILSINK_ADMIN_KEY: ${MAILSINK_ADMIN_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
