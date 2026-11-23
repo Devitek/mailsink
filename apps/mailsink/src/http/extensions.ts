@@ -12,9 +12,10 @@ export interface RequestContext<M extends AuthMode = AuthMode> {
 }
 
 /**
- * Hook into every defineApi() route without touching it. Planned users: rate limit (#24,
- * `afterAuth` throws `rate_limited`, `onResponse` adds the headers), workspace activity
- * (#20, `afterAuth`), request log (#35, `onResponse` writes `api_logs`).
+ * Hook into every defineApi() route without touching it. Users: workspace activity (#20,
+ * `afterAuth`), the ingestion guard on ingestion routes only (#24, #25, `afterAuth` throws
+ * `rate_limited` / `chaos_injected`, `onResponse` adds the headers, see ingestion-guard.ts),
+ * later the request log (#35, `onResponse` writes `api_logs`).
  */
 export interface ApiExtension {
   name: string
