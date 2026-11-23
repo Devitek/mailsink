@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import { MessageEventView, MessageSummary } from './capture'
 import { ConnectionId, MessageId, WorkspaceId } from './ids'
+import { ApiLogSummary, SmtpSessionSummary } from './logs'
 import { OverrideState } from './override'
 import { DeliveryStatus } from './status'
 import { WebhookDeliveryView } from './webhook-delivery'
 
-// `GET /capture/stream` (03-contracts, « Stream »). The `log.api` and `log.smtp` variants
-// join with their view contracts (logs #35).
+// `GET /capture/stream` (03-contracts, « Stream »).
 export const StreamEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('message.created'), message: MessageSummary }),
   z.object({
@@ -17,6 +17,8 @@ export const StreamEvent = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('message.event'), event: MessageEventView }),
   z.object({ type: z.literal('webhook.delivery'), delivery: WebhookDeliveryView }),
+  z.object({ type: z.literal('log.api'), log: ApiLogSummary }),
+  z.object({ type: z.literal('log.smtp'), session: SmtpSessionSummary }),
   z.object({ type: z.literal('override.changed'), state: OverrideState }),
   z.object({ type: z.literal('messages.purged'), count: z.number().int().min(0) }),
   // Last frame of a stream: the workspace is gone (ephemeral GC).
@@ -28,6 +30,8 @@ export const StreamEventType = z.enum([
   'message.status',
   'message.event',
   'webhook.delivery',
+  'log.api',
+  'log.smtp',
   'override.changed',
   'messages.purged',
   'workspace.deleted',

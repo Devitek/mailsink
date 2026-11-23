@@ -72,6 +72,7 @@ export {
 } from './jobs/queue'
 export { DEFAULT_JOB_SETTINGS, type JobSettings } from './jobs/settings'
 export { startWorker, type Worker, type WorkerOptions } from './jobs/worker'
+export * from './logs'
 export {
   expireOverrides,
   OVERRIDE_EXPIRY_INTERVAL_MS,
