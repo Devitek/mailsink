@@ -449,6 +449,24 @@ export const webhookAttempts = pgTable('webhook_attempts', {
 }, (t) => [index('attempts_delivery_idx').on(t.deliveryId)])
 ```
 
+How the webhook tables are written (#32, #33, propositions D135 to D144, no migration):
+- `webhook_endpoints.events` holds canonical events only, sorted in enum order. For the
+  brevo format `secret` holds the bearer token or `user:password` (null with
+  `brevo_auth = 'none'`); leaving brevo writes a fresh `whsec_` secret, so the
+  `webhook_secret_required` check always holds.
+- A delivery row is inserted with its serialized `body` in the same transaction as its
+  first `deliver_webhook` job (`payload = { deliveryId, attemptNo: 1 }`). Each attempt
+  inserts one `webhook_attempts` row (id `wha_…`) and updates the delivery
+  (`attempt_count`, `last_status_code`, `status`, `next_attempt_at`) in one transaction,
+  with the next attempt's job when it is not final. `attempt_count >= attemptNo` makes a
+  replayed job a no-op.
+- `replay_of` always holds the first delivery of a replay chain (its id is the signing id
+  of every replay). A test send (`POST /capture/webhooks/:id/test`) has `event_id` and
+  `message_id` null.
+- Nothing prevents two deliveries for one (endpoint, event) pair: the fan-out runs once
+  per committed simulation run or manual event, and a crash between the run's commit and
+  the fan-out's loses its deliveries rather than duplicating them.
+
 ## `schema/logs.ts`
 
 ```ts

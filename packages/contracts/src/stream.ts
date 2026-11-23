@@ -4,9 +4,9 @@ import { ConnectionId, MessageId, WorkspaceId } from './ids'
 import { ApiLogSummary, SmtpSessionSummary } from './logs'
 import { OverrideState } from './override'
 import { DeliveryStatus } from './status'
+import { WebhookDeliveryView } from './webhook-delivery'
 
-// `GET /capture/stream` (03-contracts, « Stream »). The `webhook.delivery` variant joins
-// with its view contract (webhook deliveries #33).
+// `GET /capture/stream` (03-contracts, « Stream »).
 export const StreamEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('message.created'), message: MessageSummary }),
   z.object({
@@ -16,6 +16,7 @@ export const StreamEvent = z.discriminatedUnion('type', [
     recipient: z.string().nullable(), // null: the aggregated message status
   }),
   z.object({ type: z.literal('message.event'), event: MessageEventView }),
+  z.object({ type: z.literal('webhook.delivery'), delivery: WebhookDeliveryView }),
   z.object({ type: z.literal('log.api'), log: ApiLogSummary }),
   z.object({ type: z.literal('log.smtp'), session: SmtpSessionSummary }),
   z.object({ type: z.literal('override.changed'), state: OverrideState }),
@@ -28,6 +29,7 @@ export const StreamEventType = z.enum([
   'message.created',
   'message.status',
   'message.event',
+  'webhook.delivery',
   'log.api',
   'log.smtp',
   'override.changed',

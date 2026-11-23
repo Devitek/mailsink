@@ -80,6 +80,16 @@ describe('readRuntimeConfig', () => {
     )
   })
 
+  it('reads the STARTTLS certificate and key paths, both or neither', () => {
+    expect(
+      readRuntimeConfig({ MAILSINK_SMTP_TLS_CERT: '/c.pem', MAILSINK_SMTP_TLS_KEY: '/k.pem' }),
+    ).toMatchObject({ smtpTls: { certPath: '/c.pem', keyPath: '/k.pem' } })
+    expect(readRuntimeConfig({}).smtpTls).toBeUndefined()
+    expect(() => readRuntimeConfig({ MAILSINK_SMTP_TLS_CERT: '/c.pem' })).toThrow(
+      /MAILSINK_SMTP_TLS_KEY: must be set together with MAILSINK_SMTP_TLS_CERT/,
+    )
+  })
+
   it('reads the retention interval in seconds', () => {
     expect(
       readRuntimeConfig({ MAILSINK_RETENTION_INTERVAL_SECONDS: '5' }).retentionIntervalMs,

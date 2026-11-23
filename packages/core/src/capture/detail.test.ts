@@ -49,8 +49,7 @@ describeDb('capture: detail, raw and attachments', (ctx) => {
 
   it('returns the full MessageDetail of the contract', async () => {
     const detail = await getCapturedMessage(ctx.db, ws, msg.id)
-    const { webhookDeliveries: _, ...contractPart } = detail
-    expect(MessageDetail.parse(detail)).toEqual(contractPart)
+    expect(MessageDetail.parse(detail)).toEqual(detail)
     const [pdf, png] = msg.attachmentIds
     expect(detail).toMatchObject({
       id: msg.id,
@@ -91,7 +90,7 @@ describeDb('capture: detail, raw and attachments', (ctx) => {
       recipient: 'jane@acme.io',
       data: { reason: 'mailbox full', smtpCode: 452 },
     })
-    // Filled by the webhook delivery issue (#33): always empty until then.
+    // No webhook endpoint in this workspace: no delivery.
     expect(detail.webhookDeliveries).toEqual([])
   })
 

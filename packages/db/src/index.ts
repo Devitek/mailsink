@@ -141,6 +141,40 @@ export {
   type Suppression,
 } from './repositories/suppressions'
 export {
+  deleteWebhookEndpoint,
+  findConnectionKind,
+  findWebhookEndpoint,
+  hasEnabledWebhookEndpoints,
+  insertWebhookEndpoint,
+  listEndpointsInScope,
+  listWebhookEndpoints,
+  type NewWebhookEndpoint,
+  updateWebhookEndpoint,
+  type WebhookEndpoint,
+  type WebhookEndpointUpdate,
+} from './repositories/webhooks'
+export {
+  findWebhookMessage,
+  findWebhookWorkspace,
+  type WebhookMessageRow,
+  type WebhookWorkspaceRow,
+} from './repositories/webhooks-context'
+export {
+  findDeliveryWithEndpoint,
+  findWebhookAttempt,
+  findWebhookDelivery,
+  insertWebhookAttempt,
+  insertWebhookDeliveries,
+  type ListDeliveriesOptions,
+  listWebhookAttempts,
+  listWebhookDeliveries,
+  type NewWebhookAttempt,
+  type NewWebhookDelivery,
+  updateWebhookDelivery,
+  type WebhookAttempt,
+  type WebhookDelivery,
+} from './repositories/webhooks-deliveries'
+export {
   deleteExpiredWorkspaces,
   touchWorkspaceActivity,
 } from './repositories/workspace-activity'

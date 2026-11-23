@@ -16,6 +16,7 @@ import {
   searchMessages,
 } from '@mailsink/db'
 import { DomainError } from '../errors'
+import { listMessageWebhookDeliveries } from '../webhooks/deliveries'
 import { encodeCursor } from './cursor'
 import { toMessageSearch } from './query'
 import { type CapturedMessageDetail, toDetail, toSummary } from './views'
@@ -62,12 +63,13 @@ export async function getCapturedMessage(
 ): Promise<CapturedMessageDetail> {
   const message = await findWorkspaceMessage(db, workspaceId, messageId)
   if (!message) throw messageNotFound()
-  const [recipients, attachments, events] = await Promise.all([
+  const [recipients, attachments, events, webhookDeliveries] = await Promise.all([
     listRecipients(db, [message.id]),
     listAttachments(db, message.id),
     listMessageEvents(db, message.id),
+    listMessageWebhookDeliveries(db, workspaceId, message.id),
   ])
-  return toDetail({ message, recipients, attachments, events })
+  return toDetail({ message, recipients, attachments, events, webhookDeliveries })
 }
 
 /** Raw EML (D9). */
