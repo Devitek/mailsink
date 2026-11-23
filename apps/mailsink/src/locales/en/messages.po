@@ -11,6 +11,10 @@ msgstr ""
 msgid ".env snippet (secret masked: shown only at creation or rotation)"
 msgstr ".env snippet (secret masked: shown only at creation or rotation)"
 
+#: apps/mailsink/src/features/logs/attempt-card.tsx
+msgid "(empty body)"
+msgstr "(empty body)"
+
 #: apps/mailsink/src/features/inbox/message-row.tsx
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "(no subject)"
@@ -33,6 +37,10 @@ msgstr "{count, plural, one {# created through the Admin API (CI / E2E)} other {
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 msgid "{kind} · created {created}"
 msgstr "{kind} · created {created}"
+
+#: apps/mailsink/src/features/logs/logs-pager.tsx
+msgid "{rows} shown"
+msgstr "{rows} shown"
 
 #: apps/mailsink/src/features/inbox/inbox-page.tsx
 msgid "← Inbox"
@@ -81,6 +89,10 @@ msgstr "A new secret is generated and shown once. The current one stops working 
 msgid "A whole number of requests per second, or empty."
 msgstr "A whole number of requests per second, or empty."
 
+#: apps/mailsink/src/features/logs/api-columns.tsx
+msgid "Action"
+msgstr "Action"
+
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Add a first connection"
 msgstr "Add a first connection"
@@ -97,6 +109,14 @@ msgstr "All"
 msgid "An msk_… key is generated on creation. Point the provider SDK at the Mailsink base URL: no application code change."
 msgstr "An msk_… key is generated on creation. Point the provider SDK at the Mailsink base URL: no application code change."
 
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
+msgid "API / Providers"
+msgstr "API / Providers"
+
+#: apps/mailsink/src/features/logs/logs-tables.tsx
+msgid "API calls"
+msgstr "API calls"
+
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 #: apps/mailsink/src/features/connections/credentials-reveal.tsx
 msgid "API key"
@@ -106,6 +126,15 @@ msgstr "API key"
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "Attachments · {0}"
 msgstr "Attachments · {0}"
+
+#: apps/mailsink/src/features/logs/webhook-columns.tsx
+msgid "Attempts"
+msgstr "Attempts"
+
+#. placeholder {0}: delivery.attempts.length
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "Attempts · {0}"
+msgstr "Attempts · {0}"
 
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 #: apps/mailsink/src/features/connections/credentials-reveal.tsx
@@ -120,6 +149,10 @@ msgstr "Base URL"
 msgid "Cancel"
 msgstr "Cancel"
 
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "Canonical event"
+msgstr "Canonical event"
+
 #: apps/mailsink/src/features/login/login-form.tsx
 msgid "Checking…"
 msgstr "Checking…"
@@ -133,9 +166,21 @@ msgstr "Choose a workspace"
 msgid "Choose the provider to emulate"
 msgstr "Choose the provider to emulate"
 
+#: apps/mailsink/src/features/logs/logs-facets.tsx
+msgid "Clear filter"
+msgstr "Clear filter"
+
 #: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
 msgid "Clicked: choose a link"
 msgstr "Clicked: choose a link"
+
+#: apps/mailsink/src/features/logs/api-inspector.tsx
+msgid "Client"
+msgstr "Client"
+
+#: apps/mailsink/src/features/logs/log-inspector.tsx
+msgid "Close"
+msgstr "Close"
 
 #: apps/mailsink/src/features/message-viewer/purge-button.tsx
 msgid "Confirm the purge ({count})"
@@ -146,6 +191,10 @@ msgid "Connecting…"
 msgstr "Connecting…"
 
 #: apps/mailsink/src/features/inbox/filter-bar.tsx
+#: apps/mailsink/src/features/logs/api-columns.tsx
+#: apps/mailsink/src/features/logs/logs-facets.tsx
+#: apps/mailsink/src/features/logs/smtp-columns.tsx
+#: apps/mailsink/src/features/logs/webhook-columns.tsx
 msgid "Connection"
 msgstr "Connection"
 
@@ -257,6 +306,10 @@ msgstr "Delete the workspace"
 msgid "Delete the workspace {slug}?"
 msgstr "Delete the workspace {slug}?"
 
+#: apps/mailsink/src/features/logs/cells.tsx
+msgid "deleted"
+msgstr "deleted"
+
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 msgid "Description"
 msgstr "Description"
@@ -264,6 +317,14 @@ msgstr "Description"
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Desktop"
 msgstr "Desktop"
+
+#: apps/mailsink/src/features/logs/logs-facets.tsx
+msgid "Dialect"
+msgstr "Dialect"
+
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "Dialect event"
+msgstr "Dialect event"
 
 #: apps/mailsink/src/features/connections/connection-list.tsx
 msgid "disabled"
@@ -284,6 +345,11 @@ msgstr "Download"
 #: apps/mailsink/src/features/message-viewer/headers-tab.tsx
 msgid "Download .eml"
 msgstr "Download .eml"
+
+#: apps/mailsink/src/features/logs/api-columns.tsx
+#: apps/mailsink/src/features/logs/smtp-columns.tsx
+msgid "Duration"
+msgstr "Duration"
 
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "e.g. resend-transactional"
@@ -317,6 +383,10 @@ msgstr "Empty inbox for <0>{slug}</0>"
 msgid "Enabled"
 msgstr "Enabled"
 
+#: apps/mailsink/src/features/logs/logs-facets.tsx
+msgid "Endpoint"
+msgstr "Endpoint"
+
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "Enter the admin key the operator of this instance gave you."
 msgstr "Enter the admin key the operator of this instance gave you."
@@ -337,6 +407,11 @@ msgstr "Ephemeral equivalent (CI / E2E), hidden by default, deleted after one id
 msgid "Ephemeral workspaces"
 msgstr "Ephemeral workspaces"
 
+#: apps/mailsink/src/features/logs/webhook-columns.tsx
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "Event"
+msgstr "Event"
+
 #: apps/mailsink/src/features/message-viewer/use-simulate.ts
 msgid "Events recorded: {events}. Webhook deliveries queued: {deliveries}."
 msgstr "Events recorded: {events}. Webhook deliveries queued: {deliveries}."
@@ -344,6 +419,26 @@ msgstr "Events recorded: {events}. Webhook deliveries queued: {deliveries}."
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "Every email caught. None delivered."
 msgstr "Every email caught. None delivered."
+
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
+msgid "Filter address, host, user…"
+msgstr "Filter address, host, user…"
+
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
+msgid "Filter by address, host or user"
+msgstr "Filter by address, host or user"
+
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
+msgid "Filter by path"
+msgstr "Filter by path"
+
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
+msgid "Filter path, e.g. /emails…"
+msgstr "Filter path, e.g. /emails…"
+
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
+msgid "Filters"
+msgstr "Filters"
 
 #. placeholder {0}: formatBytes(raw.sizeBytes, i18n.locale)
 #: apps/mailsink/src/features/message-viewer/headers-tab.tsx
@@ -353,6 +448,10 @@ msgstr "First 512 KB of {0}: download the file for the whole source."
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "For staging / QA. Ephemeral workspaces are created through the Admin API."
 msgstr "For staging / QA. Ephemeral workspaces are created through the Admin API."
+
+#: apps/mailsink/src/features/logs/webhook-columns.tsx
+msgid "Format"
+msgstr "Format"
 
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "From"
@@ -377,9 +476,18 @@ msgstr "Headers · {0}"
 msgid "Headers & MIME"
 msgstr "Headers & MIME"
 
+#: apps/mailsink/src/features/logs/attempt-card.tsx
+msgid "Headers sent"
+msgstr "Headers sent"
+
 #: apps/mailsink/src/features/login/key-field.tsx
+#: apps/mailsink/src/features/logs/inspector-parts.tsx
 msgid "Hide"
 msgstr "Hide"
+
+#: apps/mailsink/src/features/logs/inspector-parts.tsx
+msgid "Hide {name}"
+msgstr "Hide {name}"
 
 #: apps/mailsink/src/features/message-viewer/message-viewer.tsx
 msgid "History"
@@ -456,11 +564,19 @@ msgstr "Loading older messages…"
 msgid "Loading workspaces…"
 msgstr "Loading workspaces…"
 
+#: apps/mailsink/src/features/logs/inspector-state.tsx
 #: apps/mailsink/src/features/message-viewer/headers-tab.tsx
 msgid "Loading…"
 msgstr "Loading…"
 
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
+msgid "Log type"
+msgstr "Log type"
+
+#: apps/mailsink/src/features/logs/logs-page.tsx
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
+#: apps/mailsink/src/routes/w.$workspaceSlug.logs.tsx
 msgid "Logs"
 msgstr "Logs"
 
@@ -473,6 +589,7 @@ msgid "Message"
 msgstr "Message"
 
 #: apps/mailsink/src/features/inbox/message-list.tsx
+#: apps/mailsink/src/features/logs/inspector-parts.tsx
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Messages"
 msgstr "Messages"
@@ -504,9 +621,33 @@ msgstr "New persistent workspace"
 msgid "New workspace"
 msgstr "New workspace"
 
+#: apps/mailsink/src/features/logs/logs-pager.tsx
+msgid "Newest"
+msgstr "Newest"
+
+#: apps/mailsink/src/features/logs/logs-pager.tsx
+msgid "Next"
+msgstr "Next"
+
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "Next attempt"
+msgstr "Next attempt"
+
+#: apps/mailsink/src/features/logs/attempt-card.tsx
+msgid "no answer"
+msgstr "no answer"
+
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "No attachment."
 msgstr "No attachment."
+
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "No attempt yet."
+msgstr "No attempt yet."
+
+#: apps/mailsink/src/features/logs/inspector-parts.tsx
+msgid "No body."
+msgstr "No body."
 
 #: apps/mailsink/src/features/connections/connection-list.tsx
 msgid "No connection yet: create one to receive mail from Resend, Brevo or SMTP clients."
@@ -532,6 +673,14 @@ msgstr "No MIME source was kept for this message."
 msgid "No persistent workspace yet."
 msgstr "No persistent workspace yet."
 
+#: apps/mailsink/src/features/logs/logs-tables.tsx
+msgid "No row matches these filters."
+msgstr "No row matches these filters."
+
+#: apps/mailsink/src/features/logs/attempt-card.tsx
+msgid "No signature header was sent"
+msgstr "No signature header was sent"
+
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "No webhook delivery for this message."
 msgstr "No webhook delivery for this message."
@@ -540,9 +689,21 @@ msgstr "No webhook delivery for this message."
 msgid "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 msgstr "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 
+#: apps/mailsink/src/features/logs/attempt-card.tsx
+msgid "Not signed: this Brevo endpoint has no authentication"
+msgstr "Not signed: this Brevo endpoint has no authentication"
+
+#: apps/mailsink/src/features/logs/logs-tables.tsx
+msgid "Nothing logged yet."
+msgstr "Nothing logged yet."
+
 #: apps/mailsink/src/features/inbox/relative-time.tsx
 msgid "now"
 msgstr "now"
+
+#: apps/mailsink/src/features/logs/logs-pager.tsx
+msgid "Older"
+msgstr "Older"
 
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "Open its connections"
@@ -560,9 +721,22 @@ msgstr "Optional, else the workspace value."
 msgid "Optional: generated from the workspace slug."
 msgstr "Optional: generated from the workspace slug."
 
+#: apps/mailsink/src/features/logs/logs-facets.tsx
+msgid "Outcome"
+msgstr "Outcome"
+
+#: apps/mailsink/src/features/logs/logs-pager.tsx
+msgid "Pagination"
+msgstr "Pagination"
+
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Paste"
 msgstr "Paste"
+
+#. placeholder {0}: delivery.contentType
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "Payload sent · {0}"
+msgstr "Payload sent · {0}"
 
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Persistent workspaces"
@@ -579,6 +753,10 @@ msgstr "Preview background"
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Preview width"
 msgstr "Preview width"
+
+#: apps/mailsink/src/features/logs/logs-pager.tsx
+msgid "Previous"
+msgstr "Previous"
 
 #: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Protection disabled <0>MAILSINK_UI_AUTH=none</0>: no sign-in and no sign-out."
@@ -608,6 +786,10 @@ msgstr "Real-time stream (Server-Sent Events) connected"
 msgid "Received"
 msgstr "Received"
 
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "Recipient"
+msgstr "Recipient"
+
 #: apps/mailsink/src/features/realtime/live-indicator.tsx
 msgid "Reconnecting…"
 msgstr "Reconnecting…"
@@ -625,6 +807,44 @@ msgstr "Regenerate SMTP_PASS?"
 msgid "Remove the tag filter {0}"
 msgstr "Remove the tag filter {0}"
 
+#. placeholder {0}: d.replayMode
+#: apps/mailsink/src/features/logs/webhook-columns.tsx
+msgid "replay {0}"
+msgstr "replay {0}"
+
+#: apps/mailsink/src/features/logs/replay-panel.tsx
+msgid "Replay mode"
+msgstr "Replay mode"
+
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
+msgid "Replay of"
+msgstr "Replay of"
+
+#: apps/mailsink/src/features/logs/replay-panel.tsx
+msgid "Replay queued as"
+msgstr "Replay queued as"
+
+#. placeholder {0}: replay.error.message
+#: apps/mailsink/src/features/logs/replay-panel.tsx
+msgid "Replay refused: {0}"
+msgstr "Replay refused: {0}"
+
+#: apps/mailsink/src/features/logs/replay-panel.tsx
+msgid "Replay the webhook"
+msgstr "Replay the webhook"
+
+#: apps/mailsink/src/features/logs/api-inspector.tsx
+msgid "Request"
+msgstr "Request"
+
+#: apps/mailsink/src/features/logs/api-inspector.tsx
+msgid "Request headers"
+msgstr "Request headers"
+
+#: apps/mailsink/src/features/logs/api-inspector.tsx
+msgid "Response"
+msgstr "Response"
+
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Retention"
 msgstr "Retention"
@@ -636,6 +856,14 @@ msgstr "Rotate"
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 msgid "Rotate the API key?"
 msgstr "Rotate the API key?"
+
+#: apps/mailsink/src/features/logs/logs-pager.tsx
+msgid "Rows"
+msgstr "Rows"
+
+#: apps/mailsink/src/features/logs/replay-panel.tsx
+msgid "Same body and delivery id, fresh timestamp and signature: the receiver accepts it."
+msgstr "Same body and delivery id, fresh timestamp and signature: the receiver accepts it."
 
 #: apps/mailsink/src/features/connections/connection-name.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
@@ -658,13 +886,26 @@ msgstr "See in the logs explorer →"
 msgid "Select a connection."
 msgstr "Select a connection."
 
+#: apps/mailsink/src/features/logs/replay-panel.tsx
+msgid "Sends the body and the headers of the last attempt byte for byte, signature included: tests replay protection."
+msgstr "Sends the body and the headers of the last attempt byte for byte, signature included: tests replay protection."
+
+#: apps/mailsink/src/features/logs/smtp-columns.tsx
+msgid "Session"
+msgstr "Session"
+
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Settings"
 msgstr "Settings"
 
 #: apps/mailsink/src/features/login/key-field.tsx
+#: apps/mailsink/src/features/logs/inspector-parts.tsx
 msgid "Show"
 msgstr "Show"
+
+#: apps/mailsink/src/features/logs/inspector-parts.tsx
+msgid "Show {name}"
+msgstr "Show {name}"
 
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Show ephemeral workspaces"
@@ -695,6 +936,14 @@ msgstr "Sign out"
 msgid "Sign-in failed. Check your connection and try again."
 msgstr "Sign-in failed. Check your connection and try again."
 
+#: apps/mailsink/src/features/logs/attempt-card.tsx
+msgid "Signature does not match the current secret {secret} (rotated since?)"
+msgstr "Signature does not match the current secret {secret} (rotated since?)"
+
+#: apps/mailsink/src/features/logs/attempt-card.tsx
+msgid "Signature valid with the secret {secret}"
+msgstr "Signature valid with the secret {secret}"
+
 #: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
 msgid "Simulate"
 msgstr "Simulate"
@@ -717,6 +966,14 @@ msgstr "Simulation refused: {0}"
 msgid "Slug"
 msgstr "Slug"
 
+#: apps/mailsink/src/features/logs/smtp-inspector.tsx
+msgid "SMTP dialogue"
+msgstr "SMTP dialogue"
+
+#: apps/mailsink/src/features/logs/logs-tables.tsx
+msgid "SMTP sessions"
+msgstr "SMTP sessions"
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "SMTP username"
 msgstr "SMTP username"
@@ -730,6 +987,10 @@ msgid "Source"
 msgstr "Source"
 
 #: apps/mailsink/src/features/inbox/filter-bar.tsx
+#: apps/mailsink/src/features/logs/api-columns.tsx
+#: apps/mailsink/src/features/logs/logs-facets.tsx
+#: apps/mailsink/src/features/logs/smtp-columns.tsx
+#: apps/mailsink/src/features/logs/webhook-columns.tsx
 msgid "Status"
 msgstr "Status"
 
@@ -740,6 +1001,10 @@ msgstr "Status timeline"
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "Tags"
 msgstr "Tags"
+
+#: apps/mailsink/src/features/logs/replay-panel.tsx
+msgid "Target endpoint"
+msgstr "Target endpoint"
 
 #: apps/mailsink/src/features/message-viewer/message-viewer.tsx
 msgid "Text"
@@ -752,6 +1017,10 @@ msgstr "That did not work. Try again."
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "The connection could not be created. Try again."
 msgstr "The connection could not be created. Try again."
+
+#: apps/mailsink/src/features/logs/replay-panel.tsx
+msgid "The copied signature is {stale} min old: Svix verifiers (the Resend SDK) reject timestamps older than 5 minutes, and receivers may deduplicate on the delivery id."
+msgstr "The copied signature is {stale} min old: Svix verifiers (the Resend SDK) reject timestamps older than 5 minutes, and receivers may deduplicate on the delivery id."
 
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "The key is never stored in your browser: it is exchanged for a session cookie."
@@ -785,6 +1054,10 @@ msgstr "This message has no text body."
 msgid "This message no longer exists. It may have been purged."
 msgstr "This message no longer exists. It may have been purged."
 
+#: apps/mailsink/src/features/logs/inspector-state.tsx
+msgid "This row no longer exists (purged or expired)."
+msgstr "This row no longer exists (purged or expired)."
+
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "This slug is already taken."
 msgstr "This slug is already taken."
@@ -796,6 +1069,12 @@ msgstr "This SMTP username is already taken."
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "This workspace was deleted (expired or removed through the Admin API)."
 msgstr "This workspace was deleted (expired or removed through the Admin API)."
+
+#: apps/mailsink/src/features/logs/api-columns.tsx
+#: apps/mailsink/src/features/logs/smtp-columns.tsx
+#: apps/mailsink/src/features/logs/webhook-columns.tsx
+msgid "Timestamp"
+msgstr "Timestamp"
 
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "To"
@@ -809,6 +1088,11 @@ msgstr "Toggle light / dark"
 msgid "Try again in {countdown}"
 msgstr "Try again in {countdown}"
 
+#: apps/mailsink/src/features/logs/api-columns.tsx
+#: apps/mailsink/src/features/logs/smtp-columns.tsx
+msgid "Type"
+msgstr "Type"
+
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Type the slug to confirm"
 msgstr "Type the slug to confirm"
@@ -819,11 +1103,21 @@ msgstr "Type the slug to confirm"
 msgid "unlimited"
 msgstr "unlimited"
 
+#: apps/mailsink/src/features/logs/logs-tables.tsx
+msgid "Webhook deliveries"
+msgstr "Webhook deliveries"
+
 #. placeholder {0}: deliveries.length
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "Webhook deliveries · {0}"
 msgstr "Webhook deliveries · {0}"
 
+#: apps/mailsink/src/features/logs/logs-toolbar.tsx
+msgid "Webhooks"
+msgstr "Webhooks"
+
+#: apps/mailsink/src/features/logs/cells.tsx
+#: apps/mailsink/src/features/logs/webhook-inspector.tsx
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Workspace"

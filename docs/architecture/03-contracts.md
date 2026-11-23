@@ -1477,10 +1477,17 @@ export const InboxTab = z.enum(['preview', 'text', 'links', 'headers', 'history'
 export const InboxSearch = z.object({ q: urlText, status: DeliveryStatus.optional(),
   connectionId: ConnectionId.optional(), tag: urlText, m: MessageId.optional(),
   tab: InboxTab.optional() })
-export const LogsSearch = z.object({ tab: z.enum(['api', 'smtp', 'webhooks']).default('api'),
-  status: z.string().optional(), connectionId: z.string().optional(),
-  sort: z.string().default('-createdAt'), page: z.number().int().min(1).default(1),
-  pageSize: z.number().int().min(10).max(200).default(50), inspect: z.string().optional() })
+// Logs explorer (#41, D190): every key optional, invalid values dropped; multi-value facets
+// read an array or comma-separated text. Defaults: tab api, sort -createdAt, page 1, 50 rows.
+export const LogsSearch = z.object({ tab: LogsTab.optional(), q: urlText,  // API path, SMTP peer
+  connectionId: ConnectionId.optional(), dialect: facet(ApiDialect),
+  code: facet(StatusFilter), outcome: facet(SmtpOutcome),            // `404`, `4xx`
+  delivery: WebhookDeliveryStatus.optional(), format: PayloadFormat.optional(),
+  endpointId: WebhookEndpointId.optional(), sort: ApiLogSort.optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(10).max(200).optional(),
+  cursor: WebhookDeliveryId.optional(),                             // webhooks: keyset
+  inspect: z.string().max(80).optional() })                         // row in the sheet
 export const PickerSearch = z.object({ ephemeral: z.boolean().default(false) })
 /** `/w/$workspaceSlug/connections` (#38): connection id in the panel, or `new`. */
 export const ConnectionsSearch = z.object({ connection: z.string().max(64).optional() })
@@ -1527,6 +1534,26 @@ Viewer (D179): `?m=` opens a message (the newest one when absent), `?tab=` its t
 « Simulate » Opened / Clicked / Hard Bounce call `triggerMessageEvent` with origin `ui` and
 publish like `POST /capture/messages/:id/events`; « Purge the inbox » deletes every message
 of the workspace and keeps the logs (`includeLogs: false`), then publishes `messages.purged`.
+
+## Web UI logs explorer (#41, propositions D190 to D194)
+
+Page `/w/$workspaceSlug/logs` (`LogsSearch`), code in `apps/mailsink/src/features/logs`,
+server functions `server-fns/logs-fns.ts` (session checked, workspace by slug, activity
+touched) on the services of `GET /capture/logs/api[/:id]`, `GET /capture/logs/smtp[/:id]`,
+`GET /capture/webhooks/deliveries[/:id]` and `POST …/:id/replay` (published on the bus).
+
+- Tabs API / SMTP / Webhooks with their counts; columns timestamp, type (dialect, SMTP or
+  SMTP TLS, payload format), connection (the endpoint scope for webhooks), action / session /
+  event, status, duration (attempts for webhooks). Facets: connection, dialect, status code or
+  class (API); connection, outcome (SMTP); status, `payloadFormat`, endpoint (webhooks). The
+  search box filters the API path or the SMTP peer. API and SMTP: page numbers with the total;
+  webhooks: keyset (« Newest », « Older »).
+- `?inspect=` opens the inspector sheet: API request headers (credentials already reduced,
+  D146) and bodies, response status, error code and body (response headers are not stored);
+  SMTP « SMTP dialogue » (AUTH redacted) and the messages it produced; webhooks D192, with the
+  replay box D193.
+- Live: `log.api`, `log.smtp` and `webhook.delivery` frames of the workspace stream update the
+  cache through `applyLogEvent` (D194).
 
 ## Web UI auth (#37, propositions D160 to D164)
 

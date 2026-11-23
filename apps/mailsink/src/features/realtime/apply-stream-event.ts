@@ -4,6 +4,7 @@ import type { InfiniteData, QueryClient, QueryKey } from '@tanstack/react-query'
 import type { ViewerMessage } from '../../server-fns/messages-types'
 import { inboxKey } from '../inbox/queries'
 import { type InboxFilters, matchesFilters } from '../inbox/search-query'
+import { applyLogEvent } from '../logs/apply-log-event'
 
 // How one stream frame changes the TanStack Query cache of the inbox (#39). Cheap changes
 // are written in place (a new row, a status); the rest is returned as keys to invalidate,
@@ -86,6 +87,8 @@ export function applyStreamEvent(qc: QueryClient, slug: string, event: StreamEve
     case 'override.changed':
       break
   }
+  // The logs explorer (#41) keeps its own cache: log, delivery and purge frames.
+  effects.invalidate.push(...applyLogEvent(qc, slug, event))
   return effects
 }
 
