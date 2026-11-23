@@ -219,7 +219,95 @@ override; both resets are idempotent.
 `connectionId=…`. `wait=true` covers most assertions; the stream suits tests about live
 UI updates. `tests/e2e/recipe/realtime.spec.ts` reads it with `fetch`.
 
-## 10. Brevo applications
+## 10. Sending with the Resend SDK
+
+An application that sends with the official `resend` package needs no code change: the
+fixture's `resend` connection gives it a key, and the SDK reads its base URL from
+`RESEND_BASE_URL` (or the `baseUrl` option). Start the application under test with:
+
+```sh
+RESEND_API_KEY=msk_…          # connections[0].credentials.apiKey of the fixture
+RESEND_BASE_URL=http://localhost:3000   # MAILSINK_URL, no path
+```
+
+The `.env` snippet of the connection (`connections[0].envSnippet`) carries both lines.
+
+```ts
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
+const { data, error } = await resend.emails.send({
+  from: 'Acme <hello@app.test>',
+  to: ['jane@example.com'],
+  subject: 'Welcome',
+  html: '<p>Hi, <a href="https://app.test/confirm">confirm</a></p>',
+})
+// data.id is a uuid, as with Resend; resend.emails.get(data.id) reads the message back.
+```
+
+What to know when asserting:
+
+- The message is stored with `source: 'resend'`; assert on it with `wait=true` as in
+  section 5. Its Mailsink id is `msg_` followed by the Resend id
+  (`GET /capture/messages/msg_<data.id>`).
+- `resend.batch.send([...])` is all or nothing (`batchValidation: 'strict'`, the SDK
+  default): one invalid email refuses the whole batch and stores nothing. With
+  `batchValidation: 'permissive'` the valid emails are stored and the others come back in
+  `errors` (`{ index, message }`). Batch emails take no `attachments`, as with Resend.
+- `idempotencyKey` (24 h, at most 256 characters) replays the first `id`; the same key with
+  another body is `409 invalid_idempotent_request`.
+- Errors come back in Resend's shape through the SDK `error` object (`{ statusCode, name,
+  message }`): `422 missing_required_field`, `400 validation_error`, `403
+  restricted_api_key` (a key of another connection kind), `429 rate_limit_exceeded`. An
+  override with a rate limit or chaos (section 6) applies here too, with `ratelimit-*`
+  headers next to `X-RateLimit-*`.
+- Not emulated: hosted Resend templates (`template`) and attachment `path` URLs are
+  refused (Mailsink fetches nothing), `scheduled_at` is accepted but the delivery is not
+  delayed, `text` is not generated from `html`.
+
+## 11. Sending over SMTP
+
+An application that sends through SMTP (Nodemailer or any client) gets an `smtp`
+connection: create the workspace with `connections: [{ kind: 'smtp', name: 'app' }]` and
+read `credentials` (`smtpHost`, `smtpPort`, `smtpUser`, `smtpPass`) instead of `apiKey`.
+Point the application's SMTP settings at them; the `.env` snippet carries `SMTP_HOST`,
+`SMTP_PORT`, `SMTP_USER` and `SMTP_PASS`.
+
+```ts
+import { createTransport } from 'nodemailer'
+
+const { smtpHost, smtpPort, smtpUser, smtpPass } = created.connections[0].credentials
+const transport = createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: false, // STARTTLS only, when the server has a certificate
+  auth: { user: smtpUser, pass: smtpPass },
+})
+const info = await transport.sendMail({
+  from: 'app@example.test',
+  to: 'jane@example.com',
+  subject: 'Welcome',
+  text: 'Hello',
+})
+// info.response: "250 2.0.0 Ok: queued as msg_…", the id of GET /capture/messages/:id
+```
+
+- Assertions do not change: `wait=true`, `since`, overrides and the reset work the same
+  on SMTP messages (`source: 'smtp'`). The MIME source (`/raw`) is the message exactly as
+  the client sent it.
+- Recipients are the `RCPT TO` addresses: an address only in the envelope is a `bcc`
+  recipient, a header address never given in `RCPT TO` is not a recipient.
+- AUTH (PLAIN or LOGIN) is required. Plain-text AUTH is accepted without TLS; STARTTLS is
+  offered only when the server has `MAILSINK_SMTP_TLS_CERT` and `MAILSINK_SMTP_TLS_KEY`
+  (with a self-signed certificate, pass `tls: { rejectUnauthorized: false }`).
+- Errors arrive as SMTP replies, e.g. `535 5.7.8` (credentials), `552` (over
+  `MAILSINK_MAX_MESSAGE_BYTES`), `451 4.7.1 Rate limit exceeded, retry in Ns`, or the chaos
+  codes of an override (`421`, `451`, `452`, `550`, `(chaos injected)`). Nodemailer
+  rejects `sendMail` with `responseCode` and `response` set.
+- Behind a port mapping, set `MAILSINK_SMTP_PUBLIC_HOST` / `MAILSINK_SMTP_PUBLIC_PORT` so
+  the credentials name the reachable host and port.
+
+## 12. Sending with the Brevo SDK
 
 An application that sends with Brevo keeps its code: give it a `brevo` connection and point
 the official SDK at Mailsink. The fixture asks for the connection and seeds the templates

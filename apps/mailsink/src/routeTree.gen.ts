@@ -10,26 +10,46 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as CaptureMessagesRouteImport } from './routes/capture.messages'
 import { Route as CaptureOverrideRouteImport } from './routes/capture.override'
 import { Route as CaptureStreamRouteImport } from './routes/capture.stream'
 import { Route as CaptureSuppressionsRouteImport } from './routes/capture.suppressions'
+import { Route as CaptureWebhooksRouteImport } from './routes/capture.webhooks'
+import { Route as EmailsIdRouteImport } from './routes/emails.$id'
+import { Route as EmailsBatchRouteImport } from './routes/emails.batch'
 import { Route as V1EmailsRouteImport } from './routes/v1.emails'
 import { Route as AdminWorkspacesIdRouteImport } from './routes/admin.workspaces.$id'
+import { Route as CaptureLogsApiRouteImport } from './routes/capture.logs.api'
+import { Route as CaptureLogsSmtpRouteImport } from './routes/capture.logs.smtp'
 import { Route as CaptureMessagesIdRouteImport } from './routes/capture.messages.$id'
 import { Route as CaptureOverrideResetRouteImport } from './routes/capture.override.reset'
+import { Route as CaptureWebhooksIdRouteImport } from './routes/capture.webhooks.$id'
+import { Route as CaptureWebhooksDeliveriesRouteImport } from './routes/capture.webhooks.deliveries'
+import { Route as CaptureWebhooksPreviewRouteImport } from './routes/capture.webhooks.preview'
 import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
 import { Route as V3SmtpEmailRouteImport } from './routes/v3.smtp.email'
 import { Route as AdminWorkspacesIdTemplatesRouteImport } from './routes/admin.workspaces.$id.templates'
+import { Route as CaptureLogsApiIdRouteImport } from './routes/capture.logs.api.$id'
+import { Route as CaptureLogsSmtpIdRouteImport } from './routes/capture.logs.smtp.$id'
+import { Route as CaptureMessagesIdEventsRouteImport } from './routes/capture.messages.$id.events'
 import { Route as CaptureMessagesIdRawRouteImport } from './routes/capture.messages.$id.raw'
+import { Route as CaptureWebhooksIdChar91testChar93RouteImport } from './routes/capture.webhooks.$id.[test]'
+import { Route as CaptureWebhooksDeliveriesIdRouteImport } from './routes/capture.webhooks.deliveries.$id'
 import { Route as AdminWorkspacesIdTemplatesTemplateIdRouteImport } from './routes/admin.workspaces.$id.templates.$templateId'
 import { Route as CaptureMessagesIdAttachmentsAttIdRouteImport } from './routes/capture.messages.$id.attachments.$attId'
+import { Route as CaptureWebhooksDeliveriesIdReplayRouteImport } from './routes/capture.webhooks.deliveries.$id.replay'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailsRoute = EmailsRouteImport.update({
+  id: '/emails',
+  path: '/emails',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthzRoute = HealthzRouteImport.update({
@@ -62,6 +82,21 @@ const CaptureSuppressionsRoute = CaptureSuppressionsRouteImport.update({
   path: '/capture/suppressions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaptureWebhooksRoute = CaptureWebhooksRouteImport.update({
+  id: '/capture/webhooks',
+  path: '/capture/webhooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailsIdRoute = EmailsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => EmailsRoute,
+} as any)
+const EmailsBatchRoute = EmailsBatchRouteImport.update({
+  id: '/batch',
+  path: '/batch',
+  getParentRoute: () => EmailsRoute,
+} as any)
 const V1EmailsRoute = V1EmailsRouteImport.update({
   id: '/v1/emails',
   path: '/v1/emails',
@@ -72,6 +107,16 @@ const AdminWorkspacesIdRoute = AdminWorkspacesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminWorkspacesRoute,
 } as any)
+const CaptureLogsApiRoute = CaptureLogsApiRouteImport.update({
+  id: '/capture/logs/api',
+  path: '/capture/logs/api',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureLogsSmtpRoute = CaptureLogsSmtpRouteImport.update({
+  id: '/capture/logs/smtp',
+  path: '/capture/logs/smtp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CaptureMessagesIdRoute = CaptureMessagesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -81,6 +126,22 @@ const CaptureOverrideResetRoute = CaptureOverrideResetRouteImport.update({
   id: '/reset',
   path: '/reset',
   getParentRoute: () => CaptureOverrideRoute,
+} as any)
+const CaptureWebhooksIdRoute = CaptureWebhooksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CaptureWebhooksRoute,
+} as any)
+const CaptureWebhooksDeliveriesRoute =
+  CaptureWebhooksDeliveriesRouteImport.update({
+    id: '/deliveries',
+    path: '/deliveries',
+    getParentRoute: () => CaptureWebhooksRoute,
+  } as any)
+const CaptureWebhooksPreviewRoute = CaptureWebhooksPreviewRouteImport.update({
+  id: '/preview',
+  path: '/preview',
+  getParentRoute: () => CaptureWebhooksRoute,
 } as any)
 const V1EmailsBatchRoute = V1EmailsBatchRouteImport.update({
   id: '/batch',
@@ -98,11 +159,38 @@ const AdminWorkspacesIdTemplatesRoute =
     path: '/templates',
     getParentRoute: () => AdminWorkspacesIdRoute,
   } as any)
+const CaptureLogsApiIdRoute = CaptureLogsApiIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CaptureLogsApiRoute,
+} as any)
+const CaptureLogsSmtpIdRoute = CaptureLogsSmtpIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CaptureLogsSmtpRoute,
+} as any)
+const CaptureMessagesIdEventsRoute = CaptureMessagesIdEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => CaptureMessagesIdRoute,
+} as any)
 const CaptureMessagesIdRawRoute = CaptureMessagesIdRawRouteImport.update({
   id: '/raw',
   path: '/raw',
   getParentRoute: () => CaptureMessagesIdRoute,
 } as any)
+const CaptureWebhooksIdChar91testChar93Route =
+  CaptureWebhooksIdChar91testChar93RouteImport.update({
+    id: '/test',
+    path: '/test',
+    getParentRoute: () => CaptureWebhooksIdRoute,
+  } as any)
+const CaptureWebhooksDeliveriesIdRoute =
+  CaptureWebhooksDeliveriesIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => CaptureWebhooksDeliveriesRoute,
+  } as any)
 const AdminWorkspacesIdTemplatesTemplateIdRoute =
   AdminWorkspacesIdTemplatesTemplateIdRouteImport.update({
     id: '/$templateId',
@@ -115,134 +203,234 @@ const CaptureMessagesIdAttachmentsAttIdRoute =
     path: '/attachments/$attId',
     getParentRoute: () => CaptureMessagesIdRoute,
   } as any)
+const CaptureWebhooksDeliveriesIdReplayRoute =
+  CaptureWebhooksDeliveriesIdReplayRouteImport.update({
+    id: '/replay',
+    path: '/replay',
+    getParentRoute: () => CaptureWebhooksDeliveriesIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
   '/capture/stream': typeof CaptureStreamRoute
   '/capture/suppressions': typeof CaptureSuppressionsRoute
+  '/capture/webhooks': typeof CaptureWebhooksRouteWithChildren
+  '/emails/$id': typeof EmailsIdRoute
+  '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
+  '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
+  '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
+  '/capture/webhooks/$id': typeof CaptureWebhooksIdRouteWithChildren
+  '/capture/webhooks/deliveries': typeof CaptureWebhooksDeliveriesRouteWithChildren
+  '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
+  '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
+  '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
+  '/capture/messages/$id/events': typeof CaptureMessagesIdEventsRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
+  '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
   '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
+  '/capture/webhooks/deliveries/$id/replay': typeof CaptureWebhooksDeliveriesIdReplayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
   '/capture/stream': typeof CaptureStreamRoute
   '/capture/suppressions': typeof CaptureSuppressionsRoute
+  '/capture/webhooks': typeof CaptureWebhooksRouteWithChildren
+  '/emails/$id': typeof EmailsIdRoute
+  '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
+  '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
+  '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
+  '/capture/webhooks/$id': typeof CaptureWebhooksIdRouteWithChildren
+  '/capture/webhooks/deliveries': typeof CaptureWebhooksDeliveriesRouteWithChildren
+  '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
+  '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
+  '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
+  '/capture/messages/$id/events': typeof CaptureMessagesIdEventsRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
+  '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
   '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
+  '/capture/webhooks/deliveries/$id/replay': typeof CaptureWebhooksDeliveriesIdReplayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
   '/capture/stream': typeof CaptureStreamRoute
   '/capture/suppressions': typeof CaptureSuppressionsRoute
+  '/capture/webhooks': typeof CaptureWebhooksRouteWithChildren
+  '/emails/$id': typeof EmailsIdRoute
+  '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
+  '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
+  '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
+  '/capture/webhooks/$id': typeof CaptureWebhooksIdRouteWithChildren
+  '/capture/webhooks/deliveries': typeof CaptureWebhooksDeliveriesRouteWithChildren
+  '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
+  '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
+  '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
+  '/capture/messages/$id/events': typeof CaptureMessagesIdEventsRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
+  '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
   '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
+  '/capture/webhooks/deliveries/$id/replay': typeof CaptureWebhooksDeliveriesIdReplayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/emails'
     | '/healthz'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
     | '/capture/stream'
     | '/capture/suppressions'
+    | '/capture/webhooks'
+    | '/emails/$id'
+    | '/emails/batch'
     | '/v1/emails'
     | '/admin/workspaces/$id'
+    | '/capture/logs/api'
+    | '/capture/logs/smtp'
     | '/capture/messages/$id'
     | '/capture/override/reset'
+    | '/capture/webhooks/$id'
+    | '/capture/webhooks/deliveries'
+    | '/capture/webhooks/preview'
     | '/v1/emails/batch'
     | '/v3/smtp/email'
     | '/admin/workspaces/$id/templates'
+    | '/capture/logs/api/$id'
+    | '/capture/logs/smtp/$id'
+    | '/capture/messages/$id/events'
     | '/capture/messages/$id/raw'
+    | '/capture/webhooks/$id/test'
+    | '/capture/webhooks/deliveries/$id'
     | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
+    | '/capture/webhooks/deliveries/$id/replay'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/emails'
     | '/healthz'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
     | '/capture/stream'
     | '/capture/suppressions'
+    | '/capture/webhooks'
+    | '/emails/$id'
+    | '/emails/batch'
     | '/v1/emails'
     | '/admin/workspaces/$id'
+    | '/capture/logs/api'
+    | '/capture/logs/smtp'
     | '/capture/messages/$id'
     | '/capture/override/reset'
+    | '/capture/webhooks/$id'
+    | '/capture/webhooks/deliveries'
+    | '/capture/webhooks/preview'
     | '/v1/emails/batch'
     | '/v3/smtp/email'
     | '/admin/workspaces/$id/templates'
+    | '/capture/logs/api/$id'
+    | '/capture/logs/smtp/$id'
+    | '/capture/messages/$id/events'
     | '/capture/messages/$id/raw'
+    | '/capture/webhooks/$id/test'
+    | '/capture/webhooks/deliveries/$id'
     | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
+    | '/capture/webhooks/deliveries/$id/replay'
   id:
     | '__root__'
     | '/'
+    | '/emails'
     | '/healthz'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
     | '/capture/stream'
     | '/capture/suppressions'
+    | '/capture/webhooks'
+    | '/emails/$id'
+    | '/emails/batch'
     | '/v1/emails'
     | '/admin/workspaces/$id'
+    | '/capture/logs/api'
+    | '/capture/logs/smtp'
     | '/capture/messages/$id'
     | '/capture/override/reset'
+    | '/capture/webhooks/$id'
+    | '/capture/webhooks/deliveries'
+    | '/capture/webhooks/preview'
     | '/v1/emails/batch'
     | '/v3/smtp/email'
     | '/admin/workspaces/$id/templates'
+    | '/capture/logs/api/$id'
+    | '/capture/logs/smtp/$id'
+    | '/capture/messages/$id/events'
     | '/capture/messages/$id/raw'
+    | '/capture/webhooks/$id/test'
+    | '/capture/webhooks/deliveries/$id'
     | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
+    | '/capture/webhooks/deliveries/$id/replay'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EmailsRoute: typeof EmailsRouteWithChildren
   HealthzRoute: typeof HealthzRoute
   AdminWorkspacesRoute: typeof AdminWorkspacesRouteWithChildren
   CaptureMessagesRoute: typeof CaptureMessagesRouteWithChildren
   CaptureOverrideRoute: typeof CaptureOverrideRouteWithChildren
   CaptureStreamRoute: typeof CaptureStreamRoute
   CaptureSuppressionsRoute: typeof CaptureSuppressionsRoute
+  CaptureWebhooksRoute: typeof CaptureWebhooksRouteWithChildren
   V1EmailsRoute: typeof V1EmailsRouteWithChildren
+  CaptureLogsApiRoute: typeof CaptureLogsApiRouteWithChildren
+  CaptureLogsSmtpRoute: typeof CaptureLogsSmtpRouteWithChildren
   V3SmtpEmailRoute: typeof V3SmtpEmailRoute
 }
 
@@ -253,6 +441,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/emails': {
+      id: '/emails'
+      path: '/emails'
+      fullPath: '/emails'
+      preLoaderRoute: typeof EmailsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/healthz': {
@@ -297,6 +492,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaptureSuppressionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/capture/webhooks': {
+      id: '/capture/webhooks'
+      path: '/capture/webhooks'
+      fullPath: '/capture/webhooks'
+      preLoaderRoute: typeof CaptureWebhooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/emails/$id': {
+      id: '/emails/$id'
+      path: '/$id'
+      fullPath: '/emails/$id'
+      preLoaderRoute: typeof EmailsIdRouteImport
+      parentRoute: typeof EmailsRoute
+    }
+    '/emails/batch': {
+      id: '/emails/batch'
+      path: '/batch'
+      fullPath: '/emails/batch'
+      preLoaderRoute: typeof EmailsBatchRouteImport
+      parentRoute: typeof EmailsRoute
+    }
     '/v1/emails': {
       id: '/v1/emails'
       path: '/v1/emails'
@@ -311,6 +527,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWorkspacesIdRouteImport
       parentRoute: typeof AdminWorkspacesRoute
     }
+    '/capture/logs/api': {
+      id: '/capture/logs/api'
+      path: '/capture/logs/api'
+      fullPath: '/capture/logs/api'
+      preLoaderRoute: typeof CaptureLogsApiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture/logs/smtp': {
+      id: '/capture/logs/smtp'
+      path: '/capture/logs/smtp'
+      fullPath: '/capture/logs/smtp'
+      preLoaderRoute: typeof CaptureLogsSmtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/capture/messages/$id': {
       id: '/capture/messages/$id'
       path: '/$id'
@@ -324,6 +554,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/capture/override/reset'
       preLoaderRoute: typeof CaptureOverrideResetRouteImport
       parentRoute: typeof CaptureOverrideRoute
+    }
+    '/capture/webhooks/$id': {
+      id: '/capture/webhooks/$id'
+      path: '/$id'
+      fullPath: '/capture/webhooks/$id'
+      preLoaderRoute: typeof CaptureWebhooksIdRouteImport
+      parentRoute: typeof CaptureWebhooksRoute
+    }
+    '/capture/webhooks/deliveries': {
+      id: '/capture/webhooks/deliveries'
+      path: '/deliveries'
+      fullPath: '/capture/webhooks/deliveries'
+      preLoaderRoute: typeof CaptureWebhooksDeliveriesRouteImport
+      parentRoute: typeof CaptureWebhooksRoute
+    }
+    '/capture/webhooks/preview': {
+      id: '/capture/webhooks/preview'
+      path: '/preview'
+      fullPath: '/capture/webhooks/preview'
+      preLoaderRoute: typeof CaptureWebhooksPreviewRouteImport
+      parentRoute: typeof CaptureWebhooksRoute
     }
     '/v1/emails/batch': {
       id: '/v1/emails/batch'
@@ -346,12 +597,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWorkspacesIdTemplatesRouteImport
       parentRoute: typeof AdminWorkspacesIdRoute
     }
+    '/capture/logs/api/$id': {
+      id: '/capture/logs/api/$id'
+      path: '/$id'
+      fullPath: '/capture/logs/api/$id'
+      preLoaderRoute: typeof CaptureLogsApiIdRouteImport
+      parentRoute: typeof CaptureLogsApiRoute
+    }
+    '/capture/logs/smtp/$id': {
+      id: '/capture/logs/smtp/$id'
+      path: '/$id'
+      fullPath: '/capture/logs/smtp/$id'
+      preLoaderRoute: typeof CaptureLogsSmtpIdRouteImport
+      parentRoute: typeof CaptureLogsSmtpRoute
+    }
+    '/capture/messages/$id/events': {
+      id: '/capture/messages/$id/events'
+      path: '/events'
+      fullPath: '/capture/messages/$id/events'
+      preLoaderRoute: typeof CaptureMessagesIdEventsRouteImport
+      parentRoute: typeof CaptureMessagesIdRoute
+    }
     '/capture/messages/$id/raw': {
       id: '/capture/messages/$id/raw'
       path: '/raw'
       fullPath: '/capture/messages/$id/raw'
       preLoaderRoute: typeof CaptureMessagesIdRawRouteImport
       parentRoute: typeof CaptureMessagesIdRoute
+    }
+    '/capture/webhooks/$id/test': {
+      id: '/capture/webhooks/$id/test'
+      path: '/test'
+      fullPath: '/capture/webhooks/$id/test'
+      preLoaderRoute: typeof CaptureWebhooksIdChar91testChar93RouteImport
+      parentRoute: typeof CaptureWebhooksIdRoute
+    }
+    '/capture/webhooks/deliveries/$id': {
+      id: '/capture/webhooks/deliveries/$id'
+      path: '/$id'
+      fullPath: '/capture/webhooks/deliveries/$id'
+      preLoaderRoute: typeof CaptureWebhooksDeliveriesIdRouteImport
+      parentRoute: typeof CaptureWebhooksDeliveriesRoute
     }
     '/admin/workspaces/$id/templates/$templateId': {
       id: '/admin/workspaces/$id/templates/$templateId'
@@ -367,8 +653,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaptureMessagesIdAttachmentsAttIdRouteImport
       parentRoute: typeof CaptureMessagesIdRoute
     }
+    '/capture/webhooks/deliveries/$id/replay': {
+      id: '/capture/webhooks/deliveries/$id/replay'
+      path: '/replay'
+      fullPath: '/capture/webhooks/deliveries/$id/replay'
+      preLoaderRoute: typeof CaptureWebhooksDeliveriesIdReplayRouteImport
+      parentRoute: typeof CaptureWebhooksDeliveriesIdRoute
+    }
   }
 }
+
+interface EmailsRouteChildren {
+  EmailsIdRoute: typeof EmailsIdRoute
+  EmailsBatchRoute: typeof EmailsBatchRoute
+}
+
+const EmailsRouteChildren: EmailsRouteChildren = {
+  EmailsIdRoute: EmailsIdRoute,
+  EmailsBatchRoute: EmailsBatchRoute,
+}
+
+const EmailsRouteWithChildren =
+  EmailsRoute._addFileChildren(EmailsRouteChildren)
 
 interface AdminWorkspacesIdTemplatesRouteChildren {
   AdminWorkspacesIdTemplatesTemplateIdRoute: typeof AdminWorkspacesIdTemplatesTemplateIdRoute
@@ -409,11 +715,13 @@ const AdminWorkspacesRouteWithChildren = AdminWorkspacesRoute._addFileChildren(
 )
 
 interface CaptureMessagesIdRouteChildren {
+  CaptureMessagesIdEventsRoute: typeof CaptureMessagesIdEventsRoute
   CaptureMessagesIdRawRoute: typeof CaptureMessagesIdRawRoute
   CaptureMessagesIdAttachmentsAttIdRoute: typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
 
 const CaptureMessagesIdRouteChildren: CaptureMessagesIdRouteChildren = {
+  CaptureMessagesIdEventsRoute: CaptureMessagesIdEventsRoute,
   CaptureMessagesIdRawRoute: CaptureMessagesIdRawRoute,
   CaptureMessagesIdAttachmentsAttIdRoute:
     CaptureMessagesIdAttachmentsAttIdRoute,
@@ -446,6 +754,64 @@ const CaptureOverrideRouteWithChildren = CaptureOverrideRoute._addFileChildren(
   CaptureOverrideRouteChildren,
 )
 
+interface CaptureWebhooksIdRouteChildren {
+  CaptureWebhooksIdChar91testChar93Route: typeof CaptureWebhooksIdChar91testChar93Route
+}
+
+const CaptureWebhooksIdRouteChildren: CaptureWebhooksIdRouteChildren = {
+  CaptureWebhooksIdChar91testChar93Route:
+    CaptureWebhooksIdChar91testChar93Route,
+}
+
+const CaptureWebhooksIdRouteWithChildren =
+  CaptureWebhooksIdRoute._addFileChildren(CaptureWebhooksIdRouteChildren)
+
+interface CaptureWebhooksDeliveriesIdRouteChildren {
+  CaptureWebhooksDeliveriesIdReplayRoute: typeof CaptureWebhooksDeliveriesIdReplayRoute
+}
+
+const CaptureWebhooksDeliveriesIdRouteChildren: CaptureWebhooksDeliveriesIdRouteChildren =
+  {
+    CaptureWebhooksDeliveriesIdReplayRoute:
+      CaptureWebhooksDeliveriesIdReplayRoute,
+  }
+
+const CaptureWebhooksDeliveriesIdRouteWithChildren =
+  CaptureWebhooksDeliveriesIdRoute._addFileChildren(
+    CaptureWebhooksDeliveriesIdRouteChildren,
+  )
+
+interface CaptureWebhooksDeliveriesRouteChildren {
+  CaptureWebhooksDeliveriesIdRoute: typeof CaptureWebhooksDeliveriesIdRouteWithChildren
+}
+
+const CaptureWebhooksDeliveriesRouteChildren: CaptureWebhooksDeliveriesRouteChildren =
+  {
+    CaptureWebhooksDeliveriesIdRoute:
+      CaptureWebhooksDeliveriesIdRouteWithChildren,
+  }
+
+const CaptureWebhooksDeliveriesRouteWithChildren =
+  CaptureWebhooksDeliveriesRoute._addFileChildren(
+    CaptureWebhooksDeliveriesRouteChildren,
+  )
+
+interface CaptureWebhooksRouteChildren {
+  CaptureWebhooksIdRoute: typeof CaptureWebhooksIdRouteWithChildren
+  CaptureWebhooksDeliveriesRoute: typeof CaptureWebhooksDeliveriesRouteWithChildren
+  CaptureWebhooksPreviewRoute: typeof CaptureWebhooksPreviewRoute
+}
+
+const CaptureWebhooksRouteChildren: CaptureWebhooksRouteChildren = {
+  CaptureWebhooksIdRoute: CaptureWebhooksIdRouteWithChildren,
+  CaptureWebhooksDeliveriesRoute: CaptureWebhooksDeliveriesRouteWithChildren,
+  CaptureWebhooksPreviewRoute: CaptureWebhooksPreviewRoute,
+}
+
+const CaptureWebhooksRouteWithChildren = CaptureWebhooksRoute._addFileChildren(
+  CaptureWebhooksRouteChildren,
+)
+
 interface V1EmailsRouteChildren {
   V1EmailsBatchRoute: typeof V1EmailsBatchRoute
 }
@@ -458,15 +824,43 @@ const V1EmailsRouteWithChildren = V1EmailsRoute._addFileChildren(
   V1EmailsRouteChildren,
 )
 
+interface CaptureLogsApiRouteChildren {
+  CaptureLogsApiIdRoute: typeof CaptureLogsApiIdRoute
+}
+
+const CaptureLogsApiRouteChildren: CaptureLogsApiRouteChildren = {
+  CaptureLogsApiIdRoute: CaptureLogsApiIdRoute,
+}
+
+const CaptureLogsApiRouteWithChildren = CaptureLogsApiRoute._addFileChildren(
+  CaptureLogsApiRouteChildren,
+)
+
+interface CaptureLogsSmtpRouteChildren {
+  CaptureLogsSmtpIdRoute: typeof CaptureLogsSmtpIdRoute
+}
+
+const CaptureLogsSmtpRouteChildren: CaptureLogsSmtpRouteChildren = {
+  CaptureLogsSmtpIdRoute: CaptureLogsSmtpIdRoute,
+}
+
+const CaptureLogsSmtpRouteWithChildren = CaptureLogsSmtpRoute._addFileChildren(
+  CaptureLogsSmtpRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EmailsRoute: EmailsRouteWithChildren,
   HealthzRoute: HealthzRoute,
   AdminWorkspacesRoute: AdminWorkspacesRouteWithChildren,
   CaptureMessagesRoute: CaptureMessagesRouteWithChildren,
   CaptureOverrideRoute: CaptureOverrideRouteWithChildren,
   CaptureStreamRoute: CaptureStreamRoute,
   CaptureSuppressionsRoute: CaptureSuppressionsRoute,
+  CaptureWebhooksRoute: CaptureWebhooksRouteWithChildren,
   V1EmailsRoute: V1EmailsRouteWithChildren,
+  CaptureLogsApiRoute: CaptureLogsApiRouteWithChildren,
+  CaptureLogsSmtpRoute: CaptureLogsSmtpRouteWithChildren,
   V3SmtpEmailRoute: V3SmtpEmailRoute,
 }
 export const routeTree = rootRouteImport

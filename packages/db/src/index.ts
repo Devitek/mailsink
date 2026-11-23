@@ -56,6 +56,25 @@ export {
   retryJob,
 } from './repositories/jobs'
 export {
+  type ApiLog,
+  type ApiLogDialect,
+  type ApiLogFilters,
+  findApiLog,
+  insertApiLog,
+  listApiLogs,
+  type NewApiLog,
+} from './repositories/logs-api'
+export type { LogPage, LogTimeRange } from './repositories/logs-query'
+export {
+  findSmtpSession,
+  insertSmtpSession,
+  listSmtpSessions,
+  type NewSmtpSession,
+  type SmtpSession,
+  type SmtpSessionFilters,
+  type SmtpSessionOutcome,
+} from './repositories/logs-smtp'
+export {
   type MessagePurge,
   purgeMessages,
 } from './repositories/messages-purge'
@@ -132,6 +151,40 @@ export {
   type TemplateChanges,
   updateTemplate,
 } from './repositories/templates'
+export {
+  deleteWebhookEndpoint,
+  findConnectionKind,
+  findWebhookEndpoint,
+  hasEnabledWebhookEndpoints,
+  insertWebhookEndpoint,
+  listEndpointsInScope,
+  listWebhookEndpoints,
+  type NewWebhookEndpoint,
+  updateWebhookEndpoint,
+  type WebhookEndpoint,
+  type WebhookEndpointUpdate,
+} from './repositories/webhooks'
+export {
+  findWebhookMessage,
+  findWebhookWorkspace,
+  type WebhookMessageRow,
+  type WebhookWorkspaceRow,
+} from './repositories/webhooks-context'
+export {
+  findDeliveryWithEndpoint,
+  findWebhookAttempt,
+  findWebhookDelivery,
+  insertWebhookAttempt,
+  insertWebhookDeliveries,
+  type ListDeliveriesOptions,
+  listWebhookAttempts,
+  listWebhookDeliveries,
+  type NewWebhookAttempt,
+  type NewWebhookDelivery,
+  updateWebhookDelivery,
+  type WebhookAttempt,
+  type WebhookDelivery,
+} from './repositories/webhooks-deliveries'
 export {
   deleteExpiredWorkspaces,
   touchWorkspaceActivity,

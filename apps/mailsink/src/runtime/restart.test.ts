@@ -7,7 +7,7 @@ import {
   startRuntimeFromPlugin,
   whenRestartSettled,
 } from './restart'
-import { runtimeSlot, whenRuntimeReady } from './slot'
+import { runtimeSlot, whenRuntimeReady, withRuntime } from './slot'
 
 const silent = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 const quiet = { log: silent, shutdownHooks: false }
@@ -70,6 +70,60 @@ describe('runtime restart (vite dev HMR, #60)', () => {
     await expect(whenRuntimeReady()).resolves.toBe(next)
     await restarting
     expect(runtimeSlot().restarting).toBeUndefined()
+  })
+
+  it('waits for the requests in flight before stopping their runtime (#86)', async () => {
+    const old = fake(1)
+    await bootRuntime({ ...quiet, start: async () => old })
+    let finish!: () => void
+    const blocker = new Promise<void>((resolve) => {
+      finish = resolve
+    })
+    const seen: Runtime[] = []
+    const inFlight = withRuntime(async () => {
+      await blocker
+      seen.push(await whenRuntimeReady()) // still the runtime it started on
+      expect(old.stop).not.toHaveBeenCalled()
+      return 'done'
+    })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    const next = fake(2)
+    const restarting = restartRuntime({ ...quiet, start: async () => next })
+    const late = withRuntime(async () => whenRuntimeReady())
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(old.stop).not.toHaveBeenCalled()
+    finish()
+    await expect(inFlight).resolves.toBe('done')
+    await expect(restarting).resolves.toBe(next)
+    await expect(late).resolves.toBe(next)
+    expect(seen).toEqual([old])
+    expect(old.stop).toHaveBeenCalledTimes(1)
+  })
+
+  it('makes a request arriving during the debounce window wait for the new code', async () => {
+    await bootRuntime({ ...quiet, start: async () => fake(1) })
+    const next = fake(2)
+    void requestRestart({ ...quiet, start: async () => next }, 20)
+    await expect(withRuntime(() => whenRuntimeReady())).resolves.toBe(next)
+  })
+
+  it('stops anyway once the drain timeout elapsed, with a warning', async () => {
+    const old = fake(1)
+    await bootRuntime({ ...quiet, start: async () => old })
+    let finish!: () => void
+    const stuck = withRuntime(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    await restartRuntime({ log, shutdownHooks: false, start: async () => fake(2) }, 5)
+    expect(old.stop).toHaveBeenCalledTimes(1)
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('1 request(s) still running'))
+    finish()
+    await stuck
   })
 
   it('runs restarts requested during a restart after it, the last code winning', async () => {
