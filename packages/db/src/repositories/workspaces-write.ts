@@ -3,9 +3,12 @@ import type { Executor } from '../client'
 import { workspaces } from '../schema/workspaces'
 import type { Workspace } from './workspaces'
 
-/** Settings the web UI edits on an existing workspace (#38); the slug never changes. */
+/** Settings the web UI edits on an existing workspace (#38, #43); the slug never changes. */
 export type WorkspacePatch = Partial<
-  Pick<Workspace, 'name' | 'description' | 'retentionSeconds' | 'rateLimit'>
+  Pick<
+    Workspace,
+    'name' | 'description' | 'retentionSeconds' | 'rateLimit' | 'maxMessages' | 'simulation'
+  >
 >
 
 export async function updateWorkspace(

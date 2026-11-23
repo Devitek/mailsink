@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ConnectionCredentials, ConnectionView } from './admin'
 import { issue } from './common'
 import { WorkspaceKey } from './ids'
-import { RateLimitSettings, Retention } from './settings'
+import { RateLimitSettings, Retention, SimulationSettings } from './settings'
 
 // Management of an existing workspace and of its connections (#38): the web UI server
 // functions and the Admin API (`PATCH /admin/workspaces/:id`, `/connections` routes, key
@@ -34,6 +34,8 @@ export const UpdateWorkspaceRequest = z
     description: z.string().max(500).nullable().optional(),
     retention: Retention.optional(),
     rateLimit: RateLimitSettings.nullable().optional(), // null = unlimited
+    maxMessages: z.number().int().positive().max(10_000_000).nullable().optional(), // null = unbounded
+    simulation: SimulationSettings.optional(), // replaces the defaults whole (#43)
   })
   .refine(
     (patch) => Object.values(patch).some((value) => value !== undefined),

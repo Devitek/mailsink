@@ -378,7 +378,9 @@ Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connecti
 ```ts
 export const UpdateWorkspaceRequest = z.object({ name: Name.optional(),
   description: z.string().max(500).nullable().optional(), retention: Retention.optional(),
-  rateLimit: RateLimitSettings.nullable().optional() })          // at least one key
+  rateLimit: RateLimitSettings.nullable().optional(),
+  maxMessages: z.number().int().positive().nullable().optional(), // null = unbounded (#43)
+  simulation: SimulationSettings.optional() })                   // at least one key; replaced whole
 export const UpdateConnectionRequest = z.object({ name: Name.optional(),
   enabled: z.boolean().optional() })                             // at least one key
 export const CreatedConnection = ConnectionView.extend({ credentials: ConnectionCredentials,
@@ -396,6 +398,12 @@ webhook endpoints and overrides cascade, messages and logs keep a null connectio
 `updateWorkspaceSettings` (the slug never changes). The UI names workspaces by slug only
 and touches their activity on every call (D163); a taken slug or SMTP username comes back
 as a field conflict, not a failure.
+
+The settings page (#43, D200 to D204) reuses the same pattern
+(`server-fns/{settings,webhooks,templates}-fns.ts`): `updateWorkspaceSettings` for the
+defaults (message quota, default simulation, rate limit), the `/capture/webhooks` services
+for endpoints (create, patch, delete, preview, test send) plus a session-only read of the
+stored signing secret, and the Admin template services with a `renderTemplate` preview.
 
 ## Native ingestion (`native.ts`)
 

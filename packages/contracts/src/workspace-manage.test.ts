@@ -13,6 +13,19 @@ describe('UpdateWorkspaceRequest', () => {
     })
   })
 
+  it('takes the message quota (null = unbounded) and complete default simulation settings', () => {
+    expect(UpdateWorkspaceRequest.parse({ maxMessages: null })).toEqual({ maxMessages: null })
+    expect(UpdateWorkspaceRequest.safeParse({ maxMessages: 0 }).success).toBe(false)
+    const parsed = UpdateWorkspaceRequest.parse({ simulation: { rates: { hard_bounce: 5 } } })
+    expect(parsed.simulation).toEqual({
+      rates: { hard_bounce: 5 },
+      rules: [],
+      latency: { minMs: 0, maxMs: 0 },
+      openRate: 0,
+      clickRate: 0,
+    })
+  })
+
   it('refuses an empty patch and a blank name', () => {
     const empty = UpdateWorkspaceRequest.safeParse({})
     expect(issueCode(empty.error?.issues[0])).toBe('empty_patch')

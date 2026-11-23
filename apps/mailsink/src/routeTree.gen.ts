@@ -38,6 +38,7 @@ import { Route as V3SmtpEmailRouteImport } from './routes/v3.smtp.email'
 import { Route as WWorkspaceSlugIndexRouteImport } from './routes/w.$workspaceSlug.index'
 import { Route as WWorkspaceSlugConnectionsRouteImport } from './routes/w.$workspaceSlug.connections'
 import { Route as WWorkspaceSlugLogsRouteImport } from './routes/w.$workspaceSlug.logs'
+import { Route as WWorkspaceSlugSettingsRouteImport } from './routes/w.$workspaceSlug.settings'
 import { Route as WWorkspaceSlugSuppressionsRouteImport } from './routes/w.$workspaceSlug.suppressions'
 import { Route as AdminLogsApiIdRouteImport } from './routes/admin.logs.api.$id'
 import { Route as AdminWorkspacesIdConnectionsRouteImport } from './routes/admin.workspaces.$id.connections'
@@ -206,6 +207,11 @@ const WWorkspaceSlugLogsRoute = WWorkspaceSlugLogsRouteImport.update({
   path: '/logs',
   getParentRoute: () => WWorkspaceSlugRoute,
 } as any)
+const WWorkspaceSlugSettingsRoute = WWorkspaceSlugSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => WWorkspaceSlugRoute,
+} as any)
 const WWorkspaceSlugSuppressionsRoute =
   WWorkspaceSlugSuppressionsRouteImport.update({
     id: '/suppressions',
@@ -350,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/v3/smtp/email': typeof V3SmtpEmailRoute
   '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
   '/w/$workspaceSlug/logs': typeof WWorkspaceSlugLogsRoute
+  '/w/$workspaceSlug/settings': typeof WWorkspaceSlugSettingsRoute
   '/w/$workspaceSlug/suppressions': typeof WWorkspaceSlugSuppressionsRoute
   '/w/$workspaceSlug/': typeof WWorkspaceSlugIndexRoute
   '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/v3/smtp/email': typeof V3SmtpEmailRoute
   '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
   '/w/$workspaceSlug/logs': typeof WWorkspaceSlugLogsRoute
+  '/w/$workspaceSlug/settings': typeof WWorkspaceSlugSettingsRoute
   '/w/$workspaceSlug/suppressions': typeof WWorkspaceSlugSuppressionsRoute
   '/w/$workspaceSlug': typeof WWorkspaceSlugIndexRoute
   '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
@@ -452,6 +460,7 @@ export interface FileRoutesById {
   '/v3/smtp/email': typeof V3SmtpEmailRoute
   '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
   '/w/$workspaceSlug/logs': typeof WWorkspaceSlugLogsRoute
+  '/w/$workspaceSlug/settings': typeof WWorkspaceSlugSettingsRoute
   '/w/$workspaceSlug/suppressions': typeof WWorkspaceSlugSuppressionsRoute
   '/w/$workspaceSlug/': typeof WWorkspaceSlugIndexRoute
   '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
@@ -505,6 +514,7 @@ export interface FileRouteTypes {
     | '/v3/smtp/email'
     | '/w/$workspaceSlug/connections'
     | '/w/$workspaceSlug/logs'
+    | '/w/$workspaceSlug/settings'
     | '/w/$workspaceSlug/suppressions'
     | '/w/$workspaceSlug/'
     | '/admin/logs/api/$id'
@@ -555,6 +565,7 @@ export interface FileRouteTypes {
     | '/v3/smtp/email'
     | '/w/$workspaceSlug/connections'
     | '/w/$workspaceSlug/logs'
+    | '/w/$workspaceSlug/settings'
     | '/w/$workspaceSlug/suppressions'
     | '/w/$workspaceSlug'
     | '/admin/logs/api/$id'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/v3/smtp/email'
     | '/w/$workspaceSlug/connections'
     | '/w/$workspaceSlug/logs'
+    | '/w/$workspaceSlug/settings'
     | '/w/$workspaceSlug/suppressions'
     | '/w/$workspaceSlug/'
     | '/admin/logs/api/$id'
@@ -852,6 +864,13 @@ declare module '@tanstack/react-router' {
       path: '/logs'
       fullPath: '/w/$workspaceSlug/logs'
       preLoaderRoute: typeof WWorkspaceSlugLogsRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/settings': {
+      id: '/w/$workspaceSlug/settings'
+      path: '/settings'
+      fullPath: '/w/$workspaceSlug/settings'
+      preLoaderRoute: typeof WWorkspaceSlugSettingsRouteImport
       parentRoute: typeof WWorkspaceSlugRoute
     }
     '/w/$workspaceSlug/suppressions': {
@@ -1196,6 +1215,7 @@ const V1EmailsRouteWithChildren = V1EmailsRoute._addFileChildren(
 interface WWorkspaceSlugRouteChildren {
   WWorkspaceSlugConnectionsRoute: typeof WWorkspaceSlugConnectionsRoute
   WWorkspaceSlugLogsRoute: typeof WWorkspaceSlugLogsRoute
+  WWorkspaceSlugSettingsRoute: typeof WWorkspaceSlugSettingsRoute
   WWorkspaceSlugSuppressionsRoute: typeof WWorkspaceSlugSuppressionsRoute
   WWorkspaceSlugIndexRoute: typeof WWorkspaceSlugIndexRoute
   WWorkspaceSlugMStreamRoute: typeof WWorkspaceSlugMStreamRoute
@@ -1207,6 +1227,7 @@ interface WWorkspaceSlugRouteChildren {
 const WWorkspaceSlugRouteChildren: WWorkspaceSlugRouteChildren = {
   WWorkspaceSlugConnectionsRoute: WWorkspaceSlugConnectionsRoute,
   WWorkspaceSlugLogsRoute: WWorkspaceSlugLogsRoute,
+  WWorkspaceSlugSettingsRoute: WWorkspaceSlugSettingsRoute,
   WWorkspaceSlugSuppressionsRoute: WWorkspaceSlugSuppressionsRoute,
   WWorkspaceSlugIndexRoute: WWorkspaceSlugIndexRoute,
   WWorkspaceSlugMStreamRoute: WWorkspaceSlugMStreamRoute,
