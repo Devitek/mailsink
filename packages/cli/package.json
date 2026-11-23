@@ -12,11 +12,14 @@
     "build": "tsdown"
   },
   "devDependencies": {
+    "@mailsink/core": "workspace:*",
     "@mailsink/db": "workspace:*",
+    "@mailsink/mcp": "workspace:*",
     "tsdown": "^0.23.7"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.17",
+    "@modelcontextprotocol/client": "^2.4.0",
     "drizzle-orm": "^0.45.4",
     "pg": "^8.23.1"
   },
