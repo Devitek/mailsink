@@ -1,6 +1,13 @@
 // Test-only helpers for the HTTP layer (imported by *.test.ts files only).
 import { randomBytes } from 'node:crypto'
-import { createActivityTracker, createEventBus, hashApiKey } from '@mailsink/core'
+import {
+  createActivityTracker,
+  createEventBus,
+  createRateLimiter,
+  hashApiKey,
+  type Random,
+  type RateLimiter,
+} from '@mailsink/core'
 import { apiKeys, type Database, type DbHandle, newId } from '@mailsink/db'
 import { createTestWorkspaceWithConnection } from '@mailsink/db/testing'
 import { bootRuntime } from '../runtime/boot'
@@ -10,7 +17,11 @@ import type { Runtime } from '../runtime/container'
 export const ADMIN_KEY = 'test-admin-key-0123456789'
 
 /** Puts a runtime around the test database in the globalThis slot, as the Nitro plugin does. */
-export function installTestRuntime(db: DbHandle, config: Partial<RuntimeConfig> = {}) {
+export function installTestRuntime(
+  db: DbHandle,
+  config: Partial<RuntimeConfig> = {},
+  services: { rateLimiter?: RateLimiter; chaosRandom?: Random } = {},
+) {
   const runtime: Runtime = {
     config: {
       databaseUrl: 'pglite://memory',
@@ -26,6 +37,8 @@ export function installTestRuntime(db: DbHandle, config: Partial<RuntimeConfig> 
     db,
     bus: createEventBus(),
     activity: createActivityTracker({ db: db.db }),
+    rateLimiter: services.rateLimiter ?? createRateLimiter(),
+    chaosRandom: services.chaosRandom ?? Math.random,
     smtpPort: 0,
     stop: async () => {},
   }
