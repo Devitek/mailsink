@@ -14,6 +14,7 @@ describe('readRuntimeConfig', () => {
       publicUrl: 'http://localhost:3000',
       defaultIdleTtlSeconds: 3600,
       webhookBlockPrivate: false,
+      trustProxy: false,
       smtpPublicHost: undefined,
       smtpPublicPort: undefined,
       jobs: {
@@ -174,6 +175,13 @@ describe('readRuntimeConfig', () => {
     )
     expect(() => readRuntimeConfig({ MAILSINK_WEBHOOK_BLOCK_PRIVATE: 'maybe' })).toThrow(
       /MAILSINK_WEBHOOK_BLOCK_PRIVATE: must be true or false/,
+    )
+  })
+
+  it('reads MAILSINK_TRUST_PROXY as a boolean, off by default', () => {
+    expect(readRuntimeConfig({ MAILSINK_TRUST_PROXY: 'true' }).trustProxy).toBe(true)
+    expect(() => readRuntimeConfig({ MAILSINK_TRUST_PROXY: 'yes please' })).toThrow(
+      /MAILSINK_TRUST_PROXY: must be true or false/,
     )
   })
 
