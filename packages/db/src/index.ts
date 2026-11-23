@@ -211,7 +211,10 @@ export {
   deleteExpiredWorkspaces,
   touchWorkspaceActivity,
 } from './repositories/workspace-activity'
-export { countMessagesByWorkspace } from './repositories/workspace-message-counts'
+export {
+  countMessagesByConnection,
+  countMessagesByWorkspace,
+} from './repositories/workspace-message-counts'
 export {
   countEphemeralWorkspaces,
   deleteWorkspace,
