@@ -1,5 +1,11 @@
 import { ListSuppressionsQuery } from '@mailsink/contracts'
-import { createTestSuppression, createTestWorkspace, describeDb } from '@mailsink/db/testing'
+import {
+  createTestConnection,
+  createTestMessage,
+  createTestSuppression,
+  createTestWorkspace,
+  describeDb,
+} from '@mailsink/db/testing'
 import { beforeEach, expect, it } from 'vitest'
 import { listSuppressionViews, resetSuppressions } from './service'
 
@@ -27,6 +33,18 @@ describeDb('suppression service', (ctx) => {
       query({ limit: 2, cursor: first.nextCursor }),
     )
     expect(second).toMatchObject({ data: [{ email: 'a@x.io' }], nextCursor: null })
+  })
+
+  it('counts every address of the filter and names the connection of the message', async () => {
+    const connection = await createTestConnection(ctx.db, workspaceId)
+    const message = await createTestMessage(ctx.db, workspaceId, { connectionId: connection.id })
+    await createTestSuppression(ctx.db, workspaceId, 'z@x.io', 'hard_bounce', message.id)
+    const page = await listSuppressionViews(ctx.db, workspaceId, query({ limit: 1 }))
+    expect(page.total).toBe(4)
+    expect(page.data[0]).toMatchObject({ email: 'z@x.io', connectionId: connection.id })
+    const filtered = await listSuppressionViews(ctx.db, workspaceId, query({ email: 'x.io' }))
+    expect(filtered.total).toBe(3)
+    expect(filtered.data.at(-1)).toMatchObject({ email: 'a@x.io', connectionId: null })
   })
 
   it('filters on a literal, case-insensitive substring', async () => {

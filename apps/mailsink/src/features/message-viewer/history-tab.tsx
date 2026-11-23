@@ -1,9 +1,9 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { DeliveryStatus } from '@mailsink/contracts'
 import { statusColorVar } from '@mailsink/ui'
+import { Link } from '@tanstack/react-router'
 import type { ViewerMessage } from '../../server-fns/messages-types'
 import { formatReceived } from '../inbox/format-relative'
-import { workspacePagePaths } from '../inbox/workspace-pages'
 import { SectionTitle } from './links-tab'
 
 type MessageEvent = ViewerMessage['events'][number]
@@ -27,7 +27,8 @@ const deliveryColor = (d: Delivery) =>
       : statusColorVar('deferred')
 
 // Status timeline (every message event, oldest first) and the webhook deliveries of the
-// message (newest first), with a way to the logs explorer.
+// message (newest first): each opens in the logs explorer inspector, the link below lists
+// the deliveries of this message there.
 export function HistoryTab({ slug, message }: Readonly<{ slug: string; message: ViewerMessage }>) {
   const { i18n } = useLingui()
   const time = (iso: string) => formatReceived(iso, i18n.locale)
@@ -90,7 +91,14 @@ export function HistoryTab({ slug, message }: Readonly<{ slug: string; message: 
                 className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-[13px] border-b border-ms-border px-4 py-[11px] font-mono text-[11.5px] last:border-b-0"
               >
                 <div className="min-w-0">
-                  <div className="truncate">{d.dialectEvent}</div>
+                  <Link
+                    to="/w/$workspaceSlug/logs"
+                    params={{ workspaceSlug: slug }}
+                    search={{ tab: 'webhooks', inspect: d.id }}
+                    className="block truncate text-ms-text underline-offset-4 hover:underline"
+                  >
+                    {d.dialectEvent}
+                  </Link>
                   <div
                     className="truncate text-badge text-ms-text-faint"
                     title={d.endpointUrl ?? d.endpointId}
@@ -115,12 +123,14 @@ export function HistoryTab({ slug, message }: Readonly<{ slug: string; message: 
             ))}
           </ul>
         )}
-        <a
-          href={workspacePagePaths.webhookLogs(slug)}
+        <Link
+          to="/w/$workspaceSlug/logs"
+          params={{ workspaceSlug: slug }}
+          search={{ tab: 'webhooks', messageId: message.id }}
           className="mt-[13px] inline-block text-sm text-ms-accent-text underline-offset-4 hover:underline"
         >
           <Trans>See in the logs explorer →</Trans>
-        </a>
+        </Link>
       </section>
     </div>
   )

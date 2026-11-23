@@ -15,6 +15,7 @@ import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
+import { Route as CaptureDemoRouteImport } from './routes/capture.demo'
 import { Route as CaptureMessagesRouteImport } from './routes/capture.messages'
 import { Route as CaptureOverrideRouteImport } from './routes/capture.override'
 import { Route as CaptureStreamRouteImport } from './routes/capture.stream'
@@ -88,6 +89,11 @@ const McpRoute = McpRouteImport.update({
 const AdminWorkspacesRoute = AdminWorkspacesRouteImport.update({
   id: '/admin/workspaces',
   path: '/admin/workspaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureDemoRoute = CaptureDemoRouteImport.update({
+  id: '/capture/demo',
+  path: '/capture/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CaptureMessagesRoute = CaptureMessagesRouteImport.update({
@@ -334,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
+  '/capture/demo': typeof CaptureDemoRoute
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
   '/capture/stream': typeof CaptureStreamRoute
@@ -386,6 +393,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
+  '/capture/demo': typeof CaptureDemoRoute
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
   '/capture/stream': typeof CaptureStreamRoute
@@ -438,6 +446,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
+  '/capture/demo': typeof CaptureDemoRoute
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
   '/capture/stream': typeof CaptureStreamRoute
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/mcp'
     | '/admin/workspaces'
+    | '/capture/demo'
     | '/capture/messages'
     | '/capture/override'
     | '/capture/stream'
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/mcp'
     | '/admin/workspaces'
+    | '/capture/demo'
     | '/capture/messages'
     | '/capture/override'
     | '/capture/stream'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/mcp'
     | '/admin/workspaces'
+    | '/capture/demo'
     | '/capture/messages'
     | '/capture/override'
     | '/capture/stream'
@@ -648,6 +660,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
   AdminWorkspacesRoute: typeof AdminWorkspacesRouteWithChildren
+  CaptureDemoRoute: typeof CaptureDemoRoute
   CaptureMessagesRoute: typeof CaptureMessagesRouteWithChildren
   CaptureOverrideRoute: typeof CaptureOverrideRouteWithChildren
   CaptureStreamRoute: typeof CaptureStreamRoute
@@ -703,6 +716,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/workspaces'
       fullPath: '/admin/workspaces'
       preLoaderRoute: typeof AdminWorkspacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture/demo': {
+      id: '/capture/demo'
+      path: '/capture/demo'
+      fullPath: '/capture/demo'
+      preLoaderRoute: typeof CaptureDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/capture/messages': {
@@ -1284,6 +1304,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
   AdminWorkspacesRoute: AdminWorkspacesRouteWithChildren,
+  CaptureDemoRoute: CaptureDemoRoute,
   CaptureMessagesRoute: CaptureMessagesRouteWithChildren,
   CaptureOverrideRoute: CaptureOverrideRouteWithChildren,
   CaptureStreamRoute: CaptureStreamRoute,

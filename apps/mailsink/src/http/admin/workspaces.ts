@@ -48,7 +48,10 @@ export const getWorkspace = defineApi({
     getWorkspaceDetail(runtime.db.db, params.id, runtime.config.publicUrl),
 })
 
-/** `PATCH /admin/workspaces/:id`: name, description, retention, rate limit (#106). */
+/**
+ * `PATCH /admin/workspaces/:id`: name, description, retention, rate limit (#106), message
+ * quota and default simulation (#112), as the settings page writes them.
+ */
 export const patchWorkspace = defineApi({
   auth: 'admin',
   params: RefParams,

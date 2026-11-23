@@ -30,6 +30,7 @@ describe('logs stream cache', () => {
     qc.setQueryData<ListWebhookDeliveriesResponse>(listKey, {
       data: [delivery, { ...delivery, id: 'whd_2' }],
       nextCursor: null,
+      total: 1,
     })
     const done = { ...delivery, status: 'succeeded' as const, lastStatusCode: 200 }
     const keys = applyLogEvent(qc, 'staging', { type: 'webhook.delivery', delivery: done })

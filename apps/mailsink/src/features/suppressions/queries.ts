@@ -7,7 +7,8 @@ import {
 } from '@tanstack/react-query'
 import { listSuppressionsFn, removeSuppressionsFn } from '../../server-fns/suppressions-fns'
 
-// Suppression list of a workspace (#42): server pages (keyset cursor) per address filter.
+// Suppression list of a workspace (#42): server pages (keyset cursor) per address filter,
+// each with the total of the filter.
 // Removing one address is optimistic; resetting the list empties every cached page.
 
 export const suppressionsKey = (slug: string) => ['suppressions', slug] as const
@@ -23,13 +24,15 @@ export const suppressionsQuery = (slug: string, email: string | undefined) =>
 
 type Pages = InfiniteData<ListSuppressionsResponse, string | undefined>
 
-/** Every cached page without the rows `keep` refuses. */
+/** Every cached page without the rows `keep` refuses, the total lowered as much. */
 export function filterPages(data: Pages | undefined, keep: (email: string) => boolean) {
   if (!data) return data
-  return {
-    ...data,
-    pages: data.pages.map((p) => ({ ...p, data: p.data.filter((s) => keep(s.email)) })),
-  }
+  const pages = data.pages.map((p) => ({ ...p, data: p.data.filter((s) => keep(s.email)) }))
+  const removed = data.pages.reduce(
+    (n, p, i) => n + p.data.length - (pages[i]?.data.length ?? 0),
+    0,
+  )
+  return { ...data, pages: pages.map((p) => ({ ...p, total: Math.max(0, p.total - removed) })) }
 }
 
 export function useSuppressionMutations(slug: string) {

@@ -1,5 +1,5 @@
 import type { TemplateInputRaw, TemplatePatch } from '@mailsink/contracts'
-import { queryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
+import { infiniteQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { z } from 'zod'
 import {
   createTemplateFn,
@@ -8,13 +8,16 @@ import {
   updateTemplateFn,
 } from '../../server-fns/templates-fns'
 
-// Brevo templates of the settings page (#43): one list per workspace, prefetched by the
-// route loader on the templates section; every change refetches it.
+// Brevo templates of the settings page (#43): pages of 200 by `externalId` per workspace,
+// the first prefetched by the route loader on the templates section, « Load more » for the
+// next; every change refetches them.
 
 export const templatesQuery = (slug: string) =>
-  queryOptions({
+  infiniteQueryOptions({
     queryKey: ['templates', slug],
-    queryFn: () => listTemplatesFn({ data: { slug } }),
+    queryFn: ({ pageParam }) => listTemplatesFn({ data: { slug, cursor: pageParam } }),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (page) => (page.nextCursor === null ? undefined : Number(page.nextCursor)),
   })
 
 export function useTemplateMutations(slug: string) {

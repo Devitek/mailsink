@@ -194,7 +194,9 @@ test('SMTP sessions with their outcome and the SMTP dialogue', async ({ page, lo
   const table = page.getByRole('table', { name: 'SMTP sessions' })
   const rows = table.getByRole('row').filter({ hasText: 'smtp-legacy' })
   await expect(rows).toHaveCount(1)
-  // A second session arrives through the stream (log.smtp).
+  // A second session arrives through the stream (log.smtp), once it is connected: log
+  // frames are never replayed.
+  await expect(page.getByRole('status').filter({ hasText: 'SSE Live' })).toBeVisible()
   await ws.smtp()
   await expect(rows).toHaveCount(2)
 

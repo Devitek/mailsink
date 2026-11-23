@@ -152,7 +152,9 @@ export {
 export { purgeExpiredWebhookDeliveries } from './repositories/retention-webhooks'
 export {
   addSuppressions,
+  countSuppressions,
   deleteSuppressions,
+  type ListedSuppression,
   type ListSuppressionsOptions,
   listSuppressions,
   type NewSuppression,
@@ -189,6 +191,8 @@ export {
   type WebhookWorkspaceRow,
 } from './repositories/webhooks-context'
 export {
+  countWebhookDeliveries,
+  type DeliveryFilters,
   findDeliveryWithEndpoint,
   findWebhookAttempt,
   findWebhookDelivery,

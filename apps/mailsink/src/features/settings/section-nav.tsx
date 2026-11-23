@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 const SECTIONS: { value: SettingsSection; label: ReactNode }[] = [
   { value: 'connections', label: <Trans>Connections</Trans> },
   { value: 'webhooks', label: <Trans>Webhooks</Trans> },
-  { value: 'retention', label: <Trans>Retention</Trans> },
+  { value: 'retention', label: <Trans>Retention & suppression</Trans> },
   { value: 'simulation', label: <Trans>Simulation & rate limit</Trans> },
   { value: 'templates', label: <Trans>Brevo templates</Trans> },
   { value: 'mcp', label: <Trans>MCP</Trans> },

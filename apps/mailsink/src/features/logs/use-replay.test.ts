@@ -37,10 +37,12 @@ describe('optimistic replay', () => {
   })
 
   it('prepends it to first pages whose filters it matches', () => {
-    const page = { data: [source], nextCursor: null }
+    const page = { data: [source], nextCursor: null, total: 1 }
     const row = placeholderReplay(source, 'exact')
     expect(withReplay(page, { limit: 50 }, row)?.data.map((d) => d.id)).toEqual([row.id, 'whd_2'])
     expect(withReplay(page, { cursor: 'whd_9' }, row)).toBe(page)
+    expect(withReplay(page, { page: 2 }, row)).toBe(page)
+    expect(withReplay(page, { messageId: 'msg_9' }, row)).toBe(page)
     expect(withReplay(page, { status: 'failed' }, row)).toBe(page)
     expect(withReplay(page, { payloadFormat: 'brevo' }, row)).toBe(page)
     expect(withReplay(page, { status: 'pending', endpointId: 'whe_1' }, row)?.data).toHaveLength(2)

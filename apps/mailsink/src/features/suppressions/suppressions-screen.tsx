@@ -1,7 +1,8 @@
-import { Trans, useLingui } from '@lingui/react/macro'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { Button, Input } from '@mailsink/ui'
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { facetsQuery } from '../inbox/queries'
 import { ConfirmDialog } from '../workspaces/confirm-dialog'
 import { suppressionsQuery, useSuppressionMutations } from './queries'
 import { SuppressionTable } from './suppression-table'
@@ -15,8 +16,9 @@ type SuppressionsScreenProps = {
 }
 
 // « Suppression list » of the prototype (#42): addresses the simulation stores `suppressed`
-// without drawing a status, newest first, server pages of 50 with « Load more », an address
-// filter kept in the URL, removal of one address and reset of the whole list.
+// without drawing a status, newest first, server pages of 50 with « Load more », the total
+// of the filter, an address filter kept in the URL, removal of one address and reset of
+// the whole list. Kept live by the stream (hard bounces and complaints refetch it).
 export function SuppressionsScreen({ slug, email, onEmail }: SuppressionsScreenProps) {
   const { t } = useLingui()
   const [text, setText] = useState(email ?? '')
@@ -30,9 +32,14 @@ export function SuppressionsScreen({ slug, email, onEmail }: SuppressionsScreenP
   const list = useInfiniteQuery(suppressionsQuery(slug, email))
   const { removeOne, resetAll } = useSuppressionMutations(slug)
   const rows = list.data?.pages.flatMap((p) => p.data) ?? []
+  const total = list.data?.pages[0]?.total
+  const { data: facets } = useQuery(facetsQuery(slug))
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const getScrollElement = useCallback(() => scrollRef.current, [])
+  const remove = useCallback((address: string) => removeOne.mutate(address), [removeOne.mutate])
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
+    <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-[13px] px-[27px] py-[30px] max-sm:px-4">
         <div className="flex flex-wrap items-center justify-between gap-[13px]">
           <div>
@@ -47,6 +54,14 @@ export function SuppressionsScreen({ slug, email, onEmail }: SuppressionsScreenP
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
+            {total !== undefined && (
+              <span
+                className="font-mono text-xs text-ms-text-muted"
+                data-testid="suppression-total"
+              >
+                <Plural value={total} one="# address" other="# addresses" />
+              </span>
+            )}
             <Input
               type="search"
               value={text}
@@ -73,10 +88,12 @@ export function SuppressionsScreen({ slug, email, onEmail }: SuppressionsScreenP
         </div>
         <SuppressionTable
           rows={rows}
+          connections={facets?.connections}
           loading={list.isPending}
           filtered={email !== undefined}
           slug={slug}
-          onRemove={(address) => removeOne.mutate(address)}
+          onRemove={remove}
+          getScrollElement={getScrollElement}
         />
         {(removeOne.isError || list.isError) && (
           <p role="alert" className="text-sm text-ms-danger">

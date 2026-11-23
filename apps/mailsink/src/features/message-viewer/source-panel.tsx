@@ -1,14 +1,13 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { Button, buttonVariants } from '@mailsink/ui'
+import { buttonVariants, SegmentedControl } from '@mailsink/ui'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { MessageOrigin, ViewerMessage } from '../../server-fns/messages-types'
 import { connectionOf } from '../inbox/connection-label'
 import { formatBytes } from '../inbox/format-relative'
 import { messageOriginQuery, rawSourceQuery } from '../inbox/queries'
-import { Segmented } from '../inbox/segmented'
-import { workspacePagePaths } from '../inbox/workspace-pages'
-import { useCopy } from '../shell/use-copy'
+import { CopyButton } from '../shell/copy-button'
 import { SectionTitle } from './links-tab'
 
 type View = 'payload' | 'eml'
@@ -27,7 +26,6 @@ function originText(origin: MessageOrigin): string {
 // MIME source (EML, D9), cut beyond 512 KB in the page, complete in the download.
 export function SourcePanel({ slug, message }: Readonly<{ slug: string; message: ViewerMessage }>) {
   const { t, i18n } = useLingui()
-  const copy = useCopy()
   const [view, setView] = useState<View>('payload')
   const raw = useQuery({ ...rawSourceQuery(slug, message.id), enabled: view === 'eml' })
   const origin = useQuery({ ...messageOriginQuery(slug, message.id), enabled: view === 'payload' })
@@ -57,32 +55,36 @@ export function SourcePanel({ slug, message }: Readonly<{ slug: string; message:
         <SectionTitle>
           <Trans>Source</Trans>
         </SectionTitle>
-        <Segmented
-          label={t`Source view`}
+        <SegmentedControl
+          aria-label={t`Source view`}
           value={view}
-          onChange={setView}
+          onValueChange={setView}
           options={[
             { value: 'payload', label: payloadLabel },
             { value: 'eml', label: t`EML source` },
           ]}
+          fill
         />
         <div className="ml-auto flex gap-2">
-          <Button size="sm" onClick={() => copyable && void copy(copyable)} disabled={!copyable}>
-            <Trans>Copy</Trans>
-          </Button>
+          <CopyButton value={copyable ?? ''} size="sm" disabled={!copyable} />
           {view === 'eml' ? (
             <a href={message.rawUrl} download className={buttonVariants({ size: 'sm' })}>
               <Trans>Download .eml</Trans>
             </a>
           ) : (
             origin.data && (
-              <a
-                href={workspacePagePaths.logs(slug)}
-                title={origin.data.kind === 'api' ? origin.data.logId : origin.data.sessionId}
+              <Link
+                to="/w/$workspaceSlug/logs"
+                params={{ workspaceSlug: slug }}
+                search={
+                  origin.data.kind === 'api'
+                    ? { inspect: origin.data.logId }
+                    : { tab: 'smtp', inspect: origin.data.sessionId }
+                }
                 className={buttonVariants({ size: 'sm' })}
               >
                 <Trans>See in the logs →</Trans>
-              </a>
+              </Link>
             )
           )}
         </div>

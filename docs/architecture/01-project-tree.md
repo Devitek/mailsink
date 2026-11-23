@@ -88,7 +88,8 @@ mailsink/
 │       │   │                             # (POST /capture/messages/:id/events, #34),
 │       │   │                             # webhooks.ts (endpoints, preview, test send, #32,
 │       │   │                             # 422 private_webhook_url, D150), webhooks-deliveries.ts
-│       │   │                             # (delivery log, detail, replay, #33)
+│       │   │                             # (delivery log, detail, replay, #33), demo.ts
+│       │   │                             # (POST /capture/demo, #62)
 │       │   ├── routes/
 │       │   │   ├── __root.tsx                        # html shell: locale, theme, instance and public
 │       │   │   │                                     # URL loaded during SSR; head: product title,
@@ -108,10 +109,13 @@ mailsink/
 │       │   │   ├── w.$workspaceSlug.m.$messageId.html.ts         # preview document (CSP,
 │       │   │   │                                                 # ?remote=blocked, D187)
 │       │   │   ├── w.$workspaceSlug.m.$messageId.attachments.$attachmentId.ts
-│       │   │   ├── w.$workspaceSlug.logs.tsx         # API / SMTP / webhook logs (tabs), planned
-│       │   │   ├── w.$workspaceSlug.suppressions.tsx # planned
-│       │   │   ├── w.$workspaceSlug.webhooks.tsx     # planned
-│       │   │   ├── w.$workspaceSlug.settings.tsx     # defaults, retention, rate limit, planned
+│       │   │   ├── w.$workspaceSlug.logs.tsx         # logs explorer (LogsSearch: tab, facets,
+│       │   │   │                                     # more filters, page, ?inspect=; D190, D213)
+│       │   │   ├── w.$workspaceSlug.suppressions.tsx # suppression list (SuppressionsSearch,
+│       │   │   │                                     # D198, D214)
+│       │   │   ├── w.$workspaceSlug.settings.tsx     # settings (SettingsSearch ?section=:
+│       │   │   │                                     # connections, webhooks, retention &
+│       │   │   │                                     # suppression, simulation, templates, mcp)
 │       │   │   ├── admin.workspaces.ts               # POST, GET
 │       │   │   ├── admin.workspaces.$id.ts           # GET, PATCH (D186), DELETE
 │       │   │   ├── admin.workspaces.$id.key.rotate.ts            # POST: new mskw_ key (D207)
@@ -136,6 +140,7 @@ mailsink/
 │       │   │   ├── capture.override.ts               # GET current, POST activate
 │       │   │   ├── capture.override.reset.ts
 │       │   │   ├── capture.suppressions.ts           # GET, DELETE (reset)
+│       │   │   ├── capture.demo.ts                   # POST: demo messages (#62)
 │       │   │   ├── capture.logs.api.ts               # GET API logs (filters, pages)
 │       │   │   ├── capture.logs.api.$id.ts           # GET one API log (headers, bodies)
 │       │   │   ├── capture.logs.smtp.ts              # GET SMTP sessions
@@ -176,30 +181,53 @@ mailsink/
 │       │   │   │                          # facets, previews, message, raw source, purge
 │       │   │   ├── message-origin.server.ts  # API request or SMTP envelope of a message
 │       │   │   ├── events-fns.ts  events.server.ts  # « Simulate » of the viewer (D180)
+│       │   │   ├── demo-fns.ts  demo.server.ts  # « Load demo messages » (#62)
+│       │   │   ├── logs-fns.ts  logs.server.ts  logs-types.ts  logs-signature.ts  # logs
+│       │   │   │                          # explorer reads, replay, signature check (D191)
+│       │   │   ├── override-fns.ts  override.server.ts  override-types.ts  # override panel
+│       │   │   ├── suppressions-fns.ts  suppressions.server.ts  # suppression list (D198)
+│       │   │   ├── settings-fns.ts  settings.server.ts  settings-types.ts
+│       │   │   │                          # settings-catalog.ts: workspace defaults (D201)
+│       │   │   ├── webhooks-fns.ts  webhooks.server.ts  webhooks-types.ts  # endpoints
+│       │   │   ├── templates-fns.ts  templates.server.ts  # Brevo templates, pages of 200
 │       │   │   └── workspace-types.ts     # UI views of a workspace
 │       │   ├── http/start-server.ts       # request helpers of TanStack Start (cookies,
 │       │   │                              # request), never imported statically (#99, #106)
 │       │   ├── features/                  # UI, one folder per feature
 │       │   │   ├── login/                 # sign-in screen, key field, banners, countdown
-│       │   │   ├── shell/                 # app header, nav tabs (inline or mobile bar),
-│       │   │   │                          # « Language and session » menu, instance block,
-│       │   │   │                          # use-copy.ts (clipboard + toast)
+│       │   │   ├── shell/                 # app header, nav tabs (typed Links, inline or
+│       │   │   │                          # mobile bar), « Language and session » menu,
+│       │   │   │                          # instance block, use-copy.ts and copy-button.tsx
+│       │   │   │                          # (clipboard + toast), count.tsx,
+│       │   │   │                          # use-media-query.ts (narrow layouts)
 │       │   │   ├── workspaces/            # picker popover and page sections (search, paged
 │       │   │   │                          # sections, Base UI Switch "show ephemeral"),
 │       │   │   │                          # ephemeral badge and banner, create / edit dialogs
 │       │   │   │                          # (TanStack Form), confirm dialog, queries
 │       │   │   ├── inbox/                 # TanStack Virtual list, filter bar, facets, empty
-│       │   │   │                          # state, search query, session routes, queries
+│       │   │   │                          # state (« Load demo messages », #62), search
+│       │   │   │                          # query, session routes, queries
 │       │   │   ├── message-viewer/        # header + Simulate bar, sandboxed preview (desktop /
 │       │   │   │                          # mobile, background, remote images blocked or not),
 │       │   │   │                          # text, links, headers + source (payload / EML),
 │       │   │   │                          # history (events, webhook deliveries), downloads
-│       │   │   ├── logs/                  # TanStack Table DataTable + Sheet inspector
-│       │   │   ├── connections/           # TanStack Form, kind-conditional fields, panels,
-│       │   │   │                          # credentials shown once, workspace key card
+│       │   │   ├── logs/                  # DataTables of the three tabs, facets, « More
+│       │   │   │                          # filters » (more-filters.ts), page pager, Sheet
+│       │   │   │                          # inspectors, replay, live cache (D190 to D194)
+│       │   │   ├── connections/           # TanStack Form, kind-conditional fields, panels
+│       │   │   │                          # (credentials shown once, « Active webhooks »),
+│       │   │   │                          # workspace key card
 │       │   │   ├── webhooks/              # scope -> payloadFormat prefill, dialect event
 │       │   │   │                          # labels, live payload/headers preview
-│       │   │   ├── override/              # rates sum <= 100, latency bounds
+│       │   │   ├── override/              # header pill and side panel: rates sum <= 100,
+│       │   │   │                          # latency, chaos, rate limit, rules (D195 to D199)
+│       │   │   ├── suppressions/          # suppression list on the DataTable (virtualized
+│       │   │   │                          # beyond 200 rows), total, filter, reset (D214)
+│       │   │   ├── settings/              # settings page: section nav, connections,
+│       │   │   │                          # retention & suppression, simulation (D200, D201)
+│       │   │   ├── templates/             # Brevo templates: list (« Load more »), editor,
+│       │   │   │                          # server-rendered preview (D203)
+│       │   │   ├── mcp-config/            # MCP endpoint and client snippets (D204)
 │       │   │   └── realtime/              # useWorkspaceStream(): EventSource -> Query cache
 │       │   │                              # (apply-stream-event.ts, D178), live indicator
 │       │   ├── i18n/                      # Lingui (D17, D18)
@@ -307,6 +335,8 @@ mailsink/
 │   │       ├── ingestion/    pipeline.ts (fans out `suppressed`, D153) prepare.ts normalize.ts
 │   │       │                 native.ts compose-eml.ts links.ts idempotency.ts
 │   │       │                 stream-frames.ts testing/fixtures.ts
+│   │       ├── demo/         catalog.ts copy.ts copy-{en,fr}.ts layout.ts seed.ts  # #62,
+│   │       │                 demo set through persistEmails, per-message rules (D210, D211)
 │   │       ├── dialects/     native.ts smtp.ts resend.ts (to NormalizedEmail)
 │   │       │                 resend-ingest.ts resend-read.ts (POST /emails, GET /emails/:id)
 │   │       │                 brevo/{normalize,send}.ts
@@ -318,7 +348,7 @@ mailsink/
 │   │       ├── chaos/        draw.ts smtp-reply.ts                 # D93, D94
 │   │       ├── logs/         writer.ts (createLogWriter, recordSmtpSession) sanitize.ts
 │   │       │                 transcript.ts query.ts views.ts       # #35, D145 to D147
-│   │       ├── suppression/  service.ts
+│   │       ├── suppression/  service.ts (pages with total and connection, D214)
 │   │       ├── overrides/    service.ts views.ts expiry.ts publish.ts (override.changed, D96;
 │   │       │                 activate / reset and publish, D180)
 │   │       ├── events/       bus.ts frames.ts filter.ts replay.ts  # D6, D80 to D84
@@ -353,9 +383,11 @@ mailsink/
 │   │            HTTP, D165, D169) context.ts result.ts schemas.ts urls.ts (absolute URLs)
 │   │            tools/{messages,content,actions,override,logs}.ts testing.ts
 │   ├── ui/                                # shadcn/ui on Base UI + design tokens
-│   │   └── src/ index.ts  components/ (brand, button, card, dialog, field, input, menu, popover,
-│   │            segmented-control (the only one, D208), sheet, status-badge, switch, tabs,
-│   │            toast (D208))  lib/cn.ts  styles/ (tokens.css, tokens-ext.css
+│   │   └── src/ index.ts  components/ (brand, button, card, data-table (+ data-table-rows:
+│   │            virtual rows, hidden columns, row labels, D216), data-table-facet,
+│   │            data-table-pagination (D194), dialog, field, input, menu, popover,
+│   │            segmented-control (the only one, D208), select, sheet, status-badge, switch,
+│   │            tabs, textarea (D200), toast (D208))  lib/cn.ts  styles/ (tokens.css, tokens-ext.css
 │   │            with the faint text override D184, theme.css, index.css, css-declarations.ts,
 │   │            contrast.ts)
 │   └── cli/                               # `mailsink` bin: migrate, mcp (stdio proxy, D14)

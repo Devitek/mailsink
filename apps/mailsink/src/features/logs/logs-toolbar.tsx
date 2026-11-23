@@ -1,10 +1,11 @@
 import { useLingui } from '@lingui/react/macro'
 import type { LogsSearch, LogsTab } from '@mailsink/contracts'
-import { Input } from '@mailsink/ui'
+import { Input, SegmentedControl } from '@mailsink/ui'
 import { useEffect, useState } from 'react'
 import type { LogSources } from '../../server-fns/logs-types'
-import { Count, Segmented } from '../inbox/segmented'
+import { Count } from '../shell/count'
 import { LogsFacets } from './logs-facets'
+import { LogsMoreFilters } from './logs-more-filters'
 import type { SetLogsSearch } from './logs-pager'
 import { tabOf } from './search-query'
 
@@ -39,10 +40,10 @@ export function LogsToolbar({
   return (
     <div className="flex flex-wrap items-center gap-[13px] border-b border-ms-border bg-ms-panel px-6 py-[19px]">
       <h2 className="m-0 mr-2.5 text-heading font-semibold">{t`Logs`}</h2>
-      <Segmented
-        label={t`Log type`}
+      <SegmentedControl
+        aria-label={t`Log type`}
         value={tab}
-        onChange={(value) => setSearch({ tab: value })}
+        onValueChange={(value) => setSearch({ tab: value })}
         className="[&>button]:flex-none"
         options={tabs.map((o) => ({
           value: o.value,
@@ -53,9 +54,11 @@ export function LogsToolbar({
             </>
           ),
         }))}
+        fill
       />
       <fieldset aria-label={t`Filters`} className="m-0 flex flex-wrap gap-2 border-0 p-0">
         <LogsFacets tab={tab} search={search} setSearch={setSearch} sources={sources} />
+        <LogsMoreFilters key={tab} tab={tab} search={search} setSearch={setSearch} />
       </fieldset>
       <div className="flex-1" />
       {tab !== 'webhooks' && (

@@ -4,13 +4,16 @@ import { formatReceived, formatRelative } from './format-relative'
 
 const TICK_MS = 30_000
 
-/** One clock for every row: a re-render every 30 s keeps « 2 min » true. */
-export function useNow(): number {
+/**
+ * One clock for every row: a re-render every 30 s keeps « 2 min » true; countdowns tick
+ * every second (`tickMs`).
+ */
+export function useNow(tickMs = TICK_MS): number {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), TICK_MS)
+    const id = setInterval(() => setNow(Date.now()), tickMs)
     return () => clearInterval(id)
-  }, [])
+  }, [tickMs])
   return now
 }
 

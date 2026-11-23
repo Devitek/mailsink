@@ -4,6 +4,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, notFound, Outlet } from '@tanstack/react-router'
 import { ensureSignedIn } from '../auth/guard'
 import { facetsQuery } from '../features/inbox/queries'
+import { overrideQuery } from '../features/override/queries'
 import { LiveIndicator } from '../features/realtime/live-indicator'
 import { useWorkspaceStream } from '../features/realtime/use-workspace-stream'
 import { AppHeader } from '../features/shell/app-header'
@@ -19,7 +20,11 @@ export const Route = createFileRoute('/w/$workspaceSlug')({
       workspaceQuery(params.workspaceSlug),
     )
     if (!workspace) throw notFound()
-    await context.queryClient.ensureQueryData(facetsQuery(params.workspaceSlug))
+    // The header counts and the override pill render with the page (no pop-in).
+    await Promise.all([
+      context.queryClient.ensureQueryData(facetsQuery(params.workspaceSlug)),
+      context.queryClient.ensureQueryData(overrideQuery(params.workspaceSlug)),
+    ])
   },
   // Children set their own page title; the layout names the workspace, or says it is gone.
   head: ({ matches, params }) => {
@@ -41,7 +46,8 @@ export const Route = createFileRoute('/w/$workspaceSlug')({
 // the live stream indicator, the TTL banner of an ephemeral workspace, then the page (the
 // inbox, or the pages of the other Phase 4 lots). Opening it touches the workspace's
 // activity and makes it the default page after the next sign-in. One stream per open
-// workspace feeds every page.
+// workspace feeds every page; its frames keep the override pill, the counts and the TTL
+// banner live.
 function WorkspaceLayout() {
   const { workspaceSlug } = Route.useParams()
   const { data: workspace } = useSuspenseQuery(workspaceQuery(workspaceSlug))

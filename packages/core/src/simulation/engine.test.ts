@@ -76,6 +76,18 @@ describeDb('simulation engine (settings planner)', (ctx) => {
     ])
   })
 
+  it('applies the rules carried by the message before the stored ones (demo)', async () => {
+    await setWorkspace({ rules: [{ match: '*@x.io', status: 'failed' }] })
+    const id = await send(['a@x.io', 'b@x.io'])
+    await ctx.db
+      .update(messages)
+      .set({ simulation: { rules: [{ match: 'a@x.io', status: 'complained' }] } })
+      .where(eq(messages.id, id))
+    await simulateDelivery(ctx.db, id, { now: at(0) })
+    expect(await recipientStatuses(id)).toEqual({ 'a@x.io': 'complained', 'b@x.io': 'failed' })
+    expect((await message(id))?.simulation).toMatchObject({ rules: [{ match: 'a@x.io' }] })
+  })
+
   it('adds hard_bounce and complained recipients to the suppression list', async () => {
     await setWorkspace({
       rules: [

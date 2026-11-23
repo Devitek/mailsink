@@ -41,7 +41,8 @@ export type FormMessages = {
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,62}$/
 const RATE_RE = /^\s*([1-9]\d{0,5})?\s*$/
 
-const name = (m: FormMessages) => z.string().trim().min(1, m.nameRequired).max(80)
+const name = (m: Pick<FormMessages, 'nameRequired'>) =>
+  z.string().trim().min(1, m.nameRequired).max(80)
 const rate = (m: FormMessages) => z.string().regex(RATE_RE, m.rateInvalid)
 
 export type NewWorkspaceValues = {
@@ -87,19 +88,19 @@ export function toCreateRequest(
   }
 }
 
+/**
+ * « Edit » of the workspace card: name and description only. The defaults (retention,
+ * quota, rate limit, simulation) have one place, the settings page (#112).
+ */
 export type EditWorkspaceValues = {
   name: string
   description: string
-  retention: string
-  rateLimit: string
 }
 
-export const editWorkspaceSchema = (m: FormMessages) =>
+export const editWorkspaceSchema = (m: Pick<FormMessages, 'nameRequired'>) =>
   z.object({
     name: name(m),
     description: z.string().max(500),
-    retention: z.string(),
-    rateLimit: rate(m),
   })
 
 export function toUpdateRequest(
@@ -108,7 +109,5 @@ export function toUpdateRequest(
   return {
     name: values.name.trim(),
     description: values.description.trim() || null,
-    retention: retentionSeconds(values.retention),
-    rateLimit: rateLimitOf(values.rateLimit),
   }
 }
