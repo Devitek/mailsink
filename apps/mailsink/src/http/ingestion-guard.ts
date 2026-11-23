@@ -37,7 +37,7 @@ const decisions = new WeakMap<Request, RateLimitDecision>()
  */
 export const ingestionGuardExtension: ApiExtension = {
   name: 'ingestion-guard',
-  afterAuth: async ({ request, requestId, runtime, auth }) => {
+  afterAuth: async ({ request, runtime, auth }) => {
     if (auth?.kind !== 'workspace' || !auth.connection) return
     const connection = auth.connection
     const settings = await loadEffectiveSettings(
@@ -60,10 +60,8 @@ export const ingestionGuardExtension: ApiExtension = {
       const seconds = verdict.rateLimit?.retryAfterSeconds ?? 1
       throw new DomainError('rate_limited', `Rate limit exceeded, retry in ${seconds}s`)
     }
+    // Both refusals are logged in api_logs with their errorCode (request log, #35).
     if (rejection?.reason === 'chaos_injected') {
-      console.info(
-        `[mailsink] chaos: ${request.method} ${new URL(request.url).pathname} answered ${rejection.code} (request ${requestId}, connection ${connection.id}, errorCode=chaos_injected)`,
-      )
       throw new DomainError('chaos_injected', `Simulated failure (chaos ${rejection.code})`, {
         status: rejection.code,
       })

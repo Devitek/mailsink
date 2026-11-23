@@ -1,6 +1,7 @@
 import type { Runtime } from '../runtime/container'
 import { activityExtension } from './activity'
 import type { AuthFor, AuthMode } from './auth'
+import { requestLogExtension } from './logs-extension'
 
 export interface RequestContext<M extends AuthMode = AuthMode> {
   request: Request
@@ -15,7 +16,7 @@ export interface RequestContext<M extends AuthMode = AuthMode> {
  * Hook into every defineApi() route without touching it. Users: workspace activity (#20,
  * `afterAuth`), the ingestion guard on ingestion routes only (#24, #25, `afterAuth` throws
  * `rate_limited` / `chaos_injected`, `onResponse` adds the headers, see ingestion-guard.ts),
- * later the request log (#35, `onResponse` writes `api_logs`).
+ * the request log (#35, `onResponse` queues the `api_logs` row, see logs-extension.ts).
  */
 export interface ApiExtension {
   name: string
@@ -33,4 +34,6 @@ export interface ApiExtension {
 }
 
 /** Extensions applied to every route; features register theirs here. */
-export const DEFAULT_EXTENSIONS: readonly ApiExtension[] = [activityExtension]
+// The request log runs first: its afterAuth must clone the body before a later extension
+// refuses the call.
+export const DEFAULT_EXTENSIONS: readonly ApiExtension[] = [requestLogExtension, activityExtension]
