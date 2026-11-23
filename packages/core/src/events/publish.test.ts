@@ -73,8 +73,9 @@ describeDb('event publication: ingestion, simulation and replay', (ctx) => {
       'message.event',
       'message.created',
     ])
+    const created = seen[0]?.event
     expect(seen[1]?.event).toMatchObject({
-      messageId: (seen[0]?.event as { message: { id: string } }).message.id,
+      messageId: created?.type === 'message.created' ? created.message.id : 'missing',
       event: { type: 'suppressed', recipient: 'gone@x.io', data: { reason: expect.any(String) } },
     })
   })
