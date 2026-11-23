@@ -8,6 +8,7 @@ import {
 } from '@mailsink/core'
 import type { ConnectionAuth } from '../auth'
 import { defineApi } from '../handler'
+import { INGESTION_EXTENSIONS } from '../ingestion-guard'
 
 /** Set on a response replayed from a previous request with the same Idempotency-Key. */
 export const REPLAYED_HEADER = 'Idempotent-Replayed'
@@ -30,6 +31,7 @@ export const postEmail = defineApi({
   auth: 'connection',
   body: SendEmailRequest,
   maxBodyBytes: 'message',
+  extensions: INGESTION_EXTENSIONS,
   handler: async ({ request, runtime, auth, body }) =>
     toResponse(
       await sendNativeEmail(
@@ -46,6 +48,7 @@ export const postEmailBatch = defineApi({
   auth: 'connection',
   body: BatchRequest,
   maxBodyBytes: 'message',
+  extensions: INGESTION_EXTENSIONS,
   handler: async ({ request, runtime, auth, body }) =>
     toResponse(
       await sendNativeBatch(
