@@ -19,3 +19,17 @@
   --ms-shadow-sheet: -20px 0 50px rgb(0 0 0 / 0.3);
   --ms-shadow-popover: 0 16px 40px rgb(0 0 0 / 0.35);
 }
+
+/* Faint text at 4.5:1 (proposition D184, #99): the delivered values reach about 2.5:1 on
+ * --ms-bg in light and 3.2:1 in dark, under WCAG AA for the small texts that use them
+ * (section labels, reassurance line, instance block, placeholders). Same hue, darkened in
+ * light and lightened in dark just enough for 4.5:1 on --ms-bg, --ms-panel and --ms-raised
+ * (the charter criterion of IMPLEMENTATION.md); still a step below --ms-text-muted.
+ * Specificity (0,2,0) wins over tokens.css whatever the theme attribute. */
+:root:not([data-theme="dark"]) {
+  --ms-text-faint: #6e7075;
+}
+
+:root[data-theme="dark"] {
+  --ms-text-faint: #7b808a;
+}
