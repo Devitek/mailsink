@@ -18,11 +18,10 @@ sequenceDiagram
   participant B as Event bus
   participant U as UI (SSE + Query) / MCP / wait=true
 
-  C->>R: POST /emails (Resend) | /v3/smtp/email (Brevo) | /v1/emails | SMTP DATA
-  R->>R: Dialect schema (Zod) -> NormalizedEmail
-  R->>A: resolve credential (msk_ sha256 | SMTP scrypt cache)
+  C->>R: POST /emails (Resend) | /v3/smtp/email (Brevo) | /v1/emails | SMTP MAIL FROM
+  R->>A: resolve credential (msk_ sha256 | SMTP AUTH, scrypt cache)
   A-->>R: workspace + connection (401/535 otherwise, logged without body)
-  R->>R: request log: clone the body (read in the background, D146)
+  R->>R: request log: mark the body as wanted (read once, D146, D157)
   A--)DB: touch last_activity_at, expires_at (throttled, D16)
 
   R->>S: effective settings(workspace, connection)
@@ -31,19 +30,21 @@ sequenceDiagram
   R->>L: take(connection, rateLimit)
   alt bucket empty
     L-->>R: denied, resetAt
-    R-->>C: 429 + Retry-After + X-RateLimit-* | SMTP 451 4.7.1
+    R-->>C: 429 + Retry-After + X-RateLimit-* | SMTP 451 4.7.1 on MAIL FROM
     R--)DB: api_logs errorCode=rate_limited (async)
   end
   alt chaos draw hits errorRate
-    R-->>C: 429/500/502/503 | SMTP 421/451/452/550 (nothing stored)
+    R-->>C: 429/500/502/503 | SMTP 421/451/452/550 on MAIL FROM (nothing stored)
     R--)DB: api_logs errorCode=chaos_injected (async)
   end
+  Note over R: SMTP: the guard runs on MAIL FROM, one token per transaction,<br/>before any byte of DATA is read (D132)
+  R->>R: body (HTTP, capped) | DATA (SMTP) -> dialect schema (Zod) -> NormalizedEmail
 
   R->>P: ingest(normalized, ctx, idempotencyKey)
   P->>DB: idempotency lookup (replay stored response if same hash, 409 if different)
   P->>P: compose EML if missing (D9), extract links, check suppression list
-  P->>DB: TX: blobs, message(status=queued), recipients, attachments,<br/>event accepted (+ suppressed), idempotency row,<br/>job simulate_delivery(run_at = now, D70)
-  P->>B: after commit: publish message.created (+ message.event suppressed, D81)
+  P->>DB: TX: blobs, message(status=queued), recipients, attachments,<br/>event accepted (+ suppressed), idempotency row,<br/>job simulate_delivery(run_at = now, D70),<br/>email.suppressed deliveries + deliver_webhook jobs (D153)
+  P->>B: after commit: publish message.created (+ message.event suppressed, D81)<br/>and webhook.delivery per created delivery
   P-->>R: message ids
   R-->>C: 200 {id} | 201 {messageId} | 250 queued as msg_…
   R--)DB: api_logs / smtp_sessions (async: headers redacted, attachments stripped,<br/>bodies truncated, transcript capped, D145 to D147)
@@ -52,19 +53,22 @@ sequenceDiagram
   Note over Q: polls jobs FOR UPDATE SKIP LOCKED
   Q->>DB: claim simulate_delivery
   Q->>S: first run: effective settings (overrides active now), per recipient<br/>rule match first, else weighted draw; status + delay (D70, D71)
-  Q->>DB: TX (message locked): queued -> event sent, decisions in messages.simulation,<br/>aggregate message.status, follow-up job at the earliest pending decision
+  Q->>DB: TX (message locked): queued -> event sent, decisions in messages.simulation,<br/>aggregate message.status, follow-up job at the earliest pending decision,<br/>webhook_deliveries rows + deliver_webhook jobs of the run's events (D152)
   Note over Q: follow-up run, once a delay is over
-  Q->>DB: TX: event + final status per due recipient,<br/>hard_bounce/complained -> suppressions upsert,<br/>deferred -> decided again 1 s + delay later (4th: soft_bounce, D72),<br/>next follow-up job if a decision is pending,<br/>webhook_deliveries rows + deliver_webhook jobs (#33)
-  Q->>B: after commit: message.event per written row, then message.status (D95)
+  Q->>DB: TX: event + final status per due recipient,<br/>hard_bounce/complained -> suppressions upsert,<br/>deferred -> decided again 1 s + delay later (4th: soft_bounce, D72),<br/>next follow-up job if a decision is pending,<br/>automatic opened / clicked of the delivered recipients (D143),<br/>webhook_deliveries rows + deliver_webhook jobs (D152)
+  Q->>B: after commit: message.event per written row, then message.status (D95),<br/>then the engagement events and one webhook.delivery per delivery (D144)
 
   Note over Q,W: fan-out at status time: endpoints whose scope matches (connection or<br/>workspace) and whose canonical events include it. Formatter chosen by the<br/>endpoint payloadFormat, never by the ingestion channel (D20). Body serialized once.
   Q->>W: claim deliver_webhook
   W->>W: formatters[payloadFormat].sign(stored body, attempt timestamp)<br/>unified: X-Mailsink-* · resend: svix-* · brevo: Authorization / custom headers
-  W->>C: POST endpoint URL (10 s timeout)
+  opt MAILSINK_WEBHOOK_BLOCK_PRIVATE=true
+    W->>W: resolve the URL host; a private, loopback or link-local address<br/>is a final failed attempt, nothing sent (D150, D155)
+  end
+  W->>C: POST endpoint URL (10 s timeout, redirects not followed)
   alt 2xx
-    W->>DB: attempt (exact headers sent) + delivery succeeded
+    W->>DB: TX: attempt (exact headers sent) + delivery succeeded
   else error / non-2xx
-    W->>DB: attempt + retrying, job run_at = backoff(n)
+    W->>DB: TX: attempt + retrying + next deliver_webhook job (backoff, 8 attempts, D138)
   end
   W->>B: publish webhook.delivery
 
@@ -73,9 +77,15 @@ sequenceDiagram
   U->>U: wait=true and MCP wait_for_email resolve on match
 
   opt Manual event (E2E test, UI link click, MCP trigger_email_event)
-    U->>R: POST /capture/messages/:id/events {type: clicked, url}
-    R->>DB: event clicked + webhook deliveries + jobs
-    R->>B: publish message.event
+    U->>R: POST /capture/messages/:id/events {type: clicked, url} | {type: status, status}
+    R->>DB: TX (message locked): events (origin api), forced status + suppressions +<br/>aggregate (status only), webhook deliveries + jobs (D142)
+    R->>B: after commit: message.event per event, message.status if it changed,<br/>webhook.delivery per delivery
+  end
+
+  opt Webhook test send and replay
+    U->>R: POST /capture/webhooks/:id/test | POST /capture/webhooks/deliveries/:id/replay
+    R->>DB: delivery (test: sample body, one attempt sent at once, D140;<br/>replay: deliver_webhook job, exact or resign, D139)
+    R->>B: publish webhook.delivery
   end
 
   opt Override API (POST /capture/override, /capture/override/reset)
@@ -84,7 +94,7 @@ sequenceDiagram
     R->>B: publish override.changed (D96)
   end
 
-  Note over DB: Schedulers: retention purge, override expiry (5 s, publishes<br/>override.changed, D96), ephemeral GC (30 s, expires_at < now -><br/>DELETE CASCADE, publishes workspace.deleted), idempotency cleanup
+  Note over DB: Schedulers: retention purge (messages, logs, finished webhook<br/>deliveries D154, failed jobs), override expiry (5 s, publishes<br/>override.changed, D96), ephemeral GC (30 s, expires_at < now -><br/>DELETE CASCADE, publishes workspace.deleted), idempotency cleanup
 ```
 
 ## Notes
@@ -103,14 +113,23 @@ sequenceDiagram
   `rng.ts` generator); `recorder.ts` writes statuses, events and suppressions;
   `aggregate.ts` derives the message status; `snapshot.ts` reads and checks
   `messages.simulation`. The job side is `jobs/handlers/simulate.ts` (payload, run) and
-  `simulate-publish.ts` (frames of the rows the run returns, D95).
+  `simulate-publish.ts` (frames of the rows the run returns, D95); `fan-out-run.ts`
+  writes the automatic opened / clicked events and the webhook deliveries inside the run's
+  transaction, and `jobs/handlers/simulate-webhooks.ts` publishes them after the commit
+  (D152).
+- **Webhook fan-out**: every write of `message_events` fans out in its own transaction:
+  ingestion (`suppressed`, D153), a simulation run (D152) and manual events (D142).
+  Nothing is lost between the event and its deliveries; a delivery is then attempted by
+  its own jobs (D138), whatever happens to the endpoint afterwards (D141).
 - **Duplicated follow-up job**: a crash between the commit of a run and the deletion of
   its job runs the job again; that replay writes no event but may enqueue a second
   follow-up job, which later completes without effect (doc 02, D99).
 - **Request log** (#35): every call of a logged surface writes one `api_logs` row after
   its response is built, refused calls included (`unauthorized`, `rate_limited`,
   `chaos_injected`, validation errors); reading the logs and the SSE stream are not
-  logged (D145). The write is asynchronous and never fails the call; the runtime stop
+  logged (D145); calls without workspace are read through `GET /admin/logs/api` (D151).
+  The request body is read once: the bytes the handler buffered, else the unread body at
+  response time (D157). The write is asynchronous and never fails the call; the runtime stop
   waits for the pending writes before closing the database. SMTP sessions are written by
   `recordSmtpSession` once the session ends.
 - **Dev restart** (`vite dev`, D148): requests arriving while a restart is debounced or
