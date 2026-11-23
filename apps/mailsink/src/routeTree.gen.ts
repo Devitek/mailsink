@@ -35,7 +35,8 @@ import { Route as CaptureWebhooksDeliveriesRouteImport } from './routes/capture.
 import { Route as CaptureWebhooksPreviewRouteImport } from './routes/capture.webhooks.preview'
 import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
 import { Route as V3SmtpEmailRouteImport } from './routes/v3.smtp.email'
-import { Route as WWorkspaceSlugConnectionsRouteImport } from './routes/w.$workspaceSlug_.connections'
+import { Route as WWorkspaceSlugIndexRouteImport } from './routes/w.$workspaceSlug.index'
+import { Route as WWorkspaceSlugConnectionsRouteImport } from './routes/w.$workspaceSlug.connections'
 import { Route as AdminLogsApiIdRouteImport } from './routes/admin.logs.api.$id'
 import { Route as AdminWorkspacesIdTemplatesRouteImport } from './routes/admin.workspaces.$id.templates'
 import { Route as CaptureLogsApiIdRouteImport } from './routes/capture.logs.api.$id'
@@ -44,10 +45,14 @@ import { Route as CaptureMessagesIdEventsRouteImport } from './routes/capture.me
 import { Route as CaptureMessagesIdRawRouteImport } from './routes/capture.messages.$id.raw'
 import { Route as CaptureWebhooksIdChar91testChar93RouteImport } from './routes/capture.webhooks.$id.[test]'
 import { Route as CaptureWebhooksDeliveriesIdRouteImport } from './routes/capture.webhooks.deliveries.$id'
+import { Route as WWorkspaceSlugMStreamRouteImport } from './routes/w.$workspaceSlug.m.stream'
 import { Route as AdminWorkspacesIdTemplatesTemplateIdRouteImport } from './routes/admin.workspaces.$id.templates.$templateId'
 import { Route as CaptureMessagesIdAttachmentsAttIdRouteImport } from './routes/capture.messages.$id.attachments.$attId'
 import { Route as CaptureWebhooksDeliveriesIdReplayRouteImport } from './routes/capture.webhooks.deliveries.$id.replay'
+import { Route as WWorkspaceSlugMMessageIdHtmlRouteImport } from './routes/w.$workspaceSlug.m.$messageId.html'
+import { Route as WWorkspaceSlugMMessageIdRawRouteImport } from './routes/w.$workspaceSlug.m.$messageId.raw'
 import { Route as AdminWorkspacesIdConnectionsConnectionIdRotateRouteImport } from './routes/admin.workspaces.$id.connections.$connectionId.rotate'
+import { Route as WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRouteImport } from './routes/w.$workspaceSlug.m.$messageId.attachments.$attachmentId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -180,11 +185,16 @@ const V3SmtpEmailRoute = V3SmtpEmailRouteImport.update({
   path: '/v3/smtp/email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WWorkspaceSlugIndexRoute = WWorkspaceSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WWorkspaceSlugRoute,
+} as any)
 const WWorkspaceSlugConnectionsRoute =
   WWorkspaceSlugConnectionsRouteImport.update({
-    id: '/w/$workspaceSlug_/connections',
-    path: '/w/$workspaceSlug/connections',
-    getParentRoute: () => rootRouteImport,
+    id: '/connections',
+    path: '/connections',
+    getParentRoute: () => WWorkspaceSlugRoute,
   } as any)
 const AdminLogsApiIdRoute = AdminLogsApiIdRouteImport.update({
   id: '/$id',
@@ -229,6 +239,11 @@ const CaptureWebhooksDeliveriesIdRoute =
     path: '/$id',
     getParentRoute: () => CaptureWebhooksDeliveriesRoute,
   } as any)
+const WWorkspaceSlugMStreamRoute = WWorkspaceSlugMStreamRouteImport.update({
+  id: '/m/stream',
+  path: '/m/stream',
+  getParentRoute: () => WWorkspaceSlugRoute,
+} as any)
 const AdminWorkspacesIdTemplatesTemplateIdRoute =
   AdminWorkspacesIdTemplatesTemplateIdRouteImport.update({
     id: '/$templateId',
@@ -247,11 +262,29 @@ const CaptureWebhooksDeliveriesIdReplayRoute =
     path: '/replay',
     getParentRoute: () => CaptureWebhooksDeliveriesIdRoute,
   } as any)
+const WWorkspaceSlugMMessageIdHtmlRoute =
+  WWorkspaceSlugMMessageIdHtmlRouteImport.update({
+    id: '/m/$messageId/html',
+    path: '/m/$messageId/html',
+    getParentRoute: () => WWorkspaceSlugRoute,
+  } as any)
+const WWorkspaceSlugMMessageIdRawRoute =
+  WWorkspaceSlugMMessageIdRawRouteImport.update({
+    id: '/m/$messageId/raw',
+    path: '/m/$messageId/raw',
+    getParentRoute: () => WWorkspaceSlugRoute,
+  } as any)
 const AdminWorkspacesIdConnectionsConnectionIdRotateRoute =
   AdminWorkspacesIdConnectionsConnectionIdRotateRouteImport.update({
     id: '/connections/$connectionId/rotate',
     path: '/connections/$connectionId/rotate',
     getParentRoute: () => AdminWorkspacesIdRoute,
+  } as any)
+const WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRoute =
+  WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRouteImport.update({
+    id: '/m/$messageId/attachments/$attachmentId',
+    path: '/m/$messageId/attachments/$attachmentId',
+    getParentRoute: () => WWorkspaceSlugRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -269,7 +302,7 @@ export interface FileRoutesByFullPath {
   '/emails/$id': typeof EmailsIdRoute
   '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
-  '/w/$workspaceSlug': typeof WWorkspaceSlugRoute
+  '/w/$workspaceSlug': typeof WWorkspaceSlugRouteWithChildren
   '/admin/logs/api': typeof AdminLogsApiRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
@@ -282,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
   '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
+  '/w/$workspaceSlug/': typeof WWorkspaceSlugIndexRoute
   '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
@@ -290,10 +324,14 @@ export interface FileRoutesByFullPath {
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
   '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
+  '/w/$workspaceSlug/m/stream': typeof WWorkspaceSlugMStreamRoute
   '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
   '/capture/webhooks/deliveries/$id/replay': typeof CaptureWebhooksDeliveriesIdReplayRoute
+  '/w/$workspaceSlug/m/$messageId/html': typeof WWorkspaceSlugMMessageIdHtmlRoute
+  '/w/$workspaceSlug/m/$messageId/raw': typeof WWorkspaceSlugMMessageIdRawRoute
   '/admin/workspaces/$id/connections/$connectionId/rotate': typeof AdminWorkspacesIdConnectionsConnectionIdRotateRoute
+  '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId': typeof WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -310,7 +348,6 @@ export interface FileRoutesByTo {
   '/emails/$id': typeof EmailsIdRoute
   '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
-  '/w/$workspaceSlug': typeof WWorkspaceSlugRoute
   '/admin/logs/api': typeof AdminLogsApiRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
@@ -323,6 +360,7 @@ export interface FileRoutesByTo {
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
   '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
+  '/w/$workspaceSlug': typeof WWorkspaceSlugIndexRoute
   '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
@@ -331,10 +369,14 @@ export interface FileRoutesByTo {
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
   '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
+  '/w/$workspaceSlug/m/stream': typeof WWorkspaceSlugMStreamRoute
   '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
   '/capture/webhooks/deliveries/$id/replay': typeof CaptureWebhooksDeliveriesIdReplayRoute
+  '/w/$workspaceSlug/m/$messageId/html': typeof WWorkspaceSlugMMessageIdHtmlRoute
+  '/w/$workspaceSlug/m/$messageId/raw': typeof WWorkspaceSlugMMessageIdRawRoute
   '/admin/workspaces/$id/connections/$connectionId/rotate': typeof AdminWorkspacesIdConnectionsConnectionIdRotateRoute
+  '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId': typeof WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -352,7 +394,7 @@ export interface FileRoutesById {
   '/emails/$id': typeof EmailsIdRoute
   '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
-  '/w/$workspaceSlug': typeof WWorkspaceSlugRoute
+  '/w/$workspaceSlug': typeof WWorkspaceSlugRouteWithChildren
   '/admin/logs/api': typeof AdminLogsApiRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
@@ -364,7 +406,8 @@ export interface FileRoutesById {
   '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
-  '/w/$workspaceSlug_/connections': typeof WWorkspaceSlugConnectionsRoute
+  '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
+  '/w/$workspaceSlug/': typeof WWorkspaceSlugIndexRoute
   '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
@@ -373,10 +416,14 @@ export interface FileRoutesById {
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
   '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
+  '/w/$workspaceSlug/m/stream': typeof WWorkspaceSlugMStreamRoute
   '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
   '/capture/webhooks/deliveries/$id/replay': typeof CaptureWebhooksDeliveriesIdReplayRoute
+  '/w/$workspaceSlug/m/$messageId/html': typeof WWorkspaceSlugMMessageIdHtmlRoute
+  '/w/$workspaceSlug/m/$messageId/raw': typeof WWorkspaceSlugMMessageIdRawRoute
   '/admin/workspaces/$id/connections/$connectionId/rotate': typeof AdminWorkspacesIdConnectionsConnectionIdRotateRoute
+  '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId': typeof WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -408,6 +455,7 @@ export interface FileRouteTypes {
     | '/v1/emails/batch'
     | '/v3/smtp/email'
     | '/w/$workspaceSlug/connections'
+    | '/w/$workspaceSlug/'
     | '/admin/logs/api/$id'
     | '/admin/workspaces/$id/templates'
     | '/capture/logs/api/$id'
@@ -416,10 +464,14 @@ export interface FileRouteTypes {
     | '/capture/messages/$id/raw'
     | '/capture/webhooks/$id/test'
     | '/capture/webhooks/deliveries/$id'
+    | '/w/$workspaceSlug/m/stream'
     | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
     | '/capture/webhooks/deliveries/$id/replay'
+    | '/w/$workspaceSlug/m/$messageId/html'
+    | '/w/$workspaceSlug/m/$messageId/raw'
     | '/admin/workspaces/$id/connections/$connectionId/rotate'
+    | '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -436,7 +488,6 @@ export interface FileRouteTypes {
     | '/emails/$id'
     | '/emails/batch'
     | '/v1/emails'
-    | '/w/$workspaceSlug'
     | '/admin/logs/api'
     | '/admin/workspaces/$id'
     | '/capture/logs/api'
@@ -449,6 +500,7 @@ export interface FileRouteTypes {
     | '/v1/emails/batch'
     | '/v3/smtp/email'
     | '/w/$workspaceSlug/connections'
+    | '/w/$workspaceSlug'
     | '/admin/logs/api/$id'
     | '/admin/workspaces/$id/templates'
     | '/capture/logs/api/$id'
@@ -457,10 +509,14 @@ export interface FileRouteTypes {
     | '/capture/messages/$id/raw'
     | '/capture/webhooks/$id/test'
     | '/capture/webhooks/deliveries/$id'
+    | '/w/$workspaceSlug/m/stream'
     | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
     | '/capture/webhooks/deliveries/$id/replay'
+    | '/w/$workspaceSlug/m/$messageId/html'
+    | '/w/$workspaceSlug/m/$messageId/raw'
     | '/admin/workspaces/$id/connections/$connectionId/rotate'
+    | '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId'
   id:
     | '__root__'
     | '/'
@@ -489,7 +545,8 @@ export interface FileRouteTypes {
     | '/capture/webhooks/preview'
     | '/v1/emails/batch'
     | '/v3/smtp/email'
-    | '/w/$workspaceSlug_/connections'
+    | '/w/$workspaceSlug/connections'
+    | '/w/$workspaceSlug/'
     | '/admin/logs/api/$id'
     | '/admin/workspaces/$id/templates'
     | '/capture/logs/api/$id'
@@ -498,10 +555,14 @@ export interface FileRouteTypes {
     | '/capture/messages/$id/raw'
     | '/capture/webhooks/$id/test'
     | '/capture/webhooks/deliveries/$id'
+    | '/w/$workspaceSlug/m/stream'
     | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
     | '/capture/webhooks/deliveries/$id/replay'
+    | '/w/$workspaceSlug/m/$messageId/html'
+    | '/w/$workspaceSlug/m/$messageId/raw'
     | '/admin/workspaces/$id/connections/$connectionId/rotate'
+    | '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -517,12 +578,11 @@ export interface RootRouteChildren {
   CaptureSuppressionsRoute: typeof CaptureSuppressionsRoute
   CaptureWebhooksRoute: typeof CaptureWebhooksRouteWithChildren
   V1EmailsRoute: typeof V1EmailsRouteWithChildren
-  WWorkspaceSlugRoute: typeof WWorkspaceSlugRoute
+  WWorkspaceSlugRoute: typeof WWorkspaceSlugRouteWithChildren
   AdminLogsApiRoute: typeof AdminLogsApiRouteWithChildren
   CaptureLogsApiRoute: typeof CaptureLogsApiRouteWithChildren
   CaptureLogsSmtpRoute: typeof CaptureLogsSmtpRouteWithChildren
   V3SmtpEmailRoute: typeof V3SmtpEmailRoute
-  WWorkspaceSlugConnectionsRoute: typeof WWorkspaceSlugConnectionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -709,12 +769,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V3SmtpEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/w/$workspaceSlug_/connections': {
-      id: '/w/$workspaceSlug_/connections'
-      path: '/w/$workspaceSlug/connections'
+    '/w/$workspaceSlug/': {
+      id: '/w/$workspaceSlug/'
+      path: '/'
+      fullPath: '/w/$workspaceSlug/'
+      preLoaderRoute: typeof WWorkspaceSlugIndexRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/connections': {
+      id: '/w/$workspaceSlug/connections'
+      path: '/connections'
       fullPath: '/w/$workspaceSlug/connections'
       preLoaderRoute: typeof WWorkspaceSlugConnectionsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
     }
     '/admin/logs/api/$id': {
       id: '/admin/logs/api/$id'
@@ -772,6 +839,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaptureWebhooksDeliveriesIdRouteImport
       parentRoute: typeof CaptureWebhooksDeliveriesRoute
     }
+    '/w/$workspaceSlug/m/stream': {
+      id: '/w/$workspaceSlug/m/stream'
+      path: '/m/stream'
+      fullPath: '/w/$workspaceSlug/m/stream'
+      preLoaderRoute: typeof WWorkspaceSlugMStreamRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
     '/admin/workspaces/$id/templates/$templateId': {
       id: '/admin/workspaces/$id/templates/$templateId'
       path: '/$templateId'
@@ -793,12 +867,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaptureWebhooksDeliveriesIdReplayRouteImport
       parentRoute: typeof CaptureWebhooksDeliveriesIdRoute
     }
+    '/w/$workspaceSlug/m/$messageId/html': {
+      id: '/w/$workspaceSlug/m/$messageId/html'
+      path: '/m/$messageId/html'
+      fullPath: '/w/$workspaceSlug/m/$messageId/html'
+      preLoaderRoute: typeof WWorkspaceSlugMMessageIdHtmlRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
+    '/w/$workspaceSlug/m/$messageId/raw': {
+      id: '/w/$workspaceSlug/m/$messageId/raw'
+      path: '/m/$messageId/raw'
+      fullPath: '/w/$workspaceSlug/m/$messageId/raw'
+      preLoaderRoute: typeof WWorkspaceSlugMMessageIdRawRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
+    }
     '/admin/workspaces/$id/connections/$connectionId/rotate': {
       id: '/admin/workspaces/$id/connections/$connectionId/rotate'
       path: '/connections/$connectionId/rotate'
       fullPath: '/admin/workspaces/$id/connections/$connectionId/rotate'
       preLoaderRoute: typeof AdminWorkspacesIdConnectionsConnectionIdRotateRouteImport
       parentRoute: typeof AdminWorkspacesIdRoute
+    }
+    '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId': {
+      id: '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId'
+      path: '/m/$messageId/attachments/$attachmentId'
+      fullPath: '/w/$workspaceSlug/m/$messageId/attachments/$attachmentId'
+      preLoaderRoute: typeof WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRouteImport
+      parentRoute: typeof WWorkspaceSlugRoute
     }
   }
 }
@@ -967,6 +1062,29 @@ const V1EmailsRouteWithChildren = V1EmailsRoute._addFileChildren(
   V1EmailsRouteChildren,
 )
 
+interface WWorkspaceSlugRouteChildren {
+  WWorkspaceSlugConnectionsRoute: typeof WWorkspaceSlugConnectionsRoute
+  WWorkspaceSlugIndexRoute: typeof WWorkspaceSlugIndexRoute
+  WWorkspaceSlugMStreamRoute: typeof WWorkspaceSlugMStreamRoute
+  WWorkspaceSlugMMessageIdHtmlRoute: typeof WWorkspaceSlugMMessageIdHtmlRoute
+  WWorkspaceSlugMMessageIdRawRoute: typeof WWorkspaceSlugMMessageIdRawRoute
+  WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRoute: typeof WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRoute
+}
+
+const WWorkspaceSlugRouteChildren: WWorkspaceSlugRouteChildren = {
+  WWorkspaceSlugConnectionsRoute: WWorkspaceSlugConnectionsRoute,
+  WWorkspaceSlugIndexRoute: WWorkspaceSlugIndexRoute,
+  WWorkspaceSlugMStreamRoute: WWorkspaceSlugMStreamRoute,
+  WWorkspaceSlugMMessageIdHtmlRoute: WWorkspaceSlugMMessageIdHtmlRoute,
+  WWorkspaceSlugMMessageIdRawRoute: WWorkspaceSlugMMessageIdRawRoute,
+  WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRoute:
+    WWorkspaceSlugMMessageIdAttachmentsAttachmentIdRoute,
+}
+
+const WWorkspaceSlugRouteWithChildren = WWorkspaceSlugRoute._addFileChildren(
+  WWorkspaceSlugRouteChildren,
+)
+
 interface AdminLogsApiRouteChildren {
   AdminLogsApiIdRoute: typeof AdminLogsApiIdRoute
 }
@@ -1016,12 +1134,11 @@ const rootRouteChildren: RootRouteChildren = {
   CaptureSuppressionsRoute: CaptureSuppressionsRoute,
   CaptureWebhooksRoute: CaptureWebhooksRouteWithChildren,
   V1EmailsRoute: V1EmailsRouteWithChildren,
-  WWorkspaceSlugRoute: WWorkspaceSlugRoute,
+  WWorkspaceSlugRoute: WWorkspaceSlugRouteWithChildren,
   AdminLogsApiRoute: AdminLogsApiRouteWithChildren,
   CaptureLogsApiRoute: CaptureLogsApiRouteWithChildren,
   CaptureLogsSmtpRoute: CaptureLogsSmtpRouteWithChildren,
   V3SmtpEmailRoute: V3SmtpEmailRoute,
-  WWorkspaceSlugConnectionsRoute: WWorkspaceSlugConnectionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
