@@ -47,3 +47,7 @@ export type InboxSearch = z.infer<typeof InboxSearch>
  */
 export const ConnectionsSearch = z.object({ connection: z.string().max(64).optional() })
 export type ConnectionsSearch = z.infer<typeof ConnectionsSearch>
+
+/** `/w/$workspaceSlug/suppressions`: the address filter (case-insensitive substring, #42). */
+export const SuppressionsSearch = z.object({ email: urlText })
+export type SuppressionsSearch = z.infer<typeof SuppressionsSearch>
