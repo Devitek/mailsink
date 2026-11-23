@@ -2,7 +2,7 @@ import { SegmentedControl, type SegmentedOption } from '@mailsink/ui'
 
 // Segmented toggles of the inbox and the viewer (All / Resend…, Desktop / Mobile, light /
 // dark background): the design system SegmentedControl (radio group), filling the width
-// of its container. Kept as a thin adapter so its callers stay unchanged (#106).
+// of its container. Kept as a thin adapter so its callers stay unchanged.
 
 export type { SegmentedOption }
 

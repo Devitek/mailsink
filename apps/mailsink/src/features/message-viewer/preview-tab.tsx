@@ -20,7 +20,7 @@ export function PreviewTab({
   const { t } = useLingui()
   const [device, setDevice] = useState<Device>('desktop')
   const [scheme, setScheme] = useState<PreviewScheme>('light')
-  // Remembered in this browser; the frame waits for it so no pixel loads before (#105).
+  // Remembered in this browser; the frame waits for it so no pixel loads before.
   const [blockRemote, setBlockRemote] = useStoredFlag('mailsink:block-remote-images')
   const switchId = useId()
   const mobile = device === 'mobile'
