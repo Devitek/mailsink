@@ -1,5 +1,5 @@
-import { deleteCookie, getCookie, getRequest } from '@tanstack/react-start/server'
 import { clientIp } from '../http/client-ip'
+import { startServer } from '../http/start-server'
 import type { Runtime } from '../runtime/container'
 import { whenRuntimeReady } from '../runtime/slot'
 import { createLoginLimiter, type LoginLimiter } from './login-limiter'
@@ -14,7 +14,7 @@ import {
 // Request-bound helpers of the UI session, for server functions and the sign-in route.
 
 export async function readSession(): Promise<{ runtime: Runtime; status: SessionStatus }> {
-  const runtime = await whenRuntimeReady()
+  const [runtime, { getCookie }] = await Promise.all([whenRuntimeReady(), startServer()])
   return { runtime, status: sessionStatus(runtime.config, getCookie(SESSION_COOKIE)) }
 }
 
@@ -26,7 +26,7 @@ export async function requireSession(): Promise<Runtime> {
 }
 
 export async function clearSession(): Promise<void> {
-  const { config } = await whenRuntimeReady()
+  const [{ config }, { deleteCookie }] = await Promise.all([whenRuntimeReady(), startServer()])
   deleteCookie(SESSION_COOKIE, sessionCookieOptions(config, 0))
 }
 
@@ -34,8 +34,10 @@ export async function clearSession(): Promise<void> {
  * Limiter key: the socket address, or the address the trusted proxy forwarded with
  * `MAILSINK_TRUST_PROXY` (D185). Off, every visitor behind a reverse proxy shares one budget.
  */
-export const clientAddress = (runtime: Runtime): string =>
-  clientIp(getRequest(), runtime.config.trustProxy === true) ?? 'unknown'
+export async function clientAddress(runtime: Runtime): Promise<string> {
+  const { getRequest } = await startServer()
+  return clientIp(getRequest(), runtime.config.trustProxy === true) ?? 'unknown'
+}
 
 type LimiterHolder = typeof globalThis & {
   [LIMITER_KEY]?: { limiter: LoginLimiter; settings: string }

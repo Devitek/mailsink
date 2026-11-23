@@ -15,6 +15,22 @@ export const PREVIEW_CSP = [
   'font-src data: https: http:',
 ].join('; ')
 
+/**
+ * « Block remote images » (owner decision of 23/11, #105): no remote image, stylesheet or
+ * font, so tracking pixels never load; inline `cid:` images (data: URLs) still show.
+ */
+const BLOCKED_REMOTE_CSP = [
+  'sandbox',
+  "default-src 'none'",
+  "style-src 'unsafe-inline'",
+  'img-src data:',
+  'font-src data:',
+].join('; ')
+
+export function previewCsp({ blockRemote }: { blockRemote: boolean }): string {
+  return blockRemote ? BLOCKED_REMOTE_CSP : PREVIEW_CSP
+}
+
 /** Inline images embedded as data: URLs, above that they show as broken images. */
 export const INLINE_IMAGES_MAX_BYTES = 5 * 1024 * 1024
 

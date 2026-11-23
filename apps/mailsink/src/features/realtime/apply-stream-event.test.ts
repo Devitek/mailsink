@@ -72,19 +72,27 @@ describe('stream frames in the query cache', () => {
 
   it('invalidates what only the server knows', () => {
     const event = (e: StreamEvent) => applyStreamEvent(qc, 'qa', e)
-    expect(event({ type: 'messages.purged', count: 3 }).invalidate).toEqual([['inbox', 'qa']])
+    expect(event({ type: 'messages.purged', count: 3 }).invalidate).toEqual([
+      ['inbox', 'qa'],
+      ['logs', 'qa'],
+    ])
     expect(event({ type: 'log.api' } as StreamEvent).invalidate).toEqual([
       ['inbox', 'qa', 'facets'],
+      ['logs', 'qa', 'api', 'list'],
+      ['logs', 'qa', 'sources'],
     ])
-    expect(event({ type: 'message.event', event: {} } as StreamEvent).invalidate).toEqual([
-      ['inbox', 'qa', 'message'],
-    ])
+    expect(
+      event({ type: 'message.event', messageId: 'msg_2', event: {} } as StreamEvent).invalidate,
+    ).toEqual([['inbox', 'qa', 'message', 'msg_2']])
     expect(
       event({ type: 'webhook.delivery', delivery: { messageId: 'msg_1' } } as StreamEvent)
         .invalidate,
     ).toEqual([
       ['inbox', 'qa', 'message', 'msg_1'],
       ['inbox', 'qa', 'facets'],
+      ['logs', 'qa', 'webhooks', 'list'],
+      ['logs', 'qa', 'sources'],
+      ['logs', 'qa', 'webhooks', 'detail', undefined],
     ])
     expect(event({ type: 'workspace.deleted', workspaceId: 'ws_1' }).deleted).toBe(true)
   })

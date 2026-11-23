@@ -147,7 +147,12 @@ export async function sendTestWebhook(
   )
   const row = outcome?.delivery ?? delivery
   publishDeliveries(options.bus, workspaceId, [
-    { delivery: row, connectionId: endpoint.connectionId },
+    {
+      delivery: row,
+      connectionId: endpoint.connectionId,
+      endpointUrl: endpoint.url,
+      durationMs: outcome?.attempt.durationMs ?? null,
+    },
   ])
-  return toDeliveryDetail(row, await listWebhookAttempts(db, row.id))
+  return toDeliveryDetail(row, await listWebhookAttempts(db, row.id), endpoint.url)
 }

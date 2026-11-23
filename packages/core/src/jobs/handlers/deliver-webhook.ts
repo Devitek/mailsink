@@ -20,7 +20,12 @@ export function deliverWebhookHandler(options: DeliverWebhookOptions = {}): JobH
     const outcome = await runAttempt(db, payload, options)
     if (!outcome) return
     publishDeliveries(options.bus, job.workspaceId, [
-      { delivery: outcome.delivery, connectionId: outcome.endpoint.connectionId },
+      {
+        delivery: outcome.delivery,
+        connectionId: outcome.endpoint.connectionId,
+        endpointUrl: outcome.endpoint.url,
+        durationMs: outcome.attempt.durationMs,
+      },
     ])
   }
 }

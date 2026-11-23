@@ -13,6 +13,10 @@ import { attachmentForSession, htmlForSession, rawForSession } from './download-
 const jar = vi.hoisted(() => new Map<string, string>())
 vi.mock('@tanstack/react-start/server', () => ({
   getCookie: (name: string) => jar.get(name),
+  setCookie: () => undefined,
+  deleteCookie: () => undefined,
+  getRequest: () => new Request('http://localhost/'),
+  getRequestHeader: () => undefined,
   getRequestIP: () => '127.0.0.1',
 }))
 
@@ -68,6 +72,14 @@ describeDb('inbox session routes', (ctx) => {
     const body = await res.text()
     expect(body).toContain('<head><meta name="color-scheme" content="dark"><base target="_blank">')
     expect(body).toContain(`src="data:image/png;base64,${Buffer.from('PNG').toString('base64')}"`)
+  })
+
+  it('forbids remote resources when remote images are blocked', async () => {
+    const res = await htmlForSession(slug, message.id, 'light', { blockRemote: true })
+    const csp = res.headers.get('content-security-policy') ?? ''
+    expect(csp).toContain('img-src data:')
+    expect(csp).not.toMatch(/https?:/)
+    expect(await res.text()).toContain('data:image/png;base64,')
   })
 
   it('downloads the raw EML and attachments with the Capture download headers', async () => {

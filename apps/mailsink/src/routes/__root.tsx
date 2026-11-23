@@ -1,4 +1,5 @@
 import { I18nProvider } from '@lingui/react'
+import { ToastProvider } from '@mailsink/ui'
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import { type ReactNode, useMemo } from 'react'
 import { createI18n, loadCatalog } from '../i18n/lingui'
@@ -56,7 +57,9 @@ function RootComponent() {
     <I18nProvider i18n={i18n}>
       <ThemeProvider initialTheme={theme}>
         <RootDocument locale={locale}>
-          <Outlet />
+          <ToastProvider>
+            <Outlet />
+          </ToastProvider>
         </RootDocument>
       </ThemeProvider>
     </I18nProvider>
