@@ -18,7 +18,12 @@ describeDb('MCP over stateless Streamable HTTP', (db) => {
   let ctx: McpContext
   beforeAll(async () => {
     bus = createEventBus()
-    ctx = { db: db.db, bus, workspace: await createTestWorkspace(db.db) }
+    ctx = {
+      db: db.db,
+      bus,
+      workspace: await createTestWorkspace(db.db),
+      publicUrl: 'http://mailsink.test',
+    }
   })
 
   it('answers 405 to GET and DELETE: no session, no standalone stream', async () => {

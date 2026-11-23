@@ -1,5 +1,5 @@
+import { MAILSINK_VERSION } from '@mailsink/contracts'
 import { createServerFn } from '@tanstack/react-start'
-import pkg from '../../package.json'
 import { uiAuth } from '../auth/session'
 import { whenRuntimeReady } from '../runtime/slot'
 
@@ -13,6 +13,6 @@ export type InstanceInfo = {
 export const getInstanceInfo = createServerFn({ method: 'GET' }).handler(
   async (): Promise<InstanceInfo> => {
     const { config } = await whenRuntimeReady()
-    return { version: pkg.version, auth: uiAuth(config).auth }
+    return { version: MAILSINK_VERSION, auth: uiAuth(config).auth }
   },
 )

@@ -12,7 +12,7 @@ export const setLocale = createServerFn({ method: 'POST' })
     if (!isLocale(locale)) throw new Error('Unsupported locale')
     return locale
   })
-  .handler(({ data }) => {
-    writeLocaleCookie(data)
+  .handler(async ({ data }) => {
+    await writeLocaleCookie(data)
     return data
   })
