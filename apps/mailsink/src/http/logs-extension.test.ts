@@ -2,7 +2,7 @@ import type { StreamFrame } from '@mailsink/core'
 import { apiLogs } from '@mailsink/db'
 import { describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { stopRuntime } from '../runtime/boot'
 import type { Runtime } from '../runtime/container'
 import { whenRuntimeReady } from '../runtime/slot'
@@ -74,7 +74,10 @@ describeDb('request log extension', (ctx) => {
   it('logs an ingestion call: redacted key, stripped attachment, message ids', async () => {
     const frames: StreamFrame[] = []
     const off = runtime.bus.subscribe(workspaceId, (f) => frames.push(f))
+    const clone = vi.spyOn(Request.prototype, 'clone')
     const res = await send()
+    expect(clone).not.toHaveBeenCalled() // the body is read once (D157)
+    clone.mockRestore()
     expect(res.status).toBe(200)
     const { id } = await res.json()
     const [row] = await logsOf(res.headers.get('x-request-id'))
@@ -163,6 +166,8 @@ it('maps paths to dialects and skips log reads and the stream', () => {
   expect(dialectOf('/mcp')).toBe('mcp')
   expect(dialectOf('/healthz')).toBeNull()
   expect(isLoggedCall('GET', '/capture/logs/api')).toBe(false)
+  expect(isLoggedCall('GET', '/admin/logs/api')).toBe(false)
+  expect(isLoggedCall('GET', '/admin/workspaces')).toBe(true)
   expect(isLoggedCall('GET', '/capture/stream')).toBe(false)
   expect(isLoggedCall('GET', '/capture/messages')).toBe(true)
   expect(isLoggedCall('DELETE', '/capture/messages')).toBe(true)
