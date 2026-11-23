@@ -2,6 +2,16 @@ export { createDbBlobStore } from './blobs/db-store'
 export type { BlobRef, BlobStore } from './blobs/store'
 export * from './capture'
 export {
+  type InboxConnectionFacet,
+  type InboxFacets,
+  type InboxPage,
+  type InboxRow,
+  listInboxRows,
+  readInboxFacets,
+  readMessagePreviews,
+} from './capture/inbox'
+export { htmlToText, PREVIEW_LENGTH, previewText } from './capture/preview'
+export {
   type ChaosHttpCode,
   type ChaosSmtpCode,
   type ChaosSurface,

@@ -75,6 +75,14 @@ export {
   type SmtpSessionOutcome,
 } from './repositories/logs-smtp'
 export {
+  countMessageFacets,
+  countWorkspaceLogs,
+  listMessageExcerpts,
+  type MessageExcerpt,
+  type MessageFacetCounts,
+  PREVIEW_SOURCE_CHARS,
+} from './repositories/messages-inbox'
+export {
   type MessagePurge,
   purgeMessages,
 } from './repositories/messages-purge'
