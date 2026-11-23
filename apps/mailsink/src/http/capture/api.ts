@@ -7,6 +7,7 @@ import {
   purgeCapturedMessages,
   readAttachment,
   readRawMessage,
+  waitForMessages,
 } from '@mailsink/core'
 import { z } from 'zod'
 import { defineApi } from '../handler'
@@ -15,20 +16,33 @@ import { binaryResponse, contentDisposition, safeContentType } from './download'
 const MessageParams = z.object({ id: MessageId })
 const AttachmentParams = z.object({ id: MessageId, attId: AttachmentId })
 
-/** GET /capture/messages: search with filters and cursor pagination (wait=true: #26). */
+/** GET /capture/messages: search with filters and cursor pagination; wait=true long polls. */
 export const listMessages = defineApi({
   auth: 'workspace',
   query: ListMessagesQuery,
-  handler: ({ runtime, auth, query }) =>
-    listCapturedMessages(runtime.db.db, auth.workspace.id, query),
+  handler: ({ request, runtime, auth, query }) =>
+    query.wait
+      ? waitForMessages(
+          { db: runtime.db.db, bus: runtime.bus, signal: request.signal },
+          auth.workspace.id,
+          query,
+        )
+      : listCapturedMessages(runtime.db.db, auth.workspace.id, query),
 })
 
 /** DELETE /capture/messages: purge messages (and logs unless includeLogs=false). */
 export const purgeMessages = defineApi({
   auth: 'workspace',
   query: PurgeQuery,
-  handler: ({ runtime, auth, query }) =>
-    purgeCapturedMessages(runtime.db.db, auth.workspace.id, query),
+  handler: async ({ runtime, auth, query }) => {
+    const purged = await purgeCapturedMessages(runtime.db.db, auth.workspace.id, query)
+    runtime.bus.publish(auth.workspace.id, {
+      id: null,
+      connectionId: query.connectionId ?? null,
+      event: { type: 'messages.purged', count: purged.count },
+    })
+    return purged
+  },
 })
 
 /** GET /capture/messages/:id */

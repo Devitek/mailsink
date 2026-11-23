@@ -31,6 +31,12 @@ export {
   type NewConnection,
 } from './repositories/connections'
 export {
+  findWorkspaceMessagesByIds,
+  listMessageStreamEvents,
+  listWorkspaceEventsAfter,
+  type StreamEventRow,
+} from './repositories/events-stream'
+export {
   findIdempotencyRecord,
   type IdempotencyRecord,
   insertIdempotencyRecord,
@@ -115,6 +121,10 @@ export {
   type NewSuppression,
   type Suppression,
 } from './repositories/suppressions'
+export {
+  deleteExpiredWorkspaces,
+  touchWorkspaceActivity,
+} from './repositories/workspace-activity'
 export {
   deleteWorkspace,
   findWorkspaceByRef,

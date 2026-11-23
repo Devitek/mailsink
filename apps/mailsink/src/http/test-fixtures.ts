@@ -1,6 +1,6 @@
 // Test-only helpers for the HTTP layer (imported by *.test.ts files only).
 import { randomBytes } from 'node:crypto'
-import { hashApiKey } from '@mailsink/core'
+import { createActivityTracker, createEventBus, hashApiKey } from '@mailsink/core'
 import { apiKeys, type Database, type DbHandle, newId } from '@mailsink/db'
 import { createTestWorkspaceWithConnection } from '@mailsink/db/testing'
 import { bootRuntime } from '../runtime/boot'
@@ -24,6 +24,8 @@ export function installTestRuntime(db: DbHandle, config: Partial<RuntimeConfig> 
       ...config,
     },
     db,
+    bus: createEventBus(),
+    activity: createActivityTracker({ db: db.db }),
     smtpPort: 0,
     stop: async () => {},
   }
