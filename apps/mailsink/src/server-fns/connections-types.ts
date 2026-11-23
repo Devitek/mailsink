@@ -11,6 +11,8 @@ export type ConnectionRow = ConnectionView & {
   setup: ConnectionSetup
   /** `.env` lines with the secret masked (key preview, or dots for an SMTP password). */
   maskedSnippet: string
+  /** Captured messages of the connection (prototype « Resend · 1 284 messages »). */
+  messageCount: number
 }
 
 export type WorkspaceSettings = {
@@ -22,6 +24,8 @@ export type WorkspaceSettings = {
   expiresAt: string | null
   retentionSeconds: number
   rateLimit: RateLimitSettings | null
+  /** Preview of the active `mskw_` key (connections page only); null once all revoked. */
+  keyPreview?: string | null
 }
 
 export type ConnectionsPage = { workspace: WorkspaceSettings; connections: ConnectionRow[] }
