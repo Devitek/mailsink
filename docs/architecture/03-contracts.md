@@ -13,7 +13,11 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `POST /admin/workspaces` | Admin key | admin | Create workspace (+ connections) |
 | `GET /admin/workspaces?includeEphemeral=` | Admin key | admin | List |
 | `GET /admin/workspaces/:id` | Admin key | admin | Detail |
+| `PATCH /admin/workspaces/:id` | Admin key | admin | Edit name, description, retention, rate limit (D186) |
 | `DELETE /admin/workspaces/:id` | Admin key | admin | Immediate hard delete |
+| `POST /admin/workspaces/:id/key/rotate` | Admin key | admin | New `mskw_` workspace key, previous one revoked (D207) |
+| `POST /admin/workspaces/:id/connections` | Admin key | admin | Add a connection, secrets once (D186) |
+| `PATCH|DELETE /admin/workspaces/:id/connections/:connectionId` | Admin key | admin | Rename, disable / enable; hard delete (D186) |
 | `POST /admin/workspaces/:id/connections/:connectionId/rotate` | Admin key | admin | New connection secret, previous one revoked (#38) |
 | `POST /v1/emails` · `POST /v1/emails/batch` | `Bearer msk_` (any kind) | native | Native ingestion |
 | `POST /emails` · `POST /emails/batch` · `GET /emails/:id` | `Bearer msk_` (resend) | resend | Resend drop-in |
@@ -357,6 +361,17 @@ Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connecti
   same transaction (no grace period); `smtp` gets a new password, same username. Answers
   200 `CreatedConnection`, the secret shown once; a connection of another workspace is a
   404.
+- Parity with the web UI (owner decision D186, #105, #106), on the same core services:
+  `PATCH /admin/workspaces/:id` (`UpdateWorkspaceRequest`, 200 `WorkspaceView`, an empty
+  patch is a 422 `empty_patch`); `POST /admin/workspaces/:id/connections` (`ConnectionInput`,
+  201 `CreatedConnection`, a taken SMTP username is a 409); `PATCH
+  /admin/workspaces/:id/connections/:connectionId` (`UpdateConnectionRequest`, 200
+  `ConnectionView`); `DELETE` of the same path (204, hard delete, D173). Workspaces by id or
+  slug, a connection of another workspace is a 404.
+- `POST /admin/workspaces/:id/key/rotate` (D207): a new `mskw_` key, every active workspace
+  key of the workspace revoked in the same transaction (no grace period); 200
+  `RotatedWorkspaceKey { workspaceKey, keyPreview }`, the key shown once. The web UI does
+  the same from the connections page (session-checked server function).
 
 ### Workspace and connection management (`workspace-manage.ts`, #38, D170 to D174)
 
@@ -368,6 +383,8 @@ export const UpdateConnectionRequest = z.object({ name: Name.optional(),
   enabled: z.boolean().optional() })                             // at least one key
 export const CreatedConnection = ConnectionView.extend({ credentials: ConnectionCredentials,
   envSnippet: z.string() })                                      // creation or rotation
+export const RotatedWorkspaceKey = z.object({ workspaceKey: WorkspaceKey,
+  keyPreview: z.string() })                                      // "mskw_3f9a…", D207
 ```
 
 Core services (`core/connections/manage.ts`, `core/workspaces/update.ts`), called by the
@@ -1130,6 +1147,8 @@ export const WebhookDeliveryView = z.object({ id: WebhookDeliveryId,
   attemptCount: z.number().int(), nextAttemptAt: IsoDateTime.nullable(),
   lastStatusCode: z.number().int().nullable(),
   replayOf: WebhookDeliveryId.nullable(), replayMode: ReplayMode.nullable(),
+  endpointUrl: z.string().nullable(),   // current URL of the endpoint (D205)
+  durationMs: z.number().int().nullable(), // last attempt; null before the first one
   createdAt: IsoDateTime })
 export const WebhookDeliveryDetail = WebhookDeliveryView.extend({ body: z.string(),
   contentType: z.string(), attempts: z.array(WebhookAttemptView) }) // attempt: id,
@@ -1504,11 +1523,24 @@ never authenticates `/capture/**`.
 | `GET /w/$workspaceSlug/m/stream` | The `GET /capture/stream` events of the workspace (no filter); `Last-Event-ID` header, or `?lastEventId=` when the inbox reopens the stream itself |
 | `GET /w/$workspaceSlug/m/$messageId/raw` | Raw EML, headers of the Capture downloads |
 | `GET /w/$workspaceSlug/m/$messageId/attachments/$attachmentId` | The attachment, always `Content-Disposition: attachment` |
-| `GET /w/$workspaceSlug/m/$messageId/html?scheme=light\|dark` | The document of the preview iframe (D176), 404 without HTML body |
+| `GET /w/$workspaceSlug/m/$messageId/html?scheme=light\|dark[&remote=blocked]` | The document of the preview iframe (D176), 404 without HTML body; `remote=blocked` narrows its CSP to `style-src 'unsafe-inline'; img-src data:; font-src data:` (D187) |
 
 Without a valid session they answer `401 { error: { code: 'unauthorized' } }`; an unknown
 slug, another workspace's message or a missing part `404 not_found`. Each call touches the
 workspace activity (D16).
+
+« Payload / Source EML » of the Headers & MIME tab (#106, proposition D209): the server
+function `getMessageOriginFn` answers the API log row whose `messageIds` holds the message
+(method, path, status, request body as logged, pretty printed) or, for an SMTP message, the
+client envelope commands (`EHLO`, `MAIL FROM`, `RCPT TO`) of its SMTP session; `null` when
+retention or a purge removed the log. The toggle starts on the payload, as the prototype.
+
+Workspace picker (#104, proposition D206): the server function `listWorkspacesFn({
+ephemeral, q?, cursor? })` reads one section at a time (persistent or ephemeral workspaces,
+never mixed), newest first, 50 per page with a keyset `nextCursor`; `q` is a
+case-insensitive substring of the slug or the name (`%` and `_` taken literally). Each page
+carries `ephemeralCount`, an aggregate count of every ephemeral workspace (the switch
+caption), so CI leftovers can neither hide persistent workspaces nor cap the count.
 
 Preview (D176): `<iframe sandbox="">` (no allowance: no scripts, opaque origin, no popups,
 no forms), document served with `Content-Security-Policy: sandbox; default-src 'none';
