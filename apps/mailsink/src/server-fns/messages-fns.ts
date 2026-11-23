@@ -2,6 +2,7 @@ import { ConnectionId, DeliveryStatus, MessageId } from '@mailsink/contracts'
 import { createMiddleware, createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireSession } from '../auth/session.server'
+import { readMessageOrigin } from './message-origin.server'
 import {
   purgeInbox,
   readFacets,
@@ -63,3 +64,8 @@ export const purgeInboxFn = createServerFn({ method: 'POST' })
   .middleware([signedIn])
   .validator(z.object({ slug: Slug }))
   .handler(({ context, data }) => purgeInbox(context.runtime, data.slug))
+
+export const getMessageOriginFn = createServerFn({ method: 'GET' })
+  .middleware([signedIn])
+  .validator(z.object({ slug: Slug, id: MessageId }))
+  .handler(({ context, data }) => readMessageOrigin(context.runtime, data.slug, data.id))

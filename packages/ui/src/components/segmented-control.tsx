@@ -1,12 +1,19 @@
 import { Radio } from '@base-ui/react/radio'
 import { RadioGroup } from '@base-ui/react/radio-group'
+import type { ReactNode } from 'react'
 import { cn } from '../lib/cn'
 
-// Segmented control of the prototype (retention 1h / 24h / 7d / 30d, connection kind):
-// a radio group drawn as a 2 px inset track on the page background; the checked segment
-// takes the hover surface and an inset strong border. Labels come translated from the app.
+// Segmented control of the prototype (retention 1h / 24h / 7d / 30d, connection kind,
+// inbox filters, preview width): a radio group drawn as a 2 px inset track on the page
+// background; the checked segment takes the hover surface and an inset strong border.
+// Labels come translated from the app. The only segmented control of the UI.
 
-export type SegmentedOption<T extends string> = { value: T; label: string }
+export type SegmentedOption<T extends string> = {
+  value: T
+  label: ReactNode
+  /** Accessible name when the label is not plain text (a count next to it). */
+  title?: string
+}
 
 export type SegmentedControlProps<T extends string> = {
   options: readonly SegmentedOption<T>[]
@@ -17,6 +24,8 @@ export type SegmentedControlProps<T extends string> = {
   'aria-labelledby'?: string
   /** Monospace labels (durations, codes). */
   mono?: boolean
+  /** Segments share the whole width (inbox filter bar). */
+  fill?: boolean
   disabled?: boolean
   className?: string
 }
@@ -26,6 +35,7 @@ export function SegmentedControl<T extends string>({
   value,
   onValueChange,
   mono = false,
+  fill = false,
   disabled,
   className,
   ...aria
@@ -38,6 +48,7 @@ export function SegmentedControl<T extends string>({
       disabled={disabled}
       className={cn(
         'inline-flex gap-0.5 self-start rounded-md border border-ms-border bg-ms-bg p-0.5',
+        fill && 'flex self-stretch',
         className,
       )}
       {...aria}
@@ -46,9 +57,11 @@ export function SegmentedControl<T extends string>({
         <Radio.Root
           key={option.value}
           value={option.value}
+          aria-label={option.title}
           className={cn(
-            'inline-flex h-control-sm cursor-pointer items-center rounded-sm px-3.5 text-xs text-ms-text-muted outline-none transition-colors duration-fast ease-ms hover:text-ms-text focus-visible:focus-ring data-checked:bg-ms-hover data-checked:text-ms-text data-checked:shadow-[inset_0_0_0_1px_var(--ms-border-strong)] data-disabled:cursor-not-allowed data-disabled:opacity-50',
+            'inline-flex h-control-sm cursor-pointer items-center justify-center gap-1.5 rounded-sm px-3.5 text-xs whitespace-nowrap text-ms-text-muted outline-none transition-colors duration-fast ease-ms hover:text-ms-text focus-visible:focus-ring data-checked:bg-ms-hover data-checked:text-ms-text data-checked:shadow-[inset_0_0_0_1px_var(--ms-border-strong)] data-disabled:cursor-not-allowed data-disabled:opacity-50',
             mono && 'font-mono',
+            fill && 'min-w-0 flex-1',
           )}
         >
           {option.label}

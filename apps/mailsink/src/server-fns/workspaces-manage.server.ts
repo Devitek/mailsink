@@ -1,5 +1,9 @@
-import type { CreateWorkspaceRequest, UpdateWorkspaceRequest } from '@mailsink/contracts'
-import { createWorkspace, updateWorkspaceSettings } from '@mailsink/core'
+import type {
+  CreateWorkspaceRequest,
+  RotatedWorkspaceKey,
+  UpdateWorkspaceRequest,
+} from '@mailsink/contracts'
+import { createWorkspace, rotateWorkspaceKey, updateWorkspaceSettings } from '@mailsink/core'
 import { publicEndpoints } from '../http/admin/public-endpoints'
 import { removeWorkspaceAndNotify } from '../http/admin/workspaces'
 import type { Runtime } from '../runtime/container'
@@ -55,4 +59,13 @@ export async function editWorkspace(
 export async function deleteWorkspaceFromUi(runtime: Runtime, slug: string): Promise<void> {
   const workspaceId = await touchWorkspace(runtime, slug)
   await removeWorkspaceAndNotify(runtime, workspaceId)
+}
+
+/** New `mskw_` key, the previous one revoked at once; the key is answered once. */
+export async function rotateWorkspaceKeyFromUi(
+  runtime: Runtime,
+  slug: string,
+): Promise<RotatedWorkspaceKey> {
+  const workspaceId = await touchWorkspace(runtime, slug)
+  return rotateWorkspaceKey(runtime.db.db, workspaceId)
 }

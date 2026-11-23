@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../workspaces/confirm-dialog'
 import { ConnectionName } from './connection-name'
 import { CredentialRow, EnvSnippet } from './credential-fields'
 import { CredentialsReveal } from './credentials-reveal'
+import { DeleteConnection } from './delete-connection'
 import { KIND_LABELS } from './kinds'
 import { PanelHeader } from './panel'
 import { useConnectionMutations } from './queries'
@@ -134,18 +135,8 @@ export function ConnectionPanel({
           />
         )}
         <div className="flex justify-end border-t border-ms-border pt-[18px]">
-          <ConfirmDialog
-            danger
-            trigger={<Button variant="danger" />}
-            triggerLabel={<Trans>Delete the connection</Trans>}
-            title={<Trans>Delete the connection {name}?</Trans>}
-            description={
-              <Trans>
-                Its credentials stop working and its webhook endpoints are deleted. Captured
-                messages stay in the workspace.
-              </Trans>
-            }
-            confirmLabel={<Trans>Delete</Trans>}
+          <DeleteConnection
+            name={name}
             onConfirm={async () => {
               await remove.mutateAsync(connection.id)
               onDeleted()

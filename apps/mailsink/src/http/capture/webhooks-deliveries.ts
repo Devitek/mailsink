@@ -4,7 +4,7 @@ import {
   getWebhookDeliveryDetail,
   listWebhookDeliveryViews,
   replayWebhookDelivery,
-  toDeliveryView,
+  toDeliveryViews,
 } from '@mailsink/core'
 import { z } from 'zod'
 import { defineApi } from '../handler'
@@ -40,6 +40,7 @@ export const replayDeliveryApi = defineApi({
       body ?? ReplayRequest.parse({}),
       { bus: runtime.bus },
     )
-    return Response.json(toDeliveryView(replay), { status: 202 })
+    const [view] = await toDeliveryViews(runtime.db.db, [replay])
+    return Response.json(view, { status: 202 })
   },
 })
