@@ -91,6 +91,9 @@ curl "http://localhost:3000/capture/messages?to=jane@example.com&wait=true&timeo
   -H "Authorization: Bearer $MAILSINK_KEY"
 ```
 
+The [E2E testing guide](docs/guides/e2e.md) gives the full recipe: one ephemeral workspace
+per test worker, reset between tests, forced bounces through overrides.
+
 ## Features
 
 - Workspaces: persistent for staging, ephemeral with an idle TTL for CI.
@@ -110,6 +113,7 @@ curl "http://localhost:3000/capture/messages?to=jane@example.com&wait=true&timeo
   [Sequence](docs/architecture/04-sequence.md) ·
   [Roadmap](docs/architecture/05-roadmap.md)
 - [Design deliveries and brand](docs/design/README.md)
+- [Testing your app with Mailsink (E2E guide)](docs/guides/e2e.md)
 - [Translating the web UI](docs/contributing/translations.md)
 
 ## Contributing

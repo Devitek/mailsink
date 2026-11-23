@@ -12,34 +12,44 @@ mailsink/
 │       ├── nitro.config.ts               # registers runtime/nitro-plugin.ts (D3), copies
 │       │                                 # packages/db/migrations into .output/server (D42)
 │       ├── src/
-│       │   ├── server.ts                 # custom server entry: waits for the runtime (D3)
+│       │   ├── server.ts                 # custom server entry: every request runs in
+│       │   │                             # withRuntime() (waits for the runtime, D3; leased
+│       │   │                             # during a dev restart, D148)
 │       │   ├── router.tsx                # router + QueryClient (SSR dehydrate/hydrate)
 │       │   ├── runtime/
 │       │   │   ├── nitro-plugin.ts       # boots at process start (exit 1 on failure, D28),
 │       │   │   │                         # stops on Nitro `close` (D3)
 │       │   │   ├── boot.ts               # idempotent start/stop
 │       │   │   ├── restart.ts            # `vite dev`: restarts the runtime when its code changes
-│       │   │   │                         # (debounce 500 ms, D3)
-│       │   │   ├── slot.ts               # globalThis slot (HMR, two bundles), whenRuntimeReady()
+│       │   │   │                         # (debounce 500 ms, D3), after the requests in flight
+│       │   │   │                         # (drain up to 10 s, D148)
+│       │   │   ├── slot.ts               # globalThis slot (HMR, two bundles), whenRuntimeReady(),
+│       │   │   │                         # withRuntime() and whenRequestsDrained() (D148)
 │       │   │   ├── config.ts             # env validated by Zod at boot (D29, « Configuration »)
 │       │   │   ├── container.ts          # opens + migrates the db, builds the event bus and the
 │       │   │   │                         # activity tracker, starts SMTP, the job worker, the
-│       │   │   │                         # retention scheduler, the ephemeral GC and the override
-│       │   │   │                         # expiry (publishes override.changed, D96) once
+│       │   │   │                         # retention scheduler, the ephemeral GC, the override
+│       │   │   │                         # expiry (publishes override.changed, D96) and the log
+│       │   │   │                         # writer (api_logs, smtp_sessions, #35) once
 │       │   │   ├── migrations.ts         # migrations folder of the build (D42)
 │       │   │   └── shutdown.ts           # SIGTERM/SIGINT: wait for the srvx HTTP drain and the
 │       │   │                             # close hook (SMTP, workers, db), exit 0 (D3)
 │       │   ├── http/                     # thin adapters shared by server routes
 │       │   │   ├── handler.ts            # defineApi(): request id -> auth -> extensions ->
 │       │   │   │                         # parse (Zod) -> handler (D39)
-│       │   │   ├── extensions.ts         # ApiExtension hooks: rate limit, activity, request log
+│       │   │   ├── extensions.ts         # ApiExtension hooks; DEFAULT_EXTENSIONS: request log,
+│       │   │   │                         # activity
+│       │   │   ├── ingestion-guard.ts    # INGESTION_EXTENSIONS: rate limit and chaos, X-RateLimit-*
+│       │   │   │                         # headers (#24, #25, D90 to D94)
+│       │   │   ├── logs-extension.ts     # request log: one api_logs row per call (D145 to D147)
+│       │   │   ├── logs-body.ts          # capped body reads of the request log
 │       │   │   ├── auth.ts               # admin key, msk_/mskw_ keys, Brevo api-key header (D41)
 │       │   │   ├── errors.ts             # DomainError -> error body (ErrorFormatter per dialect)
 │       │   │   ├── validation.ts         # Zod issues -> validation_error details, query, JSON body
 │       │   │   ├── body-limit.ts         # request body cap (MAILSINK_MAX_MESSAGE_BYTES)
 │       │   │   ├── health.ts             # GET /healthz: liveness + database readiness (D42)
-│       │   │   ├── test-fixtures.ts      # test-only: runtime in the slot (event bus and activity
-│       │   │   │                         # tracker included), seeded keys (rows from
+│       │   │   ├── test-fixtures.ts      # test-only: runtime in the slot (event bus, activity
+│       │   │   │                         # tracker and log writer included), seeded keys (rows from
 │       │   │   │                         # @mailsink/db/testing)
 │       │   │   ├── admin/                # workspaces.ts (Admin API; DELETE publishes
 │       │   │   │                         # workspace.deleted, D97), public-endpoints.ts (URLs
@@ -47,15 +57,14 @@ mailsink/
 │       │   │   ├── native/               # emails.ts: POST /v1/emails, /v1/emails/batch (passes
 │       │   │   │                         # the event bus to ingestion, #26)
 │       │   │   ├── activity.ts           # afterAuth extension: workspace activity touch (#20)
-│       │   │   ├── capture/              # api.ts (list, wait=true, detail, purge publishing
-│       │   │   │                         # messages.purged), download.ts (raw EML, attachments,
-│       │   │   │                         # D60), override.ts (GET, activate, reset; publishes
-│       │   │   │                         # override.changed, D96), suppressions.ts (D75),
-│       │   │   │                         # stream.ts (GET /capture/stream), stream-sse.ts
-│       │   │   │                         # (ReadableStream SSE: heartbeat, Last-Event-ID
-│       │   │   │                         # replay, filters)
-│       │   │   ├── rate-limit-headers.ts
-│       │   │   └── request-log.ts        # api_logs writer (redaction, truncation)
+│       │   │   └── capture/              # api.ts (list, wait=true, detail, purge publishing
+│       │   │                             # messages.purged), download.ts (raw EML, attachments,
+│       │   │                             # D60), override.ts (GET, activate, reset; publishes
+│       │   │                             # override.changed, D96), suppressions.ts (D75),
+│       │   │                             # stream.ts (GET /capture/stream), stream-sse.ts
+│       │   │                             # (ReadableStream SSE: heartbeat, Last-Event-ID
+│       │   │                             # replay, filters), logs.ts (GET /capture/logs/api,
+│       │   │                             # /capture/logs/smtp and their :id, #35)
 │       │   ├── routes/
 │       │   │   ├── __root.tsx
 │       │   │   ├── index.tsx                         # workspace picker
@@ -84,6 +93,10 @@ mailsink/
 │       │   │   ├── capture.override.ts               # GET current, POST activate
 │       │   │   ├── capture.override.reset.ts
 │       │   │   ├── capture.suppressions.ts           # GET, DELETE (reset)
+│       │   │   ├── capture.logs.api.ts               # GET API logs (filters, pages)
+│       │   │   ├── capture.logs.api.$id.ts           # GET one API log (headers, bodies)
+│       │   │   ├── capture.logs.smtp.ts              # GET SMTP sessions
+│       │   │   ├── capture.logs.smtp.$id.ts          # GET one session (transcript)
 │       │   │   ├── capture.webhooks.ts                   # GET, POST endpoints
 │       │   │   ├── capture.webhooks.$id.ts               # GET, PATCH, DELETE
 │       │   │   ├── capture.webhooks.preview.ts           # sample body + headers
@@ -116,9 +129,13 @@ mailsink/
 │       │   │   ├── en/messages.po         # source locale
 │       │   │   └── fr/messages.po
 │       │   ├── lib/query-keys.ts
-│       │   ├── theme/                     # light/dark theme: themes.ts, theme-context.tsx,
-│       │   │                              # theme-toggle.tsx, theme-fns.ts, theme.server.ts
-│       │   └── styles/app.css             # Tailwind entry, imports @mailsink/ui tokens
+│       │   ├── theme/                     # light/dark theme: themes.ts, theme-context.tsx
+│       │   │                              # (one context per process, D149), theme-toggle.tsx,
+│       │   │                              # theme-fns.ts, theme.server.ts
+│       │   ├── seo/                       # social-meta.ts (Open Graph and Twitter tags),
+│       │   │                              # public-url-fns.ts (MAILSINK_PUBLIC_URL for the meta)
+│       │   └── styles/                    # app.css (Tailwind entry, imports @mailsink/ui tokens),
+│       │                                  # fonts.css (self-hosted fonts, B1-5)
 │       ├── public/                        # brand assets: favicon.svg, mark-*.png, maskable-*.png,
 │       │                                  # apple-touch-icon-180.png, og-image, manifest.webmanifest
 │       └── tests/e2e/                     # Playwright against the production build
@@ -139,6 +156,7 @@ mailsink/
 │   │       ├── common.ts   address.ts   status.ts   ids.ts   errors.ts (ErrorCode, ApiErrorBody)
 │   │       ├── admin.ts    native.ts    resend.ts   brevo.ts
 │   │       ├── capture.ts  override.ts  stream.ts (SSE events, D80)  suppression.ts
+│   │       ├── logs.ts                  # API logs and SMTP sessions: queries, views (#35)
 │   │       ├── webhook.ts  events.ts      # later (#33)
 │   │       ├── settings.ts              # retention, rate limit, simulation defaults
 │   │       └── search-params.ts         # UI search params (filters, tabs)
@@ -163,7 +181,9 @@ mailsink/
 │   │       └── repositories/            # one file per aggregate, typed queries only, re-exported
 │   │                                        # by name from index.ts (D68): api-keys, blobs,
 │   │                                        # connections, events-stream (replay reads),
-│   │                                        # idempotency, jobs, messages-read, messages-write,
+│   │                                        # idempotency, jobs, logs-api, logs-smtp,
+│   │                                        # logs-query (shared filters, sort, offset),
+│   │                                        # messages-read, messages-write,
 │   │                                        # messages-status, messages-purge, overrides,
 │   │                                        # retention, suppressions, workspace-activity
 │   │                                        # (throttled touch), workspaces
@@ -179,7 +199,11 @@ mailsink/
 │   │       │                 links.ts idempotency.ts stream-frames.ts testing/fixtures.ts
 │   │       ├── dialects/     resend.ts brevo.ts native.ts smtp.ts  # to/from NormalizedEmail
 │   │       ├── templates/    render.ts                             # Brevo {{ params.x }}
-│   │       ├── rate-limit/   token-bucket.ts
+│   │       ├── rate-limit/   token-bucket.ts request-guard.ts (guardRequest, smtpGuardReply)
+│   │       │                 smtp-reply.ts                         # D90 to D92
+│   │       ├── chaos/        draw.ts smtp-reply.ts                 # D93, D94
+│   │       ├── logs/         writer.ts (createLogWriter, recordSmtpSession) sanitize.ts
+│   │       │                 transcript.ts query.ts views.ts       # #35, D145 to D147
 │   │       ├── suppression/  service.ts
 │   │       ├── overrides/    service.ts views.ts expiry.ts publish.ts (override.changed, D96)
 │   │       ├── events/       bus.ts frames.ts filter.ts replay.ts  # D6, D80 to D84
@@ -241,7 +265,10 @@ node .output/server/index.mjs
 ```
 
 Boot order: config, database and migrations, SMTP listener, worker; any failure exits 1
-(D28). Stop order on SIGTERM: HTTP drain (srvx), SMTP, worker, database (D3).
+(D28). Stop order on SIGTERM: HTTP drain (srvx), SMTP, worker and schedulers, pending
+activity touches, pending log writes, database (D3). A `vite dev` restart first waits for
+the requests still running on the old runtime (at most 10 s), then stops it the same way
+(D148).
 
 ## Configuration (env, validated by Zod at boot)
 
