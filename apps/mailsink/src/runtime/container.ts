@@ -5,6 +5,7 @@ import {
   createJobRunner,
   createRateLimiter,
   DEFAULT_JOB_SETTINGS,
+  deliverWebhookHandler,
   type EventBus,
   publishExpiredOverrides,
   type Random,
@@ -94,7 +95,10 @@ export async function createRuntime(
     const jobs = config.jobs ?? DEFAULT_JOB_SETTINGS
     const runJobs = createJobRunner({
       db: db.db,
-      handlers: { simulate_delivery: simulateDeliveryHandler({ bus }) },
+      handlers: {
+        simulate_delivery: simulateDeliveryHandler({ bus }),
+        deliver_webhook: deliverWebhookHandler({ bus }),
+      },
       batchSize: jobs.batchSize,
       lockSeconds: jobs.lockSeconds,
       maxAttempts: jobs.maxAttempts,

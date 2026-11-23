@@ -1,4 +1,10 @@
-import type { Address, AddressOut, MessageDetail, MessageSummary } from '@mailsink/contracts'
+import type {
+  Address,
+  AddressOut,
+  MessageDetail,
+  MessageSummary,
+  WebhookDeliveryView,
+} from '@mailsink/contracts'
 import type { AttachmentRow, MessageEventRow, MessageRow, RecipientRow } from '@mailsink/db'
 
 /** Capture paths, relative to the server base URL. */
@@ -39,19 +45,19 @@ export interface DetailParts {
   recipients: RecipientRow[]
   attachments: AttachmentRow[]
   events: MessageEventRow[]
+  /** Webhook deliveries of the message, newest first (#33). */
+  webhookDeliveries?: WebhookDeliveryView[]
 }
 
-/**
- * `MessageDetail` plus `webhookDeliveries`, always empty until the webhook delivery issue
- * (#33) adds `WebhookDeliveryView` to the contract and fills it.
- */
-export type CapturedMessageDetail = MessageDetail & { webhookDeliveries: never[] }
+/** `MessageDetail` (kept as an alias for existing callers). */
+export type CapturedMessageDetail = MessageDetail
 
 export function toDetail({
   message: m,
   recipients,
   attachments,
   events,
+  webhookDeliveries = [],
 }: DetailParts): CapturedMessageDetail {
   return {
     ...toSummary(m, recipients),
@@ -89,6 +95,6 @@ export function toDetail({
     })),
     rawUrl: capturePaths.raw(m.id),
     simulation: m.simulation,
-    webhookDeliveries: [],
+    webhookDeliveries,
   }
 }
