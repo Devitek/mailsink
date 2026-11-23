@@ -219,6 +219,52 @@ override; both resets are idempotent.
 `connectionId=…`. `wait=true` covers most assertions; the stream suits tests about live
 UI updates. `tests/e2e/recipe/realtime.spec.ts` reads it with `fetch`.
 
+## Drop-in: an application using the Resend SDK
+
+An application that sends with the official `resend` package needs no code change: the
+fixture's `resend` connection gives it a key, and the SDK reads its base URL from
+`RESEND_BASE_URL` (or the `baseUrl` option). Start the application under test with:
+
+```sh
+RESEND_API_KEY=msk_…          # connections[0].credentials.apiKey of the fixture
+RESEND_BASE_URL=http://localhost:3000   # MAILSINK_URL, no path
+```
+
+The `.env` snippet of the connection (`connections[0].envSnippet`) carries both lines.
+
+```ts
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
+const { data, error } = await resend.emails.send({
+  from: 'Acme <hello@app.test>',
+  to: ['jane@example.com'],
+  subject: 'Welcome',
+  html: '<p>Hi, <a href="https://app.test/confirm">confirm</a></p>',
+})
+// data.id is a uuid, as with Resend; resend.emails.get(data.id) reads the message back.
+```
+
+What to know when asserting:
+
+- The message is stored with `source: 'resend'`; assert on it with `wait=true` as in
+  section 5. Its Mailsink id is `msg_` followed by the Resend id
+  (`GET /capture/messages/msg_<data.id>`).
+- `resend.batch.send([...])` is all or nothing (`batchValidation: 'strict'`, the SDK
+  default): one invalid email refuses the whole batch and stores nothing. With
+  `batchValidation: 'permissive'` the valid emails are stored and the others come back in
+  `errors` (`{ index, message }`). Batch emails take no `attachments`, as with Resend.
+- `idempotencyKey` (24 h, at most 256 characters) replays the first `id`; the same key with
+  another body is `409 invalid_idempotent_request`.
+- Errors come back in Resend's shape through the SDK `error` object (`{ statusCode, name,
+  message }`): `422 missing_required_field`, `400 validation_error`, `403
+  restricted_api_key` (a key of another connection kind), `429 rate_limit_exceeded`. An
+  override with a rate limit or chaos (section 6) applies here too, with `ratelimit-*`
+  headers next to `X-RateLimit-*`.
+- Not emulated: hosted Resend templates (`template`) and attachment `path` URLs are
+  refused (Mailsink fetches nothing), `scheduled_at` is accepted but the delivery is not
+  delayed, `text` is not generated from `html`.
+
 ## Running the example
 
 The repository suite starts the production build with a fixed, non-secret admin key
