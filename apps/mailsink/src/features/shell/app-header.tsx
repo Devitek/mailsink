@@ -3,12 +3,13 @@ import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import type { WorkspaceSummary } from '../../server-fns/workspace-types'
 import { ThemeToggle } from '../../theme/theme-toggle'
+import { OverridePill } from '../override/override-pill'
 import { WorkspacePicker } from '../workspaces/workspace-picker'
 import { type NavCounts, NavTabs } from './nav-tabs'
 import { SessionMenu } from './session-menu'
 
 // Application header of the prototype (brand-1, H2a): mark and wordmark, the workspace
-// picker and tabs when a workspace is open, then the workspace status (live stream
+// picker and tabs when a workspace is open, then the Override pill (#42), the workspace status (live stream
 // indicator), the « Language and session » menu and the theme toggle (B2-4).
 export function AppHeader({
   workspace,
@@ -33,6 +34,7 @@ export function AppHeader({
         </>
       )}
       <div className="ml-auto flex shrink-0 items-center gap-2.5">
+        {workspace && <OverridePill slug={workspace.slug} />}
         {status}
         <SessionMenu />
         <ThemeToggle />
