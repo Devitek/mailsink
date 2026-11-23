@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as CaptureMessagesRouteImport } from './routes/capture.messages'
 import { Route as CaptureOverrideRouteImport } from './routes/capture.override'
@@ -57,6 +58,11 @@ const EmailsRoute = EmailsRouteImport.update({
 const HealthzRoute = HealthzRouteImport.update({
   id: '/healthz',
   path: '/healthz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWorkspacesRoute = AdminWorkspacesRouteImport.update({
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
+  '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
+  '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
+  '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/'
     | '/emails'
     | '/healthz'
+    | '/mcp'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/'
     | '/emails'
     | '/healthz'
+    | '/mcp'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/'
     | '/emails'
     | '/healthz'
+    | '/mcp'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
@@ -446,6 +458,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmailsRoute: typeof EmailsRouteWithChildren
   HealthzRoute: typeof HealthzRoute
+  McpRoute: typeof McpRoute
   AdminWorkspacesRoute: typeof AdminWorkspacesRouteWithChildren
   CaptureMessagesRoute: typeof CaptureMessagesRouteWithChildren
   CaptureOverrideRoute: typeof CaptureOverrideRouteWithChildren
@@ -480,6 +493,13 @@ declare module '@tanstack/react-router' {
       path: '/healthz'
       fullPath: '/healthz'
       preLoaderRoute: typeof HealthzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/workspaces': {
@@ -903,6 +923,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmailsRoute: EmailsRouteWithChildren,
   HealthzRoute: HealthzRoute,
+  McpRoute: McpRoute,
   AdminWorkspacesRoute: AdminWorkspacesRouteWithChildren,
   CaptureMessagesRoute: CaptureMessagesRouteWithChildren,
   CaptureOverrideRoute: CaptureOverrideRouteWithChildren,
