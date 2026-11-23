@@ -20,6 +20,7 @@
     "@mailsink/core": "workspace:*",
     "@mailsink/db": "workspace:*",
     "@mailsink/mcp": "workspace:*",
+    "@mailsink/openapi": "workspace:*",
     "@mailsink/smtp": "workspace:*",
     "@mailsink/ui": "workspace:*",
     "@tanstack/react-form": "^1.33.5",
