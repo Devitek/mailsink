@@ -179,3 +179,57 @@ sequenceDiagram
   with `MAILSINK_TRUST_PROXY` (D182, D185).
 - `MAILSINK_UI_AUTH=none`: no guard, `/login` redirects to the page asked for and
   `POST /login` answers 404.
+
+## Web UI inbox in real time (#39, #40, D175, D178)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Br as Browser (inbox page)
+  participant R as /w/$workspaceSlug/m/stream (session)
+  participant B as Event bus
+  participant Q as TanStack Query cache
+  participant F as Server functions (signedIn)
+
+  Br->>F: SSR loader: workspace (touched), facets, first inbox page, open message
+  Br->>R: EventSource (cookie), Last-Event-ID or ?lastEventId= after a gap
+  R->>B: subscribe(workspace), replay from message_events after Last-Event-ID
+  B-->>R: frames (message.created, message.event, message.status, webhook.delivery…)
+  R-->>Br: data: StreamEvent
+  Br->>Q: applyStreamEvent: prepend message.created to matching lists, write statuses
+  Br->>Q: invalidate only what the frame names (message.event and webhook.delivery:
+  Note over Br,Q: the viewer of their messageId; log.*: facets), coalesced over 250 ms
+  Q->>F: refetch the observed queries, previews of new rows in one batch
+```
+
+- `message.event` frames carry the `messageId` of their event (D205): only the viewer of
+  that message refetches, other open viewers stay as they are.
+- After a reconnection gap, derived frames (statuses, purges, deliveries) are not replayed,
+  so every inbox query is refetched once (`onResync`).
+- `workspace.deleted` ends the stream: the layout shows « This workspace was deleted »
+  with a way back to the picker.
+
+## Credential rotation (#38, #106, D172, D207)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant C as UI (connections page) or Admin API
+  participant S as core: rotateConnectionCredentials / rotateWorkspaceKey
+  participant D as Database
+
+  C->>S: rotate (session-checked server function, or Admin key)
+  alt resend / brevo connection
+    S->>D: tx: revoke every active key of the connection, insert a new msk_ hash
+  else smtp connection
+    S->>D: new scrypt hash of a new password, same username
+  else workspace key
+    S->>D: tx: revoke every active mskw_ key of the workspace, insert a new hash
+  end
+  S-->>C: the new secret, once (CreatedConnection or RotatedWorkspaceKey)
+```
+
+- No grace period: the previous secret is refused by the next request (API keys are read
+  from the database on every call; the SMTP credential cache is keyed by the stored hash).
+- The UI keeps the new secret in memory until the page is left, with a copy button whose
+  confirmation is a toast (D208); the Admin API answers it in its body.

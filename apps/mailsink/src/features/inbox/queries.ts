@@ -2,6 +2,7 @@ import type { InboxPage } from '@mailsink/core'
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 import {
   getMessageFn,
+  getMessageOriginFn,
   getRawSourceFn,
   inboxFacetsFn,
   listInboxFn,
@@ -47,5 +48,13 @@ export const rawSourceQuery = (slug: string, id: string) =>
   queryOptions({
     queryKey: [...inboxKey(slug), 'raw', id] as const,
     queryFn: () => getRawSourceFn({ data: { slug, id } }),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+
+/** The API request or SMTP envelope that created a message (« Payload » of the viewer). */
+export const messageOriginQuery = (slug: string, id: string) =>
+  queryOptions({
+    queryKey: [...inboxKey(slug), 'origin', id] as const,
+    queryFn: () => getMessageOriginFn({ data: { slug, id } }),
     staleTime: Number.POSITIVE_INFINITY,
   })

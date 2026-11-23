@@ -6,6 +6,7 @@ import {
   createWorkspaceFromUi,
   deleteWorkspaceFromUi,
   editWorkspace,
+  rotateWorkspaceKeyFromUi,
 } from './workspaces-manage.server'
 
 // Workspace management server functions (#38): the browser never holds the admin key, these
@@ -25,3 +26,8 @@ export const deleteWorkspaceFn = createServerFn({ method: 'POST' })
   .middleware([signedIn])
   .validator(z.object({ slug: Slug }))
   .handler(({ context, data }) => deleteWorkspaceFromUi(context.runtime, data.slug))
+
+export const rotateWorkspaceKeyFn = createServerFn({ method: 'POST' })
+  .middleware([signedIn])
+  .validator(z.object({ slug: Slug }))
+  .handler(({ context, data }) => rotateWorkspaceKeyFromUi(context.runtime, data.slug))

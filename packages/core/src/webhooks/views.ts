@@ -33,7 +33,18 @@ export function toEndpointView(row: WebhookEndpoint): WebhookEndpointView {
   }
 }
 
-export function toDeliveryView(row: WebhookDelivery): WebhookDeliveryView {
+/** What a delivery row does not hold: its endpoint URL and the duration of its last try. */
+export interface DeliveryFacts {
+  endpointUrl: string | null
+  durationMs: number | null
+}
+
+const noFacts: DeliveryFacts = { endpointUrl: null, durationMs: null }
+
+export function toDeliveryView(
+  row: WebhookDelivery,
+  facts: DeliveryFacts = noFacts,
+): WebhookDeliveryView {
   return {
     id: row.id,
     endpointId: row.endpointId,
@@ -49,6 +60,8 @@ export function toDeliveryView(row: WebhookDelivery): WebhookDeliveryView {
     lastStatusCode: row.lastStatusCode,
     replayOf: row.replayOf,
     replayMode: row.replayMode,
+    endpointUrl: facts.endpointUrl,
+    durationMs: facts.durationMs,
     createdAt: row.createdAt.toISOString(),
   }
 }
@@ -70,9 +83,14 @@ export function toAttemptView(row: WebhookAttempt): WebhookAttemptView {
 export function toDeliveryDetail(
   row: WebhookDelivery,
   attempts: readonly WebhookAttempt[],
+  endpointUrl: string | null,
 ): WebhookDeliveryDetail {
+  const last = attempts.reduce<WebhookAttempt | undefined>(
+    (a, b) => (a && a.attemptNo > b.attemptNo ? a : b),
+    undefined,
+  )
   return {
-    ...toDeliveryView(row),
+    ...toDeliveryView(row, { endpointUrl, durationMs: last?.durationMs ?? null }),
     body: row.body,
     contentType: row.contentType,
     attempts: attempts.map(toAttemptView),

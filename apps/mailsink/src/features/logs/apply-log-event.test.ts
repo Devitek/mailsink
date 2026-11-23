@@ -18,6 +18,8 @@ const delivery: WebhookDeliveryView = {
   lastStatusCode: 500,
   replayOf: null,
   replayMode: null,
+  endpointUrl: 'https://hooks.example.test/mailsink',
+  durationMs: 42,
   createdAt: '2026-11-22T10:00:00.000Z',
 }
 const listKey = ['logs', 'staging', 'webhooks', 'list', { limit: 50 }]

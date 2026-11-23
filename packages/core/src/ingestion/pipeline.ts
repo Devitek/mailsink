@@ -174,6 +174,6 @@ export async function persistEmails(
     })),
   )
   const deliveries = await fanOutEvents(tx, target.workspaceId, written)
-  options.frames?.push(...deliveries.map((d) => deliveryFrame(d.delivery, d.connectionId)))
+  options.frames?.push(...deliveries.map(deliveryFrame))
   return results
 }

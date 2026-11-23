@@ -15,9 +15,11 @@ export {
   type ActiveApiKey,
   type ApiKey,
   activeKeyPrefixes,
+  activeWorkspaceKeyPrefix,
   findActiveApiKeyByHash,
   insertApiKeys,
   type NewApiKey,
+  revokeWorkspaceKeys,
 } from './repositories/api-keys'
 export {
   getBlobData,
@@ -202,11 +204,19 @@ export {
   type WebhookDelivery,
 } from './repositories/webhooks-deliveries'
 export {
+  findWebhookDeliveryFacts,
+  type WebhookDeliveryFacts,
+} from './repositories/webhooks-delivery-facts'
+export {
   deleteExpiredWorkspaces,
   touchWorkspaceActivity,
 } from './repositories/workspace-activity'
-export { countMessagesByWorkspace } from './repositories/workspace-message-counts'
 export {
+  countMessagesByConnection,
+  countMessagesByWorkspace,
+} from './repositories/workspace-message-counts'
+export {
+  countEphemeralWorkspaces,
   deleteWorkspace,
   findWorkspaceByRef,
   insertWorkspace,

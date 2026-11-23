@@ -29,7 +29,7 @@ export const getLoginState = createServerFn({ method: 'GET' }).handler(
     return {
       auth: uiAuth(runtime.config).auth,
       status,
-      retryAfter: loginLimiter(runtime).retryAfter(clientAddress(runtime)),
+      retryAfter: loginLimiter(runtime).retryAfter(await clientAddress(runtime)),
       home: await lastWorkspaceHome(runtime),
     }
   },

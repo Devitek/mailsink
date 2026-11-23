@@ -32,7 +32,11 @@ export function createdFrame(acceptedEventId: string, message: MessageSummary): 
 }
 
 export function eventFrame(row: MessageEventRow, connectionId: string | null): StreamFrame {
-  return { id: row.id, connectionId, event: { type: 'message.event', event: toEventView(row) } }
+  return {
+    id: row.id,
+    connectionId,
+    event: { type: 'message.event', messageId: row.messageId, event: toEventView(row) },
+  }
 }
 
 /** Aggregated message status (recipient null): derived, so it carries no SSE id. */

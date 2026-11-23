@@ -1,23 +1,14 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { type ConnectionKind, slugify } from '@mailsink/contracts'
-import {
-  Button,
-  DialogBody,
-  DialogClose,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  SegmentedControl,
-  Switch,
-} from '@mailsink/ui'
-import { useForm } from '@tanstack/react-form'
-import { useId, useRef, useState } from 'react'
+import { slugify } from '@mailsink/contracts'
+import { DialogBody, DialogDescription, DialogHeader, DialogTitle } from '@mailsink/ui'
+import { useForm, useStore } from '@tanstack/react-form'
+import { useRef, useState } from 'react'
 import type { CreatedWorkspace } from '../../server-fns/connections-types'
 import { createWorkspaceFn } from '../../server-fns/workspaces-manage-fns'
-import { KIND_OPTIONS } from '../connections/kinds'
 import { EphemeralHint } from './ephemeral-hint'
+import { FirstConnectionFields } from './first-connection-fields'
 import { firstError, TextField } from './form-fields'
+import { DialogFormFooter, FormFailure, RateLimitField } from './form-parts'
 import { RetentionField } from './retention-field'
 import { newWorkspaceDefaults, newWorkspaceSchema, toCreateRequest } from './workspace-form'
 
@@ -27,7 +18,6 @@ export function NewWorkspaceForm({
   onCreated,
 }: Readonly<{ onCreated: (workspace: CreatedWorkspace) => void }>) {
   const { t } = useLingui()
-  const switchId = useId()
   const slugEdited = useRef(false)
   const [slugTaken, setSlugTaken] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -50,6 +40,7 @@ export function NewWorkspaceForm({
       }
     },
   })
+  const submitting = useStore(form.store, (state) => state.isSubmitting)
   const shown = (meta: { isTouched: boolean; errors: readonly unknown[] }) =>
     meta.isTouched ? firstError(meta.errors) : undefined
 
@@ -118,70 +109,40 @@ export function NewWorkspaceForm({
           </form.Field>
           <form.Field name="rateLimit">
             {(field) => (
-              <TextField
-                label={<Trans>Default rate limit</Trans>}
+              <RateLimitField
                 name={field.name}
                 value={field.state.value}
                 onChange={field.handleChange}
                 onBlur={field.handleBlur}
                 error={shown(field.state.meta)}
-                placeholder={t`unlimited`}
-                inputMode="numeric"
-                suffix="req/s"
-                mono
               />
             )}
           </form.Field>
         </div>
-        <div className="flex flex-col gap-[13px] rounded-md border border-ms-border p-4">
-          <form.Field name="withConnection">
-            {(field) => (
-              <label htmlFor={switchId} className="flex items-center gap-[13px] text-sm">
-                <Switch
-                  id={switchId}
-                  checked={field.state.value}
-                  onCheckedChange={(on: boolean) => field.handleChange(on)}
+        <form.Field name="withConnection">
+          {(on) => (
+            <form.Field name="kind">
+              {(kind) => (
+                <FirstConnectionFields
+                  enabled={on.state.value}
+                  onEnabledChange={on.handleChange}
+                  kind={kind.state.value}
+                  onKindChange={kind.handleChange}
                 />
-                <Trans>Add a first connection</Trans>
-              </label>
-            )}
-          </form.Field>
-          <form.Subscribe selector={(state) => state.values.withConnection}>
-            {(withConnection) =>
-              withConnection && (
-                <form.Field name="kind">
-                  {(field) => (
-                    <SegmentedControl
-                      aria-label={t`Connection kind`}
-                      options={KIND_OPTIONS}
-                      value={field.state.value}
-                      onValueChange={(kind: ConnectionKind) => field.handleChange(kind)}
-                    />
-                  )}
-                </form.Field>
-              )
-            }
-          </form.Subscribe>
-        </div>
+              )}
+            </form.Field>
+          )}
+        </form.Field>
         <EphemeralHint />
         {failed && (
-          <p role="alert" className="text-sm text-ms-danger">
+          <FormFailure>
             <Trans>The workspace could not be created. Try again.</Trans>
-          </p>
+          </FormFailure>
         )}
       </DialogBody>
-      <DialogFooter>
-        <DialogClose render={<Button variant="outline" />}>
-          <Trans>Cancel</Trans>
-        </DialogClose>
-        <form.Subscribe selector={(state) => state.isSubmitting}>
-          {(submitting) => (
-            <Button type="submit" variant="primary" disabled={submitting}>
-              <Trans>Create the workspace</Trans>
-            </Button>
-          )}
-        </form.Subscribe>
-      </DialogFooter>
+      <DialogFormFooter submitting={submitting}>
+        <Trans>Create the workspace</Trans>
+      </DialogFormFooter>
     </form>
   )
 }
