@@ -96,6 +96,9 @@ test('the viewer simulates events and shows every part of the message', async ({
   expect((await download).suggestedFilename()).toBe('booking.ics')
 
   await page.getByRole('tab', { name: 'Headers & MIME' }).click()
+  // The request that created the message first, then its MIME source.
+  await expect(page.getByText(`"subject": "${booking.subject}"`)).toBeVisible()
+  await page.getByRole('radio', { name: 'EML source' }).click()
   await expect(page.getByText(`Subject: ${booking.subject}`)).toBeVisible()
 
   await page.getByRole('button', { name: 'Hard Bounce' }).click()
