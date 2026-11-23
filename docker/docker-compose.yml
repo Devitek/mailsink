@@ -1,6 +1,11 @@
 # Mailsink with Docker Compose (#18). Pick one profile:
 #   docker compose -f docker/docker-compose.yml --profile pglite up -d     # embedded PGlite
 #   docker compose -f docker/docker-compose.yml --profile postgres up -d   # PostgreSQL 18
+# Image: ghcr.io/devitek/mailsink:latest by default (#45); MAILSINK_IMAGE picks another tag
+# (ghcr.io/devitek/mailsink:0.1). Compose pulls it, and builds it from this checkout only
+# when the pull fails. To run your own build of the checkout instead:
+#   MAILSINK_IMAGE=mailsink:local docker compose -f docker/docker-compose.yml \
+#     --profile pglite up -d --build
 # Host ports: MAILSINK_HTTP_PORT (default 3000) and MAILSINK_SMTP_HOST_PORT (default 1025).
 # MAILSINK_ADMIN_KEY protects the Admin API; unset, every Admin API call is refused.
 # SMTP credentials and snippets give MAILSINK_SMTP_HOST_PORT as the port (D66), and
@@ -13,7 +18,7 @@
 # Unset, an empty volume is mounted instead and STARTTLS stays off.
 
 x-mailsink: &mailsink
-  image: ${MAILSINK_IMAGE:-mailsink:local}
+  image: ${MAILSINK_IMAGE:-ghcr.io/devitek/mailsink:latest}
   build:
     context: ..
     dockerfile: docker/Dockerfile
