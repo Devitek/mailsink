@@ -77,9 +77,9 @@ sequenceDiagram
   U->>U: wait=true and MCP wait_for_email resolve on match
 
   opt Manual event (E2E test, UI link click, MCP trigger_email_event)
-    U->>R: POST /capture/messages/:id/events {type: clicked, url} | {type: status, status}
+    U->>R: POST /capture/messages/:id/events {type: clicked, url} | {type: status, status}<br/>(or the MCP tool, origin mcp)
     R->>DB: TX (message locked): events (origin api), forced status + suppressions +<br/>aggregate (status only), webhook deliveries + jobs (D142)
-    R->>B: after commit: message.event per event, message.status if it changed,<br/>webhook.delivery per delivery
+    R->>B: after commit (core triggerAndPublishEvent, D180): message.event per event,<br/>message.status if it changed, webhook.delivery per delivery
   end
 
   opt Webhook test send and replay
@@ -88,10 +88,10 @@ sequenceDiagram
     R->>B: publish webhook.delivery
   end
 
-  opt Override API (POST /capture/override, /capture/override/reset)
+  opt Override API (POST /capture/override, /capture/override/reset) or MCP override tools
     U->>R: activate or reset (optional TTL)
     R->>DB: TX: close the open override of the scope, insert the new one
-    R->>B: publish override.changed (D96)
+    R->>B: publish override.changed (D96, from core, D180)
   end
 
   Note over DB: Schedulers: retention purge (messages, logs, finished webhook<br/>deliveries D154, failed jobs), override expiry (5 s, publishes<br/>override.changed, D96), ephemeral GC (30 s, expires_at < now -><br/>DELETE CASCADE, publishes workspace.deleted), idempotency cleanup
@@ -140,4 +140,42 @@ sequenceDiagram
   between the query and the subscription is not missed.
 - **Workspace deletion**: the ephemeral GC and `DELETE /admin/workspaces/:id` (D97) both
   publish `workspace.deleted`, which closes the open SSE streams and ends the `wait=true`
-  calls of that workspace (404); MCP sessions follow with #44.
+  calls of that workspace (404). MCP exchanges end the same way (D169): each `POST /mcp`
+  subscribes to its workspace channel; on `workspace.deleted` a pending `wait_for_email`
+  answers `not_found` at once, the calls still in flight get 1 s, then the server and its
+  response stream are closed. Without deletion, the server is closed when the response
+  ends or the client aborts (stateless: nothing outlives the exchange).
+
+## Web UI sign-in (#37, D13, D160 to D163)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Br as Browser
+  participant G as Route guard (beforeLoad)
+  participant L as /login (page + POST handler)
+  participant S as Server functions (signedIn)
+
+  Br->>G: GET /w/staging (no or invalid mailsink_session cookie)
+  G-->>Br: redirect /login?redirect=%2Fw%2Fstaging (L1d banner if the cookie expired)
+  Br->>L: GET /login?redirect=… (SSR: locale, theme, login state, Retry-After left)
+  Br->>L: POST /login { key }
+  alt right key, limiter open
+    L-->>Br: 204 Set-Cookie: mailsink_session=v1.<expires>.<nonce>.<sig> (HttpOnly, Lax)
+    Br->>G: navigate to redirect (safeRedirect: same-origin path), else last workspace, else /
+    G->>S: loaders call server functions with the cookie
+    S-->>G: data (signedIn middleware verifies the HMAC and the expiry)
+  else wrong key
+    L-->>Br: 401 unauthorized (the failure counts for the client address)
+  else limiter paused (D161)
+    L-->>Br: 429 rate_limited + Retry-After (right key included)
+  end
+```
+
+- The session is stateless (D160): nothing is stored server side; signing out deletes the
+  cookie of this browser, rotating `MAILSINK_SESSION_SECRET` (or the admin key it derives
+  from) signs everyone out.
+- Client address of the limiter: the socket address, or the last `X-Forwarded-For` entry
+  with `MAILSINK_TRUST_PROXY` (D182, D185).
+- `MAILSINK_UI_AUTH=none`: no guard, `/login` redirects to the page asked for and
+  `POST /login` answers 404.

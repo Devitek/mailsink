@@ -52,6 +52,12 @@ mailsink/
 │       │   │   ├── body-limit.ts         # request body cap (MAILSINK_MAX_MESSAGE_BYTES), buffered
 │       │   │   │                         # bytes kept for the request log (D157)
 │       │   │   ├── health.ts             # GET /healthz: liveness + database readiness (D42)
+│       │   │   ├── mcp.ts                # POST|GET|DELETE /mcp: defineApi() + handleMcpRequest()
+│       │   │   │                         # with the workspace and MAILSINK_PUBLIC_URL (D165)
+│       │   │   ├── client-ip.ts          # client address: socket, or the last X-Forwarded-For
+│       │   │   │                         # entry with MAILSINK_TRUST_PROXY (D182, D185)
+│       │   │   ├── start-server.ts       # Start request helpers read from a complete namespace
+│       │   │   │                         # (`vite dev` getCookie race, D183)
 │       │   │   ├── test-fixtures.ts      # test-only: runtime in the slot (event bus, activity
 │       │   │   │                         # tracker and log writer included), seeded keys (rows from
 │       │   │   │                         # @mailsink/db/testing)
@@ -71,10 +77,10 @@ mailsink/
 │       │   │   │   └── brevo/            # send.ts (POST /v3/smtp/email), errors.ts (D127),
 │       │   │   │                         # testing.ts (SDK contract tests)
 │       │   │   ├── activity.ts           # afterAuth extension: workspace activity touch (#20)
-│       │   │   └── capture/              # api.ts (list, wait=true, detail, purge publishing
-│       │   │                             # messages.purged), download.ts (raw EML, attachments,
-│       │   │                             # D60), override.ts (GET, activate, reset; publishes
-│       │   │                             # override.changed, D96), suppressions.ts (D75),
+│       │   │   └── capture/              # api.ts (list, wait=true, detail, purge through
+│       │   │                             # core purgeAndPublish), download.ts (raw EML,
+│       │   │                             # attachments, D60), override.ts (GET, activate, reset
+│       │   │                             # through core, override.changed, D96), suppressions.ts (D75),
 │       │   │                             # stream.ts (GET /capture/stream), stream-sse.ts
 │       │   │                             # (ReadableStream SSE: heartbeat, Last-Event-ID
 │       │   │                             # replay, filters), logs.ts (GET /capture/logs/api,
@@ -84,11 +90,14 @@ mailsink/
 │       │   │                             # 422 private_webhook_url, D150), webhooks-deliveries.ts
 │       │   │                             # (delivery log, detail, replay, #33)
 │       │   ├── routes/
-│       │   │   ├── __root.tsx
-│       │   │   ├── index.tsx                         # workspace picker
-│       │   │   ├── login.tsx                         # admin-key login (D13)
-│       │   │   ├── w.$workspaceSlug.tsx              # workspace layout (sidebar, SSE)
-│       │   │   ├── w.$workspaceSlug.index.tsx        # inbox (virtualized)
+│       │   │   ├── __root.tsx                        # html shell: locale, theme, instance and public
+│       │   │   │                                     # URL loaded during SSR; head: product title,
+│       │   │   │                                     # social tags per locale
+│       │   │   ├── index.tsx                         # workspace picker (PickerSearch, D164)
+│       │   │   ├── login.tsx                         # admin-key sign-in page, POST /login handler
+│       │   │   │                                     # (D13, D160 to D163)
+│       │   │   ├── w.$workspaceSlug.tsx              # workspace layout: header, tabs (guarded)
+│       │   │   ├── w.$workspaceSlug.index.tsx        # inbox (virtualized), planned
 │       │   │   ├── w.$workspaceSlug.m.$messageId.tsx # message viewer
 │       │   │   ├── w.$workspaceSlug.logs.tsx         # API / SMTP / webhook logs (tabs)
 │       │   │   ├── w.$workspaceSlug.suppressions.tsx
@@ -129,12 +138,28 @@ mailsink/
 │       │   │   ├── capture.stream.ts                 # SSE
 │       │   │   ├── mcp.ts                            # Streamable HTTP (stateless)
 │       │   │   └── healthz.ts
+│       │   ├── auth/                      # web UI sign-in (D13, D160 to D163)
+│       │   │   ├── session.ts             # UI auth settings, cookie options, session status
+│       │   │   ├── session-token.ts       # signed stateless session token (HMAC, expiry)
+│       │   │   ├── session.server.ts      # request-bound: read / clear the cookie, limiter key
+│       │   │   ├── login-limiter.ts       # failed sign-ins per client address, Retry-After
+│       │   │   ├── login-handler.ts       # POST /login: key check, cookie, redirect or 401 / 429
+│       │   │   ├── login-route.server.ts  # POST /login in the request context
+│       │   │   ├── auth-fns.ts            # server functions: login state, sign out
+│       │   │   ├── guard.ts               # ensureSignedIn(): route guard, back to the page asked
+│       │   │   └── redirect.ts            # safeRedirect(): same-origin paths only
 │       │   ├── server-fns/                # createServerFn wrappers for the UI, by feature
-│       │   │   ├── workspaces.ts  connections.ts  messages.ts  logs.ts
-│       │   │   ├── overrides.ts   webhooks.ts     suppressions.ts
+│       │   │   ├── instance-fns.ts        # version (MAILSINK_VERSION) and UI auth mode
+│       │   │   ├── workspaces-fns.ts      # picker list, one workspace (touches its activity)
+│       │   │   ├── workspaces.server.ts   # their server side, last workspace cookie
+│       │   │   └── workspace-types.ts     # UI views of a workspace
 │       │   ├── features/                  # UI, one folder per feature
-│       │   │   ├── workspace-picker/      # Base UI Switch "show ephemeral"
-│       │   │   ├── inbox/                 # TanStack Virtual list, SSE -> Query cache
+│       │   │   ├── login/                 # sign-in screen, key field, banners, countdown
+│       │   │   ├── shell/                 # app header, nav tabs, « Language and session »
+│       │   │   │                          # menu, instance block
+│       │   │   ├── workspaces/            # picker popover and page sections (Base UI Switch
+│       │   │   │                          # "show ephemeral"), ephemeral badge, queries
+│       │   │   ├── inbox/                 # TanStack Virtual list, SSE -> Query cache (planned)
 │       │   │   ├── message-viewer/        # sandboxed iframe, desktop/mobile, MIME, links
 │       │   │   ├── logs/                  # TanStack Table DataTable + Sheet inspector
 │       │   │   ├── connections/           # TanStack Form, kind-conditional fields
@@ -156,16 +181,20 @@ mailsink/
 │       │   ├── theme/                     # light/dark theme: themes.ts, theme-context.tsx
 │       │   │                              # (one context per process, D149), theme-toggle.tsx,
 │       │   │                              # theme-fns.ts, theme.server.ts
-│       │   ├── seo/                       # social-meta.ts (Open Graph and Twitter tags),
-│       │   │                              # public-url-fns.ts (MAILSINK_PUBLIC_URL for the meta)
+│       │   ├── seo/                       # social-meta.ts (Open Graph and Twitter tags, image
+│       │   │                              # per locale), page-title.ts (localized <title> per
+│       │   │                              # page, D183), public-url-fns.ts (MAILSINK_PUBLIC_URL)
 │       │   └── styles/                    # app.css (Tailwind entry, imports @mailsink/ui tokens),
 │       │                                  # fonts.css (self-hosted fonts, B1-5)
 │       ├── public/                        # brand assets: favicon.svg, mark-*.png, maskable-*.png,
-│       │                                  # apple-touch-icon-180.png, og-image, manifest.webmanifest
+│       │                                  # apple-touch-icon-180.png, manifest.webmanifest,
+│       │                                  # og-image-{en,fr}-1200x630.png (docs/design/og/)
 │       └── tests/e2e/                     # Playwright against the production build
 │           ├── web-server.ts              # shared config: ports, admin key, webServer
 │           ├── serve.ts                   # node <entry> on a throwaway PGlite directory
 │           ├── smoke.spec.ts  smoke-theme.spec.ts  locale.spec.ts
+│           ├── ui/                        # sign-in, picker, session menu, contrast; the
+│           │                              # login-limit.spec.ts scenario runs alone, last
 │           ├── recipe/                    # docs/guides/e2e.md: fixtures.ts (ephemeral workspace
 │           │                              # per worker, reset, cleanup), recipe.spec.ts (send,
 │           │                              # wait=true, bounce override), realtime.spec.ts (SSE
@@ -188,7 +217,8 @@ mailsink/
 │   │       ├── webhook-delivery.ts      # deliveries, attempts, replay (#33)
 │   │       ├── webhook-payloads.ts      # unified, Resend and Brevo payload shapes (D21)
 │   │       ├── settings.ts              # retention, rate limit, simulation defaults
-│   │       └── search-params.ts         # UI search params (filters, tabs)
+│   │       ├── search-params.ts         # UI search params (PickerSearch; filters, tabs)
+│   │       └── version.ts               # MAILSINK_VERSION, from the root package.json (D181)
 │   ├── db/                                # Drizzle (doc 02)
 │   │   ├── drizzle.config.ts
 │   │   ├── migrations/                    # drizzle-kit output (0000_init.sql…)
@@ -234,14 +264,17 @@ mailsink/
 │   │       │                 brevo/{normalize,send}.ts
 │   │       ├── templates/    render.ts service.ts views.ts         # Brevo {{ params.x }}, #30
 │   │       ├── events-api/   manual.ts (POST …/events, #34) engagement.ts (opened / clicked)
+│   │       │                 publish-trigger.ts (triggerAndPublishEvent, D180)
 │   │       ├── rate-limit/   token-bucket.ts request-guard.ts (guardRequest, smtpGuardReply)
 │   │       │                 smtp-reply.ts                         # D90 to D92
 │   │       ├── chaos/        draw.ts smtp-reply.ts                 # D93, D94
 │   │       ├── logs/         writer.ts (createLogWriter, recordSmtpSession) sanitize.ts
 │   │       │                 transcript.ts query.ts views.ts       # #35, D145 to D147
 │   │       ├── suppression/  service.ts
-│   │       ├── overrides/    service.ts views.ts expiry.ts publish.ts (override.changed, D96)
+│   │       ├── overrides/    service.ts views.ts expiry.ts publish.ts (override.changed, D96;
+│   │       │                 activate / reset and publish, D180)
 │   │       ├── events/       bus.ts frames.ts filter.ts replay.ts  # D6, D80 to D84
+│   │       │                 live.ts (LiveDeps: db + bus of the publishing services)
 │   │       ├── webhooks/     endpoints.ts endpoint-input.ts url-guard.ts (D150, D155)
 │   │       │                 fanout.ts context.ts jobs.ts attempt.ts send.ts retry.ts
 │   │       │                 deliveries.ts (log, replay) sample.ts sample-send.ts secret.ts
@@ -249,6 +282,7 @@ mailsink/
 │   │       │   └── formatters/            # Strategy, one per payloadFormat (D20, D21)
 │   │       │       types.ts events-map.ts shared.ts unified.ts resend.ts brevo.ts index.ts
 │   │       ├── capture/      service.ts query.ts cursor.ts views.ts wait.ts
+│   │       │                 publish-purge.ts (purgeAndPublish, D180)
 │   │       │                 testing/fixtures.ts (@mailsink/core/capture-testing)
 │   │       ├── blobs/        store.ts db-store.ts
 │   │       ├── simulation/   simulate-delivery.ts (one run, D70) planner.ts settings-planner.ts
@@ -266,11 +300,14 @@ mailsink/
 │   │            on-data.ts sessions.ts session-record.ts transcript.ts tls.ts (D134)
 │   │            testing.ts (contract test harness, raw SMTP dialogue)
 │   ├── mcp/                               # McpServer factory + tools, transport-agnostic
-│   │   └── src/ server.ts tools/{list,get,wait,trigger,override,purge,logs}.ts
+│   │   └── src/ server.ts (factory, serverInfo version D181) http.ts (stateless Streamable
+│   │            HTTP, D165, D169) context.ts result.ts schemas.ts urls.ts (absolute URLs)
+│   │            tools/{messages,content,actions,override,logs}.ts testing.ts
 │   ├── ui/                                # shadcn/ui on Base UI + design tokens
-│   │   └── src/ index.ts  components/ (brand, button, input, sheet, status-badge, switch, tabs)
-│   │            lib/cn.ts  styles/ (tokens.css, tokens-ext.css, theme.css, index.css,
-│   │            css-declarations.ts)
+│   │   └── src/ index.ts  components/ (brand, button, card, field, input, menu, popover, sheet,
+│   │            status-badge, switch, tabs)  lib/cn.ts  styles/ (tokens.css, tokens-ext.css
+│   │            with the faint text override D184, theme.css, index.css, css-declarations.ts,
+│   │            contrast.ts)
 │   └── cli/                               # `mailsink` bin: migrate, mcp (stdio proxy, D14)
 │                                          # built by tsdown into dist/bin.mjs (+ migrations)
 ├── docker/
@@ -284,7 +321,10 @@ mailsink/
 ├── .dockerignore
 ├── docs/
 │   ├── architecture/
+│   ├── design/                            # design deliveries kept verbatim (brand-1, brief-2),
+│   │                                      # og/ (Open Graph images EN and FR, #36)
 │   ├── guides/e2e.md                      # E2E recipe: workspace per worker, wait=true, overrides
+│   ├── guides/mcp.md                      # MCP clients (Claude Code, Claude Desktop, Cursor), tools
 │   └── contributing/translations.md       # how to add or fix a locale (D17)
 ├── .github/ workflows/ci.yml             # lint, typecheck, test (PGlite + Postgres), build, e2e
 │            workflows/docker.yml         # image build + docker/smoke-test.sh
@@ -316,8 +356,8 @@ the requests still running on the old runtime (at most 10 s), then stops it the 
 
 ## Configuration (env, validated by Zod at boot)
 
-`src/runtime/config.ts` validates every variable of the first table at boot; the variables of
-the second table join the schema with their feature. An invalid value stops the boot with exit
+`src/runtime/config.ts` validates every variable of the table below at boot; a new variable
+joins the schema with the feature using it. An invalid value stops the boot with exit
 code 1 (D28) and the error names the variable, never its value. Empty values count as unset.
 
 | Variable | Default | Purpose |
@@ -340,10 +380,8 @@ code 1 (D28) and the error names the variable, never its value. Empty values cou
 | `MAILSINK_JOBS_FAILED_RETENTION_SECONDS` | `604800` (7 days) | How long a failed job stays for diagnosis before the retention pass purges it (60 to 31536000, D65) |
 | `MAILSINK_SMTP_TLS_CERT` / `_KEY` | unset | STARTTLS PEM file paths, both or neither, read at boot (D134); in docker-compose, files of `MAILSINK_SMTP_TLS_DIR` under `/app/tls` (D159) |
 | `MAILSINK_WEBHOOK_BLOCK_PRIVATE` | `false` | `true` refuses webhook URLs resolving to private, loopback or link-local addresses, at creation and at send time (D150, D155) |
-
-Planned, not read yet:
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `MAILSINK_UI_AUTH` | `admin-key` | `none` for local/CI |
-| `MAILSINK_SESSION_SECRET` | derived from admin key | Cookie signing |
+| `MAILSINK_UI_AUTH` | `admin-key` | `none`: no sign-in at all, for local runs and CI (D13) |
+| `MAILSINK_SESSION_SECRET` | derived from the admin key | Session cookie signing, at least 32 characters (D160) |
+| `MAILSINK_SESSION_TTL` | `604800` (7 days) | Session lifetime: seconds or a duration (`12h`), 60 s to 1 year |
+| `MAILSINK_UI_LOGIN_MAX_ATTEMPTS` / `_LOCK_SECONDS` | `5` / `60` | Failed sign-ins per client address within the window, then a pause of that length (`Retry-After`, D161) |
+| `MAILSINK_TRUST_PROXY` | `false` | `true` (behind a reverse proxy): the client address of the sign-in limiter and of the request log `ip` is the last `X-Forwarded-For` entry, not the socket address (D182, D185) |
