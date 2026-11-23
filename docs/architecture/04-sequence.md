@@ -39,17 +39,19 @@ sequenceDiagram
   R->>P: ingest(normalized, ctx, idempotencyKey)
   P->>DB: idempotency lookup (replay stored response if same hash, 409 if different)
   P->>P: compose EML if missing (D9), extract links, check suppression list
-  P->>DB: TX: blobs, message(status=queued), recipients, attachments,<br/>event accepted (+ suppressed), idempotency row,<br/>job simulate_delivery(run_at = now + latency or rule delay)
-  P->>B: publish message.created
+  P->>DB: TX: blobs, message(status=queued), recipients, attachments,<br/>event accepted (+ suppressed), idempotency row,<br/>job simulate_delivery(run_at = now, D70)
+  P->>B: after commit: publish message.created (+ message.event suppressed, D81)
   P-->>R: message ids
   R-->>C: 200 {id} | 201 {messageId} | 250 queued as msg_…
   R--)DB: api_logs / smtp_sessions (async, redacted)
 
   Note over Q: polls jobs FOR UPDATE SKIP LOCKED
   Q->>DB: claim simulate_delivery
-  Q->>S: draw per recipient: deterministic rule match first, else weighted rates
-  Q->>DB: TX: event sent + final status per recipient, aggregate message.status,<br/>hard_bounce/complained -> suppressions upsert,<br/>deferred -> new job later (then delivered or bounce),<br/>webhook_deliveries rows + deliver_webhook jobs
-  Q->>B: publish message.status, message.event
+  Q->>S: first run: effective settings (overrides active now), per recipient<br/>rule match first, else weighted draw; status + delay (D70, D71)
+  Q->>DB: TX (message locked): queued -> event sent, decisions in messages.simulation,<br/>aggregate message.status, follow-up job at the earliest pending decision
+  Note over Q: follow-up run, once a delay is over
+  Q->>DB: TX: event + final status per due recipient,<br/>hard_bounce/complained -> suppressions upsert,<br/>deferred -> decided again 1 s + delay later (4th: soft_bounce, D72),<br/>next follow-up job if a decision is pending,<br/>webhook_deliveries rows + deliver_webhook jobs (#33)
+  Q->>B: after commit: message.event per written row, then message.status (D95)
 
   Note over Q,W: fan-out at status time: endpoints whose scope matches (connection or<br/>workspace) and whose canonical events include it. Formatter chosen by the<br/>endpoint payloadFormat, never by the ingestion channel (D20). Body serialized once.
   Q->>W: claim deliver_webhook
@@ -72,7 +74,13 @@ sequenceDiagram
     R->>B: publish message.event
   end
 
-  Note over DB: Schedulers: retention purge, override expiry,<br/>ephemeral GC (expires_at < now -> DELETE CASCADE),<br/>idempotency cleanup
+  opt Override API (POST /capture/override, /capture/override/reset)
+    U->>R: activate or reset (optional TTL)
+    R->>DB: TX: close the open override of the scope, insert the new one
+    R->>B: publish override.changed (D96)
+  end
+
+  Note over DB: Schedulers: retention purge, override expiry (5 s, publishes<br/>override.changed, D96), ephemeral GC (30 s, expires_at < now -><br/>DELETE CASCADE, publishes workspace.deleted), idempotency cleanup
 ```
 
 ## Notes
@@ -80,10 +88,23 @@ sequenceDiagram
 - **Ordering guarantee**: one transaction writes the message and its first job, so a
   crash never leaves a message without its simulation, and the worker never sees a job
   whose message is not committed.
-- **Latency semantics**: the HTTP/SMTP reply is immediate; `latency` and rule `delayMs`
-  delay the transition from `queued` to the final status (what providers do). Chaos is
-  the only knob that slows or fails the request itself (`chaos.slowMs` can be added later).
+- **Latency semantics**: the HTTP/SMTP reply is immediate and the first job runs at once;
+  `latency` and rule `delayMs` are per recipient, so they delay the transition from `sent`
+  to the final status through follow-up jobs (D70), what providers do. Chaos is the only
+  knob that slows or fails the request itself (`chaos.slowMs` can be added later).
+- **Simulation files** (`packages/core/src/simulation/`): `simulate-delivery.ts` is one
+  run (steps above); `settings-planner.ts` is the default `DeliveryPlanner`
+  (`planner.ts`), it loads the four layers (`load-settings.ts`, `settings-resolver.ts`)
+  and decides each recipient (`decide.ts`: `rules.ts` globs, then `draw.ts` with the
+  `rng.ts` generator); `recorder.ts` writes statuses, events and suppressions;
+  `aggregate.ts` derives the message status; `snapshot.ts` reads and checks
+  `messages.simulation`. The job side is `jobs/handlers/simulate.ts` (payload, run) and
+  `simulate-publish.ts` (frames of the rows the run returns, D95).
+- **Duplicated follow-up job**: a crash between the commit of a run and the deletion of
+  its job runs the job again; that replay writes no event but may enqueue a second
+  follow-up job, which later completes without effect (doc 02, D99).
 - **wait=true** subscribes to the bus *before* running the query, so a message committed
   between the query and the subscription is not missed.
-- **Ephemeral GC** publishes `workspace.deleted` to close open SSE streams and MCP
-  sessions of that workspace.
+- **Workspace deletion**: the ephemeral GC and `DELETE /admin/workspaces/:id` (D97) both
+  publish `workspace.deleted`, which closes the open SSE streams and ends the `wait=true`
+  calls of that workspace (404); MCP sessions follow with #44.
