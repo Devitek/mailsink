@@ -1,6 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Button } from '@mailsink/ui'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query'
 import { SectionHeader } from '../settings/section-header'
 import { ConfirmDialog } from '../workspaces/confirm-dialog'
 import { templatesQuery, useTemplateMutations } from './queries'
@@ -13,7 +13,8 @@ const COLUMNS = 'grid grid-cols-[80px_minmax(0,1fr)_minmax(0,1.4fr)_150px] items
 // may send, with their subject, sender and an editor with a rendered preview.
 export function TemplatesSection({ slug }: Readonly<{ slug: string }>) {
   const { t, i18n } = useLingui()
-  const { data: templates } = useSuspenseQuery(templatesQuery(slug))
+  const list = useSuspenseInfiniteQuery(templatesQuery(slug))
+  const templates = list.data.pages.flatMap((p) => p.data)
   const { remove } = useTemplateMutations(slug)
   const params = '{{ params.x }}'
   const contact = '{{ contact.X }}'
@@ -100,6 +101,17 @@ export function TemplatesSection({ slug }: Readonly<{ slug: string }>) {
           )}
         </div>
       </div>
+      {list.hasNextPage && (
+        <div className="mt-[13px] flex justify-center">
+          <Button
+            variant="outline"
+            disabled={list.isFetchingNextPage}
+            onClick={() => void list.fetchNextPage()}
+          >
+            <Trans>Load more</Trans>
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

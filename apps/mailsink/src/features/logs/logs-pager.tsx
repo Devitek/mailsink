@@ -16,7 +16,7 @@ function usePagerLabels() {
   }
 }
 
-/** Page-number pager of the API and SMTP tables (total known). */
+/** Page-number pager of the log tables (total known), shared by the three tabs. */
 export function PagePager({
   search,
   setSearch,
@@ -26,7 +26,8 @@ export function PagePager({
   const labels = usePagerLabels()
   const page = search.page ?? 1
   const pageSize = search.pageSize ?? DEFAULT_PAGE_SIZE
-  const toPage = (n: number) => setSearch({ page: n === 1 ? undefined : n, inspect: undefined })
+  const toPage = (n: number) =>
+    setSearch({ page: n === 1 ? undefined : n, cursor: undefined, inspect: undefined })
   return (
     <DataTablePagination
       summary={rangeOf(page, pageSize, rows, total)}
@@ -34,39 +35,6 @@ export function PagePager({
       canNext={page * pageSize < total}
       onPrevious={() => toPage(page - 1)}
       onNext={() => toPage(page + 1)}
-      pageSize={pageSize}
-      pageSizes={PAGE_SIZES}
-      onPageSize={(size) => setSearch({ pageSize: size === DEFAULT_PAGE_SIZE ? undefined : size })}
-      labels={labels}
-    />
-  )
-}
-
-/**
- * Keyset pager of the delivery log (no total): « Older » follows the cursor of the page,
- * « Newest » goes back to the first page (a keyset has no previous page).
- */
-export function CursorPager({
-  search,
-  setSearch,
-  rows,
-  nextCursor,
-}: Readonly<{
-  search: LogsSearch
-  setSearch: SetLogsSearch
-  rows: number
-  nextCursor: string | null
-}>) {
-  const { t } = useLingui()
-  const labels = { ...usePagerLabels(), previous: t`Newest`, next: t`Older` }
-  const pageSize = search.pageSize ?? DEFAULT_PAGE_SIZE
-  return (
-    <DataTablePagination
-      summary={t`${rows} shown`}
-      canPrevious={search.cursor !== undefined}
-      canNext={nextCursor !== null}
-      onPrevious={() => setSearch({ cursor: undefined, inspect: undefined })}
-      onNext={() => nextCursor && setSearch({ cursor: nextCursor, inspect: undefined })}
       pageSize={pageSize}
       pageSizes={PAGE_SIZES}
       onPageSize={(size) => setSearch({ pageSize: size === DEFAULT_PAGE_SIZE ? undefined : size })}

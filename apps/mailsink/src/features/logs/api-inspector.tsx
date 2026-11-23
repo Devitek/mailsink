@@ -16,8 +16,8 @@ import { CodeBadge, TypeBadge } from './log-badges'
 import { apiLogQuery } from './queries'
 
 // API call inspector (#41): request headers (credentials already redacted by the log
-// writer, D146) and body, then the response status, error code and body. Response
-// headers are not stored by the request log.
+// writer, D146) and body, then the response status, error code, headers (stored since the
+// migration 0003: older calls show none) and body.
 export function ApiInspector({
   slug,
   id,
@@ -60,6 +60,7 @@ export function ApiInspector({
               {log.errorCode ? ` · ${log.errorCode}` : ''}
               {log.ip ? `\n${t`Client`} ${log.ip}` : ''}
             </CodeBlock>
+            <HeaderTable headers={log.responseHeaders} label={t`Response headers`} />
             {log.responseBody ? (
               <CodeBlock tone="text">{log.responseBody}</CodeBlock>
             ) : (

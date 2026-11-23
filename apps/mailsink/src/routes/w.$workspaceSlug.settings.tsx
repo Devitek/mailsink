@@ -4,6 +4,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { settingsQuery } from '../features/settings/queries'
 import { SettingsScreen } from '../features/settings/settings-screen'
+import { suppressionsQuery } from '../features/suppressions/queries'
 import { templatesQuery } from '../features/templates/queries'
 import { endpointsQuery } from '../features/webhooks/queries'
 import { pageTitle } from '../seo/page-title'
@@ -20,7 +21,9 @@ export const Route = createFileRoute('/w/$workspaceSlug/settings')({
     if (!page) throw notFound()
     if (deps.section === 'webhooks') await context.queryClient.ensureQueryData(endpointsQuery(slug))
     if (deps.section === 'templates')
-      await context.queryClient.ensureQueryData(templatesQuery(slug))
+      await context.queryClient.ensureInfiniteQueryData(templatesQuery(slug))
+    if (deps.section === 'retention')
+      await context.queryClient.ensureInfiniteQueryData(suppressionsQuery(slug, undefined))
   },
   head: ({ matches }) => ({ meta: [pageTitle(matches, msg`Settings`)] }),
   component: SettingsRoute,

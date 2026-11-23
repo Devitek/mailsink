@@ -1,8 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { Button, cn, Switch } from '@mailsink/ui'
+import { Button, cn, SegmentedControl, Switch } from '@mailsink/ui'
 import { useId, useState } from 'react'
 import type { ViewerMessage } from '../../server-fns/messages-types'
-import { Segmented } from '../inbox/segmented'
 import { inboxPaths, type PreviewScheme } from '../inbox/ui-paths'
 import { useStoredFlag } from './use-stored-flag'
 
@@ -43,23 +42,25 @@ export function PreviewTab({
   return (
     <div className="flex h-full min-h-[420px] flex-col">
       <div className="flex flex-wrap items-center gap-2.5 border-b border-ms-border px-6 py-3.5">
-        <Segmented
-          label={t`Preview width`}
+        <SegmentedControl
+          aria-label={t`Preview width`}
           value={device}
-          onChange={setDevice}
+          onValueChange={setDevice}
           options={[
             { value: 'desktop', label: t`Desktop` },
             { value: 'mobile', label: t`Mobile` },
           ]}
+          fill
         />
-        <Segmented
-          label={t`Preview background`}
+        <SegmentedControl
+          aria-label={t`Preview background`}
           value={scheme}
-          onChange={setScheme}
+          onValueChange={setScheme}
           options={[
             { value: 'light', label: t`Light background` },
             { value: 'dark', label: t`Dark background` },
           ]}
+          fill
         />
         <span className="flex items-center gap-2 text-xs text-ms-text-muted">
           <Switch

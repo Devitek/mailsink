@@ -2,7 +2,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { Button } from '@mailsink/ui'
 import { useState } from 'react'
 import type { EndpointRow } from '../../server-fns/webhooks-types'
-import { CopyButton } from '../connections/copy-button'
+import { CopyButton } from '../shell/copy-button'
 import { ConfirmDialog } from '../workspaces/confirm-dialog'
 import { useEndpointMutations } from './queries'
 

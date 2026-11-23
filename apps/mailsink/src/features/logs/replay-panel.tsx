@@ -1,9 +1,8 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { ReplayMode, WebhookDeliveryView } from '@mailsink/contracts'
-import { Button } from '@mailsink/ui'
+import { Button, SegmentedControl } from '@mailsink/ui'
 import { useState } from 'react'
 import type { InspectedDelivery } from '../../server-fns/logs-types'
-import { Segmented } from '../inbox/segmented'
 import { staleSignatureMinutes } from './replay-warning'
 import { useReplay } from './use-replay'
 
@@ -41,15 +40,16 @@ export function ReplayPanel({
             {delivery.endpoint?.url ?? delivery.endpointId}
           </div>
         </div>
-        <Segmented
-          label={t`Replay mode`}
+        <SegmentedControl
+          aria-label={t`Replay mode`}
           value={mode}
-          onChange={setMode}
+          onValueChange={setMode}
           options={[
             { value: 'exact', label: 'exact' },
             { value: 'resign', label: 'resign' },
           ]}
           className="w-[160px]"
+          fill
         />
         <Button
           variant="primary"

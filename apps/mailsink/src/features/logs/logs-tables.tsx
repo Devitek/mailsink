@@ -4,8 +4,9 @@ import { DataTable, type DataTableProps } from '@mailsink/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import type { LogSources } from '../../server-fns/logs-types'
+import { NARROW_QUERY, useMediaQuery } from '../shell/use-media-query'
 import { useApiColumns } from './api-columns'
-import { CursorPager, PagePager, type SetLogsSearch } from './logs-pager'
+import { PagePager, type SetLogsSearch } from './logs-pager'
 import { apiLogsQuery, deliveriesQuery, smtpSessionsQuery } from './queries'
 import {
   apiQueryOf,
@@ -38,14 +39,24 @@ const WIDTHS = {
   durationMs: '96px',
 }
 
+/** Below 768 px: time, action and status only, no sideways scroll. */
+const NARROW_HIDDEN = ['type', 'connection', 'durationMs']
+const NARROW_WIDTHS = { createdAt: '84px', status: '96px', statusCode: '96px' }
+
 function Frame<T extends object>({
   table,
   pager,
 }: Readonly<{ table: DataTableProps<T>; pager: ReactNode }>) {
+  const narrow = useMediaQuery(NARROW_QUERY)
   return (
     <>
       <div className="min-h-0 flex-1 overflow-auto">
-        <DataTable {...table} widths={WIDTHS} className="min-w-[860px]" />
+        <DataTable
+          {...table}
+          widths={narrow ? NARROW_WIDTHS : WIDTHS}
+          hiddenColumns={narrow ? NARROW_HIDDEN : undefined}
+          className={narrow ? undefined : 'min-w-[860px]'}
+        />
       </div>
       {pager}
     </>
@@ -69,7 +80,12 @@ const filtered = (s: LogsSearch) =>
       s.outcome ||
       s.delivery ||
       s.format ||
-      s.endpointId,
+      s.endpointId ||
+      s.messageId ||
+      s.since ||
+      s.until ||
+      s.method ||
+      s.errorCode,
   )
 
 export function ApiLogsTable({ slug, search, setSearch, sources, now }: Readonly<LogsTableProps>) {
@@ -81,6 +97,7 @@ export function ApiLogsTable({ slug, search, setSearch, sources, now }: Readonly
       table={{
         label: t`API calls`,
         columns,
+        rowLabel: (row) => `${row.method} ${row.path} ${row.statusCode}`,
         data: data?.data ?? [],
         getRowId: (row) => row.id,
         sorting: sortingOf(sortOf(search)),
@@ -111,6 +128,7 @@ export function SmtpLogsTable({ slug, search, setSearch, sources, now }: Readonl
       table={{
         label: t`SMTP sessions`,
         columns,
+        rowLabel: (row) => `SMTP ${row.remoteAddress} ${row.outcome}`,
         data: data?.data ?? [],
         getRowId: (row) => row.id,
         sorting: sortingOf(sortOf(search)),
@@ -147,6 +165,7 @@ export function WebhookLogsTable({
       table={{
         label: t`Webhook deliveries`,
         columns,
+        rowLabel: (row) => `${row.dialectEvent} ${row.payloadFormat} ${row.status}`,
         data: data?.data ?? [],
         getRowId: (row) => row.id,
         selectedRowId: search.inspect,
@@ -157,11 +176,11 @@ export function WebhookLogsTable({
         empty: data && <Empty filtered={filtered(search)} />,
       }}
       pager={
-        <CursorPager
+        <PagePager
           search={search}
           setSearch={setSearch}
           rows={data?.data.length ?? 0}
-          nextCursor={data?.nextCursor ?? null}
+          total={data?.total ?? 0}
         />
       }
     />

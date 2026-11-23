@@ -39,11 +39,12 @@ export function withReplay(
   query: DeliveriesQueryInput,
   row: WebhookDeliveryView,
 ): ListWebhookDeliveriesResponse | undefined {
-  if (!page || query.cursor) return page
+  if (!page || query.cursor || (query.page ?? 1) > 1) return page
+  if (query.messageId && query.messageId !== row.messageId) return page
   if (query.status && query.status !== row.status) return page
   if (query.endpointId && query.endpointId !== row.endpointId) return page
   if (query.payloadFormat && query.payloadFormat !== row.payloadFormat) return page
-  return { ...page, data: [row, ...page.data] }
+  return { ...page, data: [row, ...page.data], total: page.total + 1 }
 }
 
 export function useReplay(slug: string) {

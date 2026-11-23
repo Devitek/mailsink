@@ -1,24 +1,16 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { useEffect, useState } from 'react'
 import type { WorkspaceSummary } from '../../server-fns/workspace-types'
+import { useNow } from '../inbox/relative-time'
 import { formatCountdown, formatTtl } from './format-ttl'
 
-/** The current time, refreshed every second (countdowns). */
-function useNow(): number {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(timer)
-  }, [])
-  return now
-}
-
 // Ephemeral banner of the prototype, under the header of an ephemeral workspace: what it
-// is, then the live countdown to the GC purge and how much of its idle TTL is left. The
+// is and who created it (`metadata.createdBy`, when the Admin API caller gave one), then
+// the live countdown to the GC purge and how much of its idle TTL is left. Stream frames
+// of ingestion and API calls push the expiry back (realtime/apply-stream-event.ts). The
 // countdown depends on the clock, so server and browser differ by a second at hydration.
 export function EphemeralBanner({ workspace }: Readonly<{ workspace: WorkspaceSummary }>) {
   const { t, i18n } = useLingui()
-  const now = useNow()
+  const now = useNow(1000)
   const { expiresAt, idleTtlSeconds: ttl } = workspace
   if (!workspace.ephemeral || !expiresAt) return null
   const left = Math.max(0, Date.parse(expiresAt) - now)
@@ -36,10 +28,18 @@ export function EphemeralBanner({ workspace }: Readonly<{ workspace: WorkspaceSu
           <Trans>Ephemeral workspace</Trans>
         </span>{' '}
         <span className="text-ms-text-muted">
-          <Trans>
-            created through <code className="font-mono">POST /admin/workspaces</code> · hidden from
-            the main list by default · purged automatically after inactivity.
-          </Trans>
+          {workspace.createdBy ? (
+            <Trans>
+              created by <span className="font-mono text-ms-text">{workspace.createdBy}</span>{' '}
+              through <code className="font-mono">POST /admin/workspaces</code> · hidden from the
+              main list by default · purged automatically after inactivity.
+            </Trans>
+          ) : (
+            <Trans>
+              created through <code className="font-mono">POST /admin/workspaces</code> · hidden
+              from the main list by default · purged automatically after inactivity.
+            </Trans>
+          )}
         </span>
       </p>
       <div className="flex shrink-0 items-center gap-[13px]">

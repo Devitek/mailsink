@@ -5,6 +5,7 @@ import { useId } from 'react'
 import type { ConnectionRow } from '../../server-fns/connections-types'
 import { ConfirmDialog } from '../workspaces/confirm-dialog'
 import { ConnectionName } from './connection-name'
+import { ConnectionWebhooks } from './connection-webhooks'
 import { CredentialRow, EnvSnippet } from './credential-fields'
 import { CredentialsReveal } from './credentials-reveal'
 import { DeleteConnection } from './delete-connection'
@@ -25,7 +26,8 @@ const rotateClass =
   'border-[color-mix(in_oklch,var(--ms-override)_40%,transparent)] bg-transparent text-ms-override hover:bg-[color-mix(in_oklch,var(--ms-override)_10%,transparent)]'
 
 // Detail of one connection (#38): enable switch, name, credentials (masked once created,
-// in clear right after a creation or rotation), `.env` snippet, rotation and deletion.
+// in clear right after a creation or rotation), `.env` snippet, its webhooks, rotation and
+// deletion.
 export function ConnectionPanel({
   slug,
   connection,
@@ -134,6 +136,7 @@ export function ConnectionPanel({
             copyLabel={t`Copy the .env snippet`}
           />
         )}
+        <ConnectionWebhooks slug={slug} connectionId={connection.id} />
         <div className="flex justify-end border-t border-ms-border pt-[18px]">
           <DeleteConnection
             name={name}

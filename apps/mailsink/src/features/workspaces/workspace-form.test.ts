@@ -48,23 +48,13 @@ describe('new workspace form', () => {
 })
 
 describe('edit workspace form', () => {
-  it('keeps a non-preset retention and clears the rate limit when emptied', () => {
+  it('edits the name and description only, a blank description cleared', () => {
     expect(retentionChoice(86_400)).toBe('24h')
     expect(retentionChoice(7_200)).toBe('7200')
-    const request = toUpdateRequest({
-      name: 'QA',
-      description: ' ',
-      retention: '7200',
-      rateLimit: '',
-    })
-    expect(UpdateWorkspaceRequest.parse(request)).toEqual({
-      name: 'QA',
-      description: null,
-      retention: 7_200,
-      rateLimit: null,
-    })
-    const values = { name: 'QA', description: '', retention: '1h', rateLimit: '' }
-    expect(editWorkspaceSchema(m).safeParse(values).success).toBe(true)
+    const request = toUpdateRequest({ name: ' QA ', description: ' ' })
+    expect(UpdateWorkspaceRequest.parse(request)).toEqual({ name: 'QA', description: null })
+    expect(editWorkspaceSchema(m).safeParse({ name: 'QA', description: '' }).success).toBe(true)
+    expect(editWorkspaceSchema(m).safeParse({ name: ' ', description: '' }).success).toBe(false)
   })
 
   it('shows a rate limit per second', () => {
