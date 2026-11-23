@@ -36,9 +36,15 @@ function explicitName(details: unknown): ResendErrorName | undefined {
   return parsed.success ? parsed.data : undefined
 }
 
+/** A request without any credential (`details.credential` set by the shared auth). */
+const missingKey = (error: ApiError) =>
+  error.code === 'unauthorized' &&
+  (error.details as { credential?: unknown } | undefined)?.credential === 'missing'
+
 function nameOf(error: ApiError, status: number): ResendErrorName {
   const explicit = explicitName(error.details)
   if (explicit) return explicit
+  if (missingKey(error)) return 'missing_api_key'
   if (error.code === 'chaos_injected') {
     if (status === 429) return 'rate_limit_exceeded'
     if (status === 503) return 'service_unavailable'
@@ -46,10 +52,20 @@ function nameOf(error: ApiError, status: number): ResendErrorName {
   return NAMES[error.code]
 }
 
-/** Error body of the Resend dialect: `{ statusCode, name, message }`, never `details`. */
-export const resendErrorBody: ErrorFormatter = (error, { status }) =>
-  ({
-    statusCode: status,
-    name: nameOf(error, status),
-    message: MESSAGES[error.code] ?? error.message,
-  }) satisfies ResendErrorBody
+/**
+ * Error body of the Resend dialect: `{ statusCode, name, message }`, never `details`.
+ * A missing key is `401 missing_api_key`; an unknown key is `400 validation_error` on every
+ * endpoint but sending, which keeps 401 (Resend errors reference, D158).
+ */
+export const resendErrorBody: ErrorFormatter = Object.assign(
+  (error: ApiError, { status }: { status: number }) =>
+    ({
+      statusCode: status,
+      name: nameOf(error, status),
+      message: missingKey(error) ? 'Missing API Key' : (MESSAGES[error.code] ?? error.message),
+    }) satisfies ResendErrorBody,
+  {
+    status: (error: ApiError, { status, method }: { status: number; method: string }) =>
+      error.code === 'unauthorized' && !missingKey(error) && method === 'GET' ? 400 : status,
+  },
+)

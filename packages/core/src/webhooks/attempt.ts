@@ -15,7 +15,8 @@ import { endpointSecrets } from './context'
 import { formatters } from './formatters'
 import { type DeliverWebhookPayload, deliverWebhookJob } from './jobs'
 import { WEBHOOK_MAX_ATTEMPTS, webhookRetryDelayMs } from './retry'
-import { type FetchLike, isSuccess, sendWebhook } from './send'
+import { type FetchLike, isSuccess, type SendResult, sendWebhook } from './send'
+import type { UrlGuard } from './url-guard'
 
 export interface AttemptOptions {
   fetch?: FetchLike
@@ -26,6 +27,8 @@ export interface AttemptOptions {
   maxAttempts?: number
   /** false: a failed attempt is final (test send). */
   retry?: boolean
+  /** Refuses private destinations before sending; a refusal is final (D150, D155). */
+  urlGuard?: UrlGuard
 }
 
 export interface AttemptOutcome {
@@ -78,13 +81,15 @@ export async function runAttempt(
       signError = error instanceof Error ? error.message : String(error)
     }
   }
-  const sent = signError
-    ? { status: null, body: null, durationMs: 0, error: signError }
+  const refused = signError ? null : ((await options.urlGuard?.(endpoint.url)) ?? null)
+  const failure = signError ?? refused
+  const sent: SendResult = failure
+    ? { status: null, body: null, durationMs: 0, error: failure }
     : await sendWebhook(endpoint.url, headers, delivery.body, options)
 
   const maxAttempts = options.retry === false ? 1 : (options.maxAttempts ?? WEBHOOK_MAX_ATTEMPTS)
   const ok = isSuccess(sent.status)
-  const final = ok || payload.attemptNo >= maxAttempts
+  const final = ok || refused !== null || payload.attemptNo >= maxAttempts
   const nextAt = final
     ? null
     : new Date(now + webhookRetryDelayMs(payload.attemptNo, options.random))

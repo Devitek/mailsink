@@ -8,6 +8,7 @@ export {
 } from './deliveries'
 export {
   createWebhookEndpoint,
+  type EndpointWriteOptions,
   getWebhookEndpointView,
   listWebhookEndpointViews,
   patchWebhookEndpoint,
@@ -25,4 +26,10 @@ export {
 export { previewWebhook, sendTestWebhook } from './sample-send'
 export { generateWebhookSecret, webhookSecretPreview } from './secret'
 export { type FetchLike, sendWebhook } from './send'
+export {
+  type HostLookup,
+  isBlockedAddress,
+  privateAddressGuard,
+  type UrlGuard,
+} from './url-guard'
 export { toDeliveryDetail, toDeliveryView, toEndpointView } from './views'

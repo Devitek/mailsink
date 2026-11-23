@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as CaptureMessagesRouteImport } from './routes/capture.messages'
 import { Route as CaptureOverrideRouteImport } from './routes/capture.override'
@@ -23,6 +24,7 @@ import { Route as EmailsIdRouteImport } from './routes/emails.$id'
 import { Route as EmailsBatchRouteImport } from './routes/emails.batch'
 import { Route as V1EmailsRouteImport } from './routes/v1.emails'
 import { Route as WWorkspaceSlugRouteImport } from './routes/w.$workspaceSlug'
+import { Route as AdminLogsApiRouteImport } from './routes/admin.logs.api'
 import { Route as AdminWorkspacesIdRouteImport } from './routes/admin.workspaces.$id'
 import { Route as CaptureLogsApiRouteImport } from './routes/capture.logs.api'
 import { Route as CaptureLogsSmtpRouteImport } from './routes/capture.logs.smtp'
@@ -33,6 +35,7 @@ import { Route as CaptureWebhooksDeliveriesRouteImport } from './routes/capture.
 import { Route as CaptureWebhooksPreviewRouteImport } from './routes/capture.webhooks.preview'
 import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
 import { Route as V3SmtpEmailRouteImport } from './routes/v3.smtp.email'
+import { Route as AdminLogsApiIdRouteImport } from './routes/admin.logs.api.$id'
 import { Route as AdminWorkspacesIdTemplatesRouteImport } from './routes/admin.workspaces.$id.templates'
 import { Route as CaptureLogsApiIdRouteImport } from './routes/capture.logs.api.$id'
 import { Route as CaptureLogsSmtpIdRouteImport } from './routes/capture.logs.smtp.$id'
@@ -62,6 +65,11 @@ const HealthzRoute = HealthzRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWorkspacesRoute = AdminWorkspacesRouteImport.update({
@@ -114,6 +122,11 @@ const WWorkspaceSlugRoute = WWorkspaceSlugRouteImport.update({
   path: '/w/$workspaceSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLogsApiRoute = AdminLogsApiRouteImport.update({
+  id: '/admin/logs/api',
+  path: '/admin/logs/api',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminWorkspacesIdRoute = AdminWorkspacesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -164,6 +177,11 @@ const V3SmtpEmailRoute = V3SmtpEmailRouteImport.update({
   id: '/v3/smtp/email',
   path: '/v3/smtp/email',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLogsApiIdRoute = AdminLogsApiIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminLogsApiRoute,
 } as any)
 const AdminWorkspacesIdTemplatesRoute =
   AdminWorkspacesIdTemplatesRouteImport.update({
@@ -227,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
@@ -237,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/w/$workspaceSlug': typeof WWorkspaceSlugRoute
+  '/admin/logs/api': typeof AdminLogsApiRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
   '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
@@ -247,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
   '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
@@ -263,6 +284,7 @@ export interface FileRoutesByTo {
   '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
@@ -273,6 +295,7 @@ export interface FileRoutesByTo {
   '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/w/$workspaceSlug': typeof WWorkspaceSlugRoute
+  '/admin/logs/api': typeof AdminLogsApiRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
   '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
@@ -283,6 +306,7 @@ export interface FileRoutesByTo {
   '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
   '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
@@ -300,6 +324,7 @@ export interface FileRoutesById {
   '/emails': typeof EmailsRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
   '/capture/override': typeof CaptureOverrideRouteWithChildren
@@ -310,6 +335,7 @@ export interface FileRoutesById {
   '/emails/batch': typeof EmailsBatchRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/w/$workspaceSlug': typeof WWorkspaceSlugRoute
+  '/admin/logs/api': typeof AdminLogsApiRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
   '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
@@ -320,6 +346,7 @@ export interface FileRoutesById {
   '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/admin/logs/api/$id': typeof AdminLogsApiIdRoute
   '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
   '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
@@ -338,6 +365,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/healthz'
     | '/login'
+    | '/mcp'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
@@ -348,6 +376,7 @@ export interface FileRouteTypes {
     | '/emails/batch'
     | '/v1/emails'
     | '/w/$workspaceSlug'
+    | '/admin/logs/api'
     | '/admin/workspaces/$id'
     | '/capture/logs/api'
     | '/capture/logs/smtp'
@@ -358,6 +387,7 @@ export interface FileRouteTypes {
     | '/capture/webhooks/preview'
     | '/v1/emails/batch'
     | '/v3/smtp/email'
+    | '/admin/logs/api/$id'
     | '/admin/workspaces/$id/templates'
     | '/capture/logs/api/$id'
     | '/capture/logs/smtp/$id'
@@ -374,6 +404,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/healthz'
     | '/login'
+    | '/mcp'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
@@ -384,6 +415,7 @@ export interface FileRouteTypes {
     | '/emails/batch'
     | '/v1/emails'
     | '/w/$workspaceSlug'
+    | '/admin/logs/api'
     | '/admin/workspaces/$id'
     | '/capture/logs/api'
     | '/capture/logs/smtp'
@@ -394,6 +426,7 @@ export interface FileRouteTypes {
     | '/capture/webhooks/preview'
     | '/v1/emails/batch'
     | '/v3/smtp/email'
+    | '/admin/logs/api/$id'
     | '/admin/workspaces/$id/templates'
     | '/capture/logs/api/$id'
     | '/capture/logs/smtp/$id'
@@ -410,6 +443,7 @@ export interface FileRouteTypes {
     | '/emails'
     | '/healthz'
     | '/login'
+    | '/mcp'
     | '/admin/workspaces'
     | '/capture/messages'
     | '/capture/override'
@@ -420,6 +454,7 @@ export interface FileRouteTypes {
     | '/emails/batch'
     | '/v1/emails'
     | '/w/$workspaceSlug'
+    | '/admin/logs/api'
     | '/admin/workspaces/$id'
     | '/capture/logs/api'
     | '/capture/logs/smtp'
@@ -430,6 +465,7 @@ export interface FileRouteTypes {
     | '/capture/webhooks/preview'
     | '/v1/emails/batch'
     | '/v3/smtp/email'
+    | '/admin/logs/api/$id'
     | '/admin/workspaces/$id/templates'
     | '/capture/logs/api/$id'
     | '/capture/logs/smtp/$id'
@@ -447,6 +483,7 @@ export interface RootRouteChildren {
   EmailsRoute: typeof EmailsRouteWithChildren
   HealthzRoute: typeof HealthzRoute
   LoginRoute: typeof LoginRoute
+  McpRoute: typeof McpRoute
   AdminWorkspacesRoute: typeof AdminWorkspacesRouteWithChildren
   CaptureMessagesRoute: typeof CaptureMessagesRouteWithChildren
   CaptureOverrideRoute: typeof CaptureOverrideRouteWithChildren
@@ -455,6 +492,7 @@ export interface RootRouteChildren {
   CaptureWebhooksRoute: typeof CaptureWebhooksRouteWithChildren
   V1EmailsRoute: typeof V1EmailsRouteWithChildren
   WWorkspaceSlugRoute: typeof WWorkspaceSlugRoute
+  AdminLogsApiRoute: typeof AdminLogsApiRouteWithChildren
   CaptureLogsApiRoute: typeof CaptureLogsApiRouteWithChildren
   CaptureLogsSmtpRoute: typeof CaptureLogsSmtpRouteWithChildren
   V3SmtpEmailRoute: typeof V3SmtpEmailRoute
@@ -488,6 +526,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/workspaces': {
@@ -560,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WWorkspaceSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/logs/api': {
+      id: '/admin/logs/api'
+      path: '/admin/logs/api'
+      fullPath: '/admin/logs/api'
+      preLoaderRoute: typeof AdminLogsApiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/workspaces/$id': {
       id: '/admin/workspaces/$id'
       path: '/$id'
@@ -629,6 +681,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/v3/smtp/email'
       preLoaderRoute: typeof V3SmtpEmailRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/logs/api/$id': {
+      id: '/admin/logs/api/$id'
+      path: '/$id'
+      fullPath: '/admin/logs/api/$id'
+      preLoaderRoute: typeof AdminLogsApiIdRouteImport
+      parentRoute: typeof AdminLogsApiRoute
     }
     '/admin/workspaces/$id/templates': {
       id: '/admin/workspaces/$id/templates'
@@ -864,6 +923,18 @@ const V1EmailsRouteWithChildren = V1EmailsRoute._addFileChildren(
   V1EmailsRouteChildren,
 )
 
+interface AdminLogsApiRouteChildren {
+  AdminLogsApiIdRoute: typeof AdminLogsApiIdRoute
+}
+
+const AdminLogsApiRouteChildren: AdminLogsApiRouteChildren = {
+  AdminLogsApiIdRoute: AdminLogsApiIdRoute,
+}
+
+const AdminLogsApiRouteWithChildren = AdminLogsApiRoute._addFileChildren(
+  AdminLogsApiRouteChildren,
+)
+
 interface CaptureLogsApiRouteChildren {
   CaptureLogsApiIdRoute: typeof CaptureLogsApiIdRoute
 }
@@ -893,6 +964,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailsRoute: EmailsRouteWithChildren,
   HealthzRoute: HealthzRoute,
   LoginRoute: LoginRoute,
+  McpRoute: McpRoute,
   AdminWorkspacesRoute: AdminWorkspacesRouteWithChildren,
   CaptureMessagesRoute: CaptureMessagesRouteWithChildren,
   CaptureOverrideRoute: CaptureOverrideRouteWithChildren,
@@ -901,6 +973,7 @@ const rootRouteChildren: RootRouteChildren = {
   CaptureWebhooksRoute: CaptureWebhooksRouteWithChildren,
   V1EmailsRoute: V1EmailsRouteWithChildren,
   WWorkspaceSlugRoute: WWorkspaceSlugRoute,
+  AdminLogsApiRoute: AdminLogsApiRouteWithChildren,
   CaptureLogsApiRoute: CaptureLogsApiRouteWithChildren,
   CaptureLogsSmtpRoute: CaptureLogsSmtpRouteWithChildren,
   V3SmtpEmailRoute: V3SmtpEmailRoute,

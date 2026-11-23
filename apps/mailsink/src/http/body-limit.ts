@@ -22,10 +22,17 @@ const tooLarge = (maxBytes: number) =>
     details: { maxBytes },
   })
 
+/** Bytes read by limitBody, per original request: the request log reuses them (D157). */
+const buffered = new WeakMap<Request, Uint8Array>()
+
+/** The body limitBody already read for this request, if any. */
+export const bufferedBodyOf = (request: Request): Uint8Array | undefined => buffered.get(request)
+
 /**
  * Reads the request body with a size cap (see resolveBodyCap) before any parsing:
  * a declared `Content-Length` above the cap is refused without reading, a streamed body is
- * cut as soon as it crosses it. Returns a copy of the request holding the buffered body.
+ * cut as soon as it crosses it. Returns a copy of the request holding the buffered body,
+ * also kept for the request log (bufferedBodyOf).
  */
 export async function limitBody(request: Request, maxBytes: number): Promise<Request> {
   const declared = Number(request.headers.get('content-length') ?? Number.NaN)
@@ -44,9 +51,7 @@ export async function limitBody(request: Request, maxBytes: number): Promise<Req
     }
     chunks.push(value)
   }
-  return new Request(request.url, {
-    method: request.method,
-    headers: request.headers,
-    body: Buffer.concat(chunks),
-  })
+  const bytes = Buffer.concat(chunks)
+  buffered.set(request, bytes)
+  return new Request(request.url, { method: request.method, headers: request.headers, body: bytes })
 }

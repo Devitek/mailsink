@@ -1,4 +1,4 @@
-import { and, arrayContains, between, count, eq, inArray, or, type SQL } from 'drizzle-orm'
+import { and, arrayContains, between, count, eq, inArray, isNull, or, type SQL } from 'drizzle-orm'
 import type { Executor } from '../client'
 import { apiLogs } from '../schema/logs'
 import {
@@ -44,8 +44,12 @@ function statusCondition(statuses: readonly string[]): SQL | undefined {
   )
 }
 
-function where(workspaceId: string, f: ApiLogFilters): SQL | undefined {
-  const all: (SQL | undefined)[] = [eq(apiLogs.workspaceId, workspaceId)]
+/** A workspace's rows, or with `null` the rows without workspace (failed authentication). */
+const ofWorkspace = (workspaceId: string | null) =>
+  workspaceId === null ? isNull(apiLogs.workspaceId) : eq(apiLogs.workspaceId, workspaceId)
+
+function where(workspaceId: string | null, f: ApiLogFilters): SQL | undefined {
+  const all: (SQL | undefined)[] = [ofWorkspace(workspaceId)]
   if (f.connectionId) all.push(eq(apiLogs.connectionId, f.connectionId))
   if (f.dialects?.length) all.push(inArray(apiLogs.dialect, [...f.dialects]))
   if (f.statuses?.length) all.push(statusCondition(f.statuses))
@@ -63,10 +67,13 @@ const SORT_COLUMNS = {
   statusCode: apiLogs.statusCode,
 }
 
-/** One page of a workspace's API logs and the total matching the filters. */
+/**
+ * One page of a workspace's API logs (`null`: the rows without workspace, read through the
+ * Admin API, D151) and the total matching the filters.
+ */
 export async function listApiLogs(
   db: Executor,
-  workspaceId: string,
+  workspaceId: string | null,
   filters: ApiLogFilters,
 ): Promise<{ rows: ApiLog[]; total: number }> {
   const condition = where(workspaceId, filters)
@@ -85,12 +92,12 @@ export async function listApiLogs(
 
 export async function findApiLog(
   db: Executor,
-  workspaceId: string,
+  workspaceId: string | null,
   id: string,
 ): Promise<ApiLog | undefined> {
   const [row] = await db
     .select()
     .from(apiLogs)
-    .where(and(eq(apiLogs.workspaceId, workspaceId), eq(apiLogs.id, id)))
+    .where(and(ofWorkspace(workspaceId), eq(apiLogs.id, id)))
   return row
 }

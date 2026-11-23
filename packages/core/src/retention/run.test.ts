@@ -52,6 +52,7 @@ describeDb('retention pass', (ctx) => {
       orphanBlobs: 1,
       idempotencyKeys: 0,
       logs: 0,
+      webhookDeliveries: 0,
       failedJobs: 0,
     })
     expect(await ctx.db.select({ id: messages.id }).from(messages)).toEqual([{ id: fresh }])

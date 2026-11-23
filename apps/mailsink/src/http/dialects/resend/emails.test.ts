@@ -105,6 +105,23 @@ describeDb('Resend dialect routes', (ctx) => {
     })
   })
 
+  it('answers a missing key 401 missing_api_key and an unknown key on a read 400', async () => {
+    const missing = await post(postResendEmail, email, { bearer: '' })
+    expect(missing.status).toBe(401)
+    expect(await missing.json()).toEqual({
+      statusCode: 401,
+      name: 'missing_api_key',
+      message: 'Missing API Key',
+    })
+    const read = await get('msg_x', 'msk_nope')
+    expect(read.status).toBe(400)
+    expect(await read.json()).toEqual({
+      statusCode: 400,
+      name: 'validation_error',
+      message: 'API key is invalid',
+    })
+  })
+
   it('batch is all or nothing by default, partial with x-batch-validation: permissive', async () => {
     const strict = await post(postResendBatch, [email, { ...email, from: 'bad' }])
     expect(strict.status).toBe(400)

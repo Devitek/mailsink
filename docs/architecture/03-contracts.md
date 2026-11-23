@@ -18,6 +18,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `POST /emails` · `POST /emails/batch` · `GET /emails/:id` | `Bearer msk_` (resend) | resend | Resend drop-in |
 | `POST /v3/smtp/email` | `api-key: msk_` (brevo) | brevo | Brevo drop-in |
 | `GET|POST /admin/workspaces/:id/templates` · `GET|PATCH|DELETE …/:templateId` | Admin key | admin | Brevo templates (numeric `templateId`) |
+| `GET /admin/logs/api` · `GET /admin/logs/api/:id` | Admin key | admin | API log rows without workspace (D151, D156) |
 | SMTP `:1025` | `AUTH PLAIN/LOGIN` (smtp) | smtp | Nodemailer / any client |
 | `GET /capture/messages` | workspace scope (D12) | capture | Search, `wait=true` |
 | `GET /capture/messages/:id` | workspace scope | capture | Full detail |
@@ -468,12 +469,15 @@ Behaviour (`core/dialects/resend*.ts`, `http/dialects/resend/`):
 
 - Auth: `Authorization: Bearer msk_…` of a `resend` connection only. A key of another
   connection kind, a workspace key or the Admin key: `403 restricted_api_key`, checked
-  before the rate limit spends a token. An unknown, revoked or missing key:
-  `401 validation_error` `API key is invalid` (Resend also answers `missing_api_key` for an
-  absent header; Mailsink does not tell them apart).
+  before the rate limit spends a token. A missing key: `401 missing_api_key`
+  `Missing API Key`. An unknown or revoked key: `401 validation_error` `API key is invalid`
+  on `POST /emails` and `/emails/batch`, `400` with the same body on `GET /emails/:id`, as
+  Resend answers every endpoint but sending (D158; the dialect reads `details.credential`
+  of the shared auth and sets the status through `ErrorFormatter.status`).
 - Ids (D120): the Resend id of a message is the UUIDv7 of its `msg_` id
   (`msg_<uuid>`, also stored as `provider_message_id`), so `GET /emails/:id` reads the
-  message by primary key. `message_id` is the composed `Message-ID` (`<msg_…@mailsink>`).
+  message by primary key. `message_id` is the `Message-ID` an SMTP client wrote itself,
+  else the composed one (`<msg_…@mailsink>`, D158).
 - `POST /emails`: validated by the dialect (`parseResendEmail`, not by `defineApi`, which
   only caps and reads the JSON), mapped by `fromResendRequest` to `NormalizedEmail`
   (`source: 'resend'`, `metadata: null`), then the shared pipeline. `200 { id }`.
@@ -502,7 +506,8 @@ Behaviour (`core/dialects/resend*.ts`, `http/dialects/resend/`):
   counts every request), plus `ratelimit-limit`, `ratelimit-remaining`, `ratelimit-reset`
   copied from the `X-RateLimit-*` headers (`Retry-After` is shared).
 - Error names (`http/dialects/resend/errors.ts`, D122): `details.resend` set by the dialect
-  wins; otherwise `unauthorized` `validation_error`, `forbidden` `restricted_api_key`,
+  wins; otherwise `unauthorized` `missing_api_key` (no credential) or `validation_error`,
+  `forbidden` `restricted_api_key`,
   `not_found` `not_found`, `idempotency_mismatch` `invalid_idempotent_request`,
   `rate_limited` `rate_limit_exceeded`, `chaos_injected` by drawn status (`429`
   `rate_limit_exceeded`, `503` `service_unavailable`, else `application_error`),
@@ -553,7 +558,7 @@ export const BrevoSendResponse = z.union([
 export const BrevoError = z.object({ code: BrevoErrorCode, message: z.string() })
 ```
 
-Behaviour (#29, propositions D125 to D127):
+Behaviour (#29, D125 to D127):
 
 - Auth: `api-key: msk_…` (or a bearer) of a **brevo** connection; another connection kind,
   a workspace key or the Admin key answer 403. The message records the connection and
@@ -654,11 +659,11 @@ Server: `packages/smtp` (smtp-server), listening on `MAILSINK_SMTP_HOST:MAILSINK
 | `EHLO` | Advertises `AUTH PLAIN LOGIN`, `SIZE <MAILSINK_MAX_MESSAGE_BYTES>`, and `STARTTLS` only when `MAILSINK_SMTP_TLS_CERT` and `MAILSINK_SMTP_TLS_KEY` (PEM file paths, both or neither, read at boot) are set |
 | `AUTH PLAIN/LOGIN` | `smtp_username` -> `smtp` connection; scrypt verify, skipped when the verified-credential cache (D11) already holds this password for this stored hash; unknown user, wrong password or disabled connection -> `535 5.7.8 Authentication credentials invalid`. Allowed without TLS. Success touches workspace activity |
 | No AUTH | `MAIL FROM` -> `530` |
-| `MAIL FROM` | Effective settings of the connection, then rate limit (one token per transaction), then chaos (D92); touches activity. Nothing read nor stored when refused. A `SIZE=` over the cap -> `552` |
+| `MAIL FROM` | Effective settings of the connection, then rate limit (one token per transaction), then chaos (D92); touches activity. Nothing read nor stored when refused. A `SIZE=` over the cap -> `552 Error: message exceeds fixed maximum message size N`, written by smtp-server before `onMailFrom`, without enhanced code (D159) |
 | `RCPT TO` | Every address accepted; a suppressed one is accepted, then marked `suppressed` by the pipeline (provider parity) |
 | Rate limit | `451 4.7.1 Rate limit exceeded, retry in Ns` |
 | Chaos | `421`/`451`/`452`/`550` per active override (`smtpGuardReply`, D94); `421` closes the connection |
-| `DATA` | size cap -> `552`; `mailparser` -> `NormalizedEmail` + raw EML kept byte for byte (D9); then the shared pipeline, `source: 'smtp'`, `message.created` published once committed |
+| `DATA` | size cap -> `552 5.3.4 Message exceeds the N bytes limit` (size not declared at `MAIL FROM`, D159); `mailparser` -> `NormalizedEmail` + raw EML kept byte for byte (D9); then the shared pipeline, `source: 'smtp'`, `message.created` published once committed |
 | Reply | `250 2.0.0 Ok: queued as msg_…` (the message id, also its `providerMessageId`) |
 | Failure | Unexpected error -> `451 4.3.0 Local error in processing` (logged); a message without any sender -> `550 5.6.0` |
 
@@ -825,11 +830,16 @@ Behaviour (#26, propositions D80 to D84):
   `accepted` -> `message.created` (current summary), any other type -> `message.event`.
   Derived frames have no `id:` and are never replayed: the aggregated `message.status`
   (`recipient: null`) after a simulation run, `messages.purged`, `override.changed`,
-  `workspace.deleted`, `log.api`, `log.smtp`.
+  `workspace.deleted`, `log.api`, `log.smtp`, `webhook.delivery`.
 - Publishers: ingestion after its transaction committed (`message.created`, one
-  `message.event` per suppressed recipient; nothing for an idempotent replay); the
-  `simulate_delivery` job handler (`sent` and final event per recipient, then the
-  aggregated status); `DELETE /capture/messages` (`messages.purged`); the Override API
+  `message.event` per suppressed recipient, one `webhook.delivery` per `email.suppressed`
+  delivery, D153; nothing for an idempotent replay); the `simulate_delivery` job handler
+  (`sent` and final event per recipient, then the aggregated status, then the automatic
+  `opened` / `clicked` events and one `webhook.delivery` per delivery the run created,
+  D152); `POST /capture/messages/:id/events` (one `message.event` per event, the
+  aggregated `message.status` when a forced status changed it, one `webhook.delivery` per
+  delivery, D142); the `deliver_webhook` job handler after each attempt, the test send and
+  the replay (`webhook.delivery`, D144); `DELETE /capture/messages` (`messages.purged`); the Override API
   after every successful activation and reset, an idempotent reset included, and the
   override expiry scheduler once per workspace that lost an override in a pass
   (`override.changed` with the new `OverrideState`, `connectionId` = the changed scope,
@@ -849,7 +859,8 @@ Behaviour (#26, propositions D80 to D84):
 - A client that stops reading while 1 000 frames are queued is disconnected.
 - `connectionId` keeps the `log.api` and `log.smtp` frames of that connection only (a
   call or session without connection is dropped, like a message without one).
-- `webhook.delivery` joins the union with its view contract (#33).
+- `webhook.delivery` frames carry the `connectionId` of the endpoint scope: a Workspace
+  endpoint's frames are dropped by a `connectionId` filter (D144).
 
 ```ts
 export const StreamEvent = z.discriminatedUnion('type', [
@@ -869,7 +880,62 @@ export const StreamQuery = z.object({ connectionId: ConnectionId.optional(),
     z.array(StreamEventType)).optional() })
 ```
 
-## Logs (`logs.ts`, #35, propositions D145 to D147)
+## MCP (`POST /mcp`, `mailsink mcp`, #44, propositions D165 to D169)
+
+`packages/mcp` holds the server factory and the tools (transport-agnostic, one server bound
+to one authenticated workspace) and `handleMcpRequest(request, { db, bus, workspace })`, the
+stateless Streamable HTTP handler. The app route wraps it in `defineApi({ auth: 'workspace'
+})`. Tool input schemas are built from the contracts below (`packages/mcp/src/schemas.ts`):
+
+```ts
+const { wait, timeout, ...messageFilters } = ListMessagesQuery.shape
+export const ListEmailsInput = z.object(messageFilters)          // list_emails
+export const WaitForEmailInput = z.object({ ...messageFilters,   // wait_for_email
+  timeout: z.number().int().min(0).max(WAIT_TIMEOUT_MAX_MS).default(WAIT_TIMEOUT_MAX_MS) })
+export const GetEmailInput = z.object({ id: MessageId })          // get_email
+export const TriggerEmailEventInput = z.object({ id: MessageId,   // trigger_email_event
+  event: TriggerEventRequest })
+export const SetOverrideInput = ActivateOverrideRequest           // set_override_config
+// reset_override_config: ResetOverrideRequest · get_override_config: {}
+// purge_emails: PurgeQuery · list_suppressions: ListSuppressionsQuery
+export const GetDeliveryLogsInput = z.object({                    // get_delivery_logs
+  source: z.enum(['api', 'smtp']).default('api'), id: z.string().optional(),
+  apiFilters: ListApiLogsQuery.optional(), smtpFilters: ListSmtpSessionsQuery.optional() })
+export const GetWebhookDeliveriesInput = ListWebhookDeliveriesQuery.extend({
+  id: WebhookDeliveryId.optional() })                             // get_webhook_deliveries
+```
+
+| Tool | Service (same as) | Annotations |
+| --- | --- | --- |
+| `list_emails` | `listCapturedMessages` (`GET /capture/messages`) | read only |
+| `get_email` | `getCapturedMessage` (`GET /capture/messages/:id`) | read only |
+| `wait_for_email` | `waitForMessages` (`wait=true`), aborted with the call | read only |
+| `trigger_email_event` | `triggerMessageEvent`, origin `mcp`, frames published | open world (webhooks) |
+| `set_override_config` | `activateOverride`, via `mcp`, `override.changed` published | |
+| `reset_override_config` | `resetOverride`, `override.changed` published | idempotent |
+| `get_override_config` | `getOverrideState` | read only |
+| `purge_emails` | `purgeCapturedMessages`, `messages.purged` published | destructive |
+| `get_delivery_logs` | `listApiLogViews` / `getApiLogView`, `listSmtpSessionViews` / `getSmtpSessionView` | read only |
+| `get_webhook_deliveries` | `listWebhookDeliveryViews` / `getWebhookDeliveryDetail` | read only |
+| `list_suppressions` | `listSuppressionViews` | read only |
+
+Behaviour:
+- **Transport** (D165): `POST /mcp` only, stateless (no `Mcp-Session-Id`); `GET` and `DELETE`
+  answer 405 `Allow: POST`. The SDK answers JSON-RPC over an SSE response (keep-alive
+  comments during a long `wait_for_email`); the request log keeps the request body and no
+  response body for SSE (D146). Auth, activity and the log row are those of every
+  `defineApi()` route (dialect `mcp`).
+- **Answers** (D166): the HTTP JSON as text and as `structuredContent`. Failures are
+  `isError` results whose text is the HTTP error body (`not_found`, `wait_timeout`,
+  `validation_error` with `details.in = 'arguments'`…). English only (D19).
+- **Workspace deletion** (D169): `workspace.deleted` ends a pending `wait_for_email` with
+  `not_found`; whatever still runs 1 s later is cut and the response stream closed.
+- **stdio** (D14, D169): `mailsink mcp [--url] [--key] [--workspace]` (env `MAILSINK_URL`,
+  `MAILSINK_KEY`, `MAILSINK_WORKSPACE`) forwards newline-delimited JSON-RPC from stdin to
+  `<url>/mcp` and writes the answers on stdout; a refused or unreachable request gets a
+  JSON-RPC error `-32000`. Client configuration: `docs/guides/mcp.md`.
+
+## Logs (`logs.ts`, #35, D145 to D147, D151, D156, D157)
 
 ```ts
 export const ApiDialect = z.enum(['native', 'resend', 'brevo', 'admin', 'capture', 'mcp'])
@@ -918,15 +984,20 @@ Behaviour:
 - **What is logged** (D145): every `defineApi()` call of `/v1`, `/emails`, `/v3`, `/admin`,
   `/capture` and `/mcp`, refused calls included (`unauthorized`, `forbidden`,
   `validation_error`, `rate_limited`, `chaos_injected`…, `error_code` = the error code).
-  Not logged: `GET /capture/logs/**` (reading the logs would log itself and, through
-  `log.api`, make a live log view refetch forever), `GET /capture/stream` (long-lived) and
-  `/healthz`. The row id is the `X-Request-Id` of the call. Admin calls and failed
-  authentications have no workspace: they are kept (default retention, D49) but no Capture
-  route reads them.
+  Not logged: `GET /capture/logs/**` and `GET /admin/logs/**` (reading the logs would log
+  itself and, through `log.api`, make a live log view refetch forever), `GET
+  /capture/stream` (long-lived) and `/healthz`. The row id is the `X-Request-Id` of the
+  call. Admin calls and failed authentications have no workspace: they are kept (default
+  retention, D49) and read through `GET /admin/logs/api[/:id]` (Admin key, same query and
+  views as `/capture/logs/api`, D151, D156); no route reads the SMTP sessions without
+  workspace yet.
 - **How** (D146): the `request-log` extension runs first in `DEFAULT_EXTENSIONS`. Once the
-  caller is authenticated, its `afterAuth` starts reading a clone of a JSON or text body
-  (bounded by `MAILSINK_MAX_MESSAGE_BYTES`), so a call refused by a later extension still
-  logs its body; `onResponse` clones a JSON or text response (bounded to 1 MiB) and hands
+  caller is authenticated, its `afterAuth` marks a JSON or text body as wanted; at
+  response time the log takes the bytes the handler already buffered (`limitBody`), else
+  reads the body nothing consumed (bounded by `MAILSINK_MAX_MESSAGE_BYTES`), so a call
+  refused by a later extension still logs its body and no body is read twice (D157); a
+  body cut by the 413 cap logs `null`. `ip` is the socket address srvx gives the request
+  (verified on the build; `X-Forwarded-For` is not read). `onResponse` clones a JSON or text response (bounded to 1 MiB) and hands
   the row to the runtime log writer, which inserts it after the response left. A failed
   write is logged on the server, never sent. Redaction and truncation rules: doc 02,
   « `schema/logs.ts` ». `durationMs` is measured up to the built response.
@@ -1022,7 +1093,7 @@ export const ListWebhookDeliveriesQuery = z.object({ endpointId, payloadFormat,
   messageId, status, limit: PageLimit, cursor: WebhookDeliveryId })   // all optional
 ```
 
-Behaviour (#32, #33, #34, propositions D135 to D144):
+Behaviour (#32, #33, #34, D135 to D144, D150 to D155):
 - Endpoint CRUD: `GET /capture/webhooks[?connectionId=]` lists that scope and the
   Workspace scope, oldest first; another workspace's endpoint or connection is a 404.
   Event names are validated against the resolved format: dialect names, canonical names,
@@ -1031,19 +1102,29 @@ Behaviour (#32, #33, #34, propositions D135 to D144):
   format is refused (`brevo_auth_requires_brevo`); custom headers may not use
   `content-type`, `content-length`, `host`, `authorization`, `svix-*` or `x-mailsink-*`
   (`reserved_webhook_header`) and are sent on every format, under the format's own
-  headers. `DELETE` answers `{ id }` (its deliveries cascade).
+  headers. `DELETE` answers `{ id }` (its deliveries cascade). With
+  `MAILSINK_WEBHOOK_BLOCK_PRIVATE=true`, a `url` (create or `PATCH`) whose host is, or
+  resolves to, a private, loopback or link-local address is a 422 on `url` with
+  `params.code = private_webhook_url` (D150, D155).
 - Secrets: the unified HMAC key is the whole `whsec_…` string; `secretPreview` is the
   prefix plus 4 characters. `PATCH { rotateSecret: true }` issues a new one; leaving the
   brevo format issues one too, entering it drops it (Brevo credentials live in the same
   column: the token, or `user:password`).
-- Fan-out: the `simulate_delivery` handler fans out the events of the run once it
-  committed (and the automatic opened / clicked below), in its own transaction; manual
-  events fan out in their own transaction. Disabled endpoints get no new delivery.
+- Fan-out: in the transaction that writes the events. Ingestion fans out its `suppressed`
+  events (`email.suppressed`, Brevo `blocked`, D153); a simulation run fans out its events
+  and the automatic opened / clicked below (D152); manual events fan out with them.
+  Disabled endpoints get no new delivery.
 - Attempts: one `deliver_webhook` job per attempt (payload `{ deliveryId, attemptNo,
   exactAttemptId? }`); a failed attempt enqueues the next one itself after
   `min(2^(n-1) * 5 s, 1 h) ± 20 %`, the queue backoff (D47) only covers database errors.
   Redirects are not followed (a 3xx fails); network errors and timeouts are stored in the
-  attempt `error`. A job whose attempt is already recorded does nothing.
+  attempt `error`. A job whose attempt is already recorded does nothing. With
+  `MAILSINK_WEBHOOK_BLOCK_PRIVATE=true`, each attempt first resolves the URL host: a
+  blocked address makes the attempt fail at once, final and never sent
+  (`error: blocked: <host> resolves to …`, D155); this covers the test send and replays.
+- Retention (D154): a finished delivery (`succeeded`, `failed`) and its attempts are
+  purged by the retention pass once older than the retention of the endpoint scope (the
+  connection's when it sets one, else the workspace's); deliveries in flight wait.
 - Replay: `replayOf` always points to the first delivery, whose id stays the signing id
   (`svix-id`, `X-Mailsink-Delivery-Id`). `exact` copies the headers of one attempt for
   every attempt of the replay; on a delivery without attempts it is a 409 (use `resign`).
@@ -1266,7 +1347,10 @@ Native/capture/admin error body (`errors.ts`, `ApiErrorBody`):
 Codes (`ErrorCode`): `unauthorized`, `forbidden`, `validation_error`, `not_found`,
 `conflict`, `idempotency_mismatch`, `rate_limited`, `payload_too_large`, `chaos_injected`,
 `wait_timeout`, `internal_error` (unexpected 500). Resend/Brevo dialects map these to their
-own body shape (`http/errors.ts`).
+own body shape: `http/errors.ts` defines the `ErrorFormatter` (body, and an optional
+dialect status), each dialect plugs its own from `http/dialects/<dialect>/errors.ts`
+(D122, D127, D158). An `unauthorized` error carries `details.credential`: `missing` (no
+credential sent) or `invalid` (D158).
 
 HTTP status per code (D40, `core/errors.ts`; a call site may override it, e.g. 400 for an
 unreadable body or a malformed auth header):
@@ -1285,7 +1369,8 @@ the cap is refused without reading, a streamed body is cut as soon as it crosses
 answer `413 payload_too_large` with `details: { maxBytes }`. The cap is 1 MiB
 (`DEFAULT_MAX_BODY_BYTES`) unless the route sets one: Admin and Capture routes keep that
 default (their bodies are small JSON documents); ingestion routes (`POST /v1/emails`,
-`POST /v1/emails/batch`, and the provider dialects when they land) set
+`POST /v1/emails/batch`, Resend `POST /emails` and `/emails/batch`; Brevo
+`POST /v3/smtp/email` reads its body under the same cap itself) set
 `maxBodyBytes: 'message'`, which resolves to `MAILSINK_MAX_MESSAGE_BYTES` (25 MiB by
 default). A number sets a route-specific cap in bytes.
 
@@ -1304,11 +1389,12 @@ Every ingestion response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
 (no headers while the effective `rateLimit` is `null`, D91). The Resend dialect also emits
 `ratelimit-limit`/`ratelimit-remaining`/`ratelimit-reset` as Resend does.
 
-### Rate limit and chaos (#24, #25, propositions D90 to D94)
+### Rate limit and chaos (#24, #25, D90 to D94)
 
 Both run in the `ingestion-guard` extension (`http/ingestion-guard.ts`,
-`INGESTION_EXTENSIONS`), on ingestion routes only (native `/v1` now, Resend and Brevo
-with #28 and #29), never on Admin nor Capture. Order (04-sequence): authentication, then
+`INGESTION_EXTENSIONS`), on ingestion routes only (native `/v1`, Resend `/emails` and
+Brevo `/v3/smtp/email`, each dialect adding its own rate limit headers), never on Admin
+nor Capture. Order (04-sequence): authentication, then
 the effective settings of the connection (resolver above: connection override > workspace
 override > connection > workspace), then the rate limit, then the chaos draw, then body
 parsing and ingestion. A refused call reads no body and stores nothing.
