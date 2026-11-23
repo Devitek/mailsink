@@ -1,5 +1,7 @@
-import { enqueueJobs, jobs, messages } from '@mailsink/db'
+import { hashSmtpPassword } from '@mailsink/core'
+import { enqueueJobs, insertOverride, jobs, messages, newId } from '@mailsink/db'
 import {
+  createTestConnection,
   createTestMessage,
   createTestRecipients,
   createTestWorkspace,
@@ -7,6 +9,7 @@ import {
   testDatabaseUrl,
 } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
+import { createTransport } from 'nodemailer'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RuntimeConfig } from './config'
 import { createRuntime, type Runtime } from './container'
@@ -55,6 +58,54 @@ describe('createRuntime background processing', () => {
         ?.s
     await expect.poll(status, { timeout: 5_000 }).toBe('delivered')
     expect(await db.select().from(jobs)).toEqual([])
+  }, 30_000)
+})
+
+describe('createRuntime SMTP wiring', () => {
+  let runtime: Runtime | undefined
+
+  afterEach(async () => {
+    await runtime?.stop()
+    runtime = undefined
+  })
+
+  it('ingests SMTP mail through the pipeline, with the runtime chaos source', async () => {
+    runtime = await createRuntime(baseConfig, silent)
+    const { db } = runtime.db
+    const workspace = await createTestWorkspace(db)
+    await createTestConnection(db, workspace.id, {
+      kind: 'smtp',
+      smtpUsername: 'smtp-user',
+      smtpPasswordHash: await hashSmtpPassword('smtp-pass'),
+    })
+    const transport = createTransport({
+      host: '127.0.0.1',
+      port: runtime.smtpPort,
+      ignoreTLS: true,
+      auth: { user: 'smtp-user', pass: 'smtp-pass' },
+    })
+    const mail = { from: 'a@example.test', to: 'b@example.test', subject: 's', text: 'x' }
+    try {
+      const info = await transport.sendMail(mail)
+      const id = info.response.split(' ').at(-1) ?? ''
+      const status = async () =>
+        (await db.select({ s: messages.status }).from(messages).where(eq(messages.id, id)))[0]?.s
+      await expect.poll(status, { timeout: 5_000 }).toBe('delivered')
+
+      await insertOverride(db, {
+        id: newId('ovr'),
+        workspaceId: workspace.id,
+        connectionId: null,
+        config: { chaos: { errorRate: 50, httpCodes: [500], smtpCodes: [550] } },
+        activatedVia: 'api',
+        expiresAt: null,
+        createdAt: new Date(Date.now() - 1_000),
+      })
+      runtime.chaosRandom = () => 0
+      await expect(transport.sendMail(mail)).rejects.toMatchObject({ responseCode: 550 })
+    } finally {
+      transport.close()
+    }
   }, 30_000)
 })
 

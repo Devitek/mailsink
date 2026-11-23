@@ -27,6 +27,8 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `GET /capture/override` · `POST /capture/override` | workspace scope | capture | Read / activate |
 | `POST /capture/override/reset` | workspace scope | capture | Back to defaults |
 | `GET /capture/suppressions` · `DELETE /capture/suppressions[?email=]` | workspace scope | capture | List / reset |
+| `GET /capture/logs/api` · `GET /capture/logs/api/:id` | workspace scope | capture | API request log (#35) |
+| `GET /capture/logs/smtp` · `GET /capture/logs/smtp/:id` | workspace scope | capture | SMTP sessions with transcript (#35) |
 | `GET|POST /capture/webhooks` · `GET|PATCH|DELETE /capture/webhooks/:id` | workspace scope | capture | Endpoint CRUD |
 | `GET /capture/webhooks/deliveries[?endpointId=&payloadFormat=]` · `GET …/:id` | workspace scope | capture | Delivery log |
 | `POST /capture/webhooks/deliveries/:id/replay` | workspace scope | capture | Replay (`exact` or `resign`) |
@@ -544,14 +546,46 @@ the UI or seeded through the Admin API (Phase 3).
 
 ## SMTP mapping (`dialects/smtp.ts`)
 
+Server: `packages/smtp` (smtp-server), listening on `MAILSINK_SMTP_HOST:MAILSINK_SMTP_PORT`
+(1025). Replies carry their enhanced status code in the text; smtp-server's own replies
+(`530`, `503`...) carry none. Propositions D130 to D134.
+
 | Step | Behaviour |
 |---|---|
-| `AUTH PLAIN/LOGIN` | `smtp_username` -> connection; scrypt verify; fail -> `535 5.7.8` |
-| `MAIL FROM` / `RCPT TO` | Suppressed recipient accepted but marked `suppressed` (provider parity) |
+| `EHLO` | Advertises `AUTH PLAIN LOGIN`, `SIZE <MAILSINK_MAX_MESSAGE_BYTES>`, and `STARTTLS` only when `MAILSINK_SMTP_TLS_CERT` and `MAILSINK_SMTP_TLS_KEY` (PEM file paths, both or neither, read at boot) are set |
+| `AUTH PLAIN/LOGIN` | `smtp_username` -> `smtp` connection; scrypt verify, skipped when the verified-credential cache (D11) already holds this password for this stored hash; unknown user, wrong password or disabled connection -> `535 5.7.8 Authentication credentials invalid`. Allowed without TLS. Success touches workspace activity |
+| No AUTH | `MAIL FROM` -> `530` |
+| `MAIL FROM` | Effective settings of the connection, then rate limit (one token per transaction), then chaos (D92); touches activity. Nothing read nor stored when refused. A `SIZE=` over the cap -> `552` |
+| `RCPT TO` | Every address accepted; a suppressed one is accepted, then marked `suppressed` by the pipeline (provider parity) |
 | Rate limit | `451 4.7.1 Rate limit exceeded, retry in Ns` |
-| Chaos | `421`/`451`/`452`/`550` per active override |
-| `DATA` | size cap -> `552`; `mailparser` -> `NormalizedEmail` + raw EML kept as is |
-| Reply | `250 2.0.0 Ok: queued as msg_…` |
+| Chaos | `421`/`451`/`452`/`550` per active override (`smtpGuardReply`, D94); `421` closes the connection |
+| `DATA` | size cap -> `552`; `mailparser` -> `NormalizedEmail` + raw EML kept byte for byte (D9); then the shared pipeline, `source: 'smtp'`, `message.created` published once committed |
+| Reply | `250 2.0.0 Ok: queued as msg_…` (the message id, also its `providerMessageId`) |
+| Failure | Unexpected error -> `451 4.3.0 Local error in processing` (logged); a message without any sender -> `550 5.6.0` |
+
+`DATA` to `NormalizedEmail` (`fromSmtpMessage(raw, envelope)`):
+
+- Recipients come from the envelope: an `RCPT TO` address listed in `To` or `Cc` keeps that
+  kind and its display name, any other one is `bcc`; a header address absent from `RCPT TO`
+  is not a recipient. Addresses are lower-cased.
+- `from` = the `From` header, else `MAIL FROM`; `subject` = `Subject` or `''`; `html` /
+  `text` as sent (no conversion between them), `cid:` links kept.
+- `headers` = every header except `From`, `To`, `Cc`, `Bcc`, `Reply-To`, `Subject`,
+  `MIME-Version`, `Content-Type`, `Content-Transfer-Encoding`; names lower-cased, folded
+  values unfolded, repeated names joined with `, `.
+- Attachments with their filename, content type and, when inline (`related` or
+  `Content-Disposition: inline`), their content id. `tags: []`, `metadata: null`.
+
+Session transcript (`RecordSmtpSession`, written to `smtp_sessions` by #35; a no-op
+until then): one `SmtpSessionRecord` per connection, handed over after it closed, shaped
+like the `smtp_sessions` row (`id` `smtp_…`, workspace and connection once authenticated,
+`remoteAddress`, `clientHostname` = the `EHLO` name, `authUser`, `secure`, `messageIds`,
+`outcome`, `error` = the last `4xx`/`5xx` reply, `startedAt`, `endedAt`). Transcript lines
+`{ at (epoch ms), dir: 'C' | 'S', line }`: AUTH arguments and continuation lines read
+`/* secured */`, `DATA` content is one `<N bytes of DATA>` line, at most 500 lines of 1 000
+characters (then one `[mailsink] N more lines not recorded` line). Outcome: `accepted`
+when a message was stored, else `error` after a server-side failure, else `auth_failed`
+when AUTH failed and never succeeded, else `rejected`.
 
 ## Capture (`capture.ts`)
 
@@ -598,8 +632,7 @@ export const MessageDetail = MessageSummary.extend({
   events: z.array(MessageEventView),
   rawUrl: z.string(), simulation: z.record(z.string(), z.unknown()).nullable(),
 })
-// Phase 3 (webhook delivery issue #33) adds `webhookDeliveries: z.array(WebhookDeliveryView)`.
-// Until then the detail already carries `webhookDeliveries: []` (always empty).
+// + webhookDeliveries: z.array(WebhookDeliveryView), newest first (#33, see « Webhooks »).
 
 export const TriggerEventRequest = z.discriminatedUnion('type', [
   z.object({ type: z.literal('opened'), recipient: z.email().optional(),
@@ -612,7 +645,13 @@ export const TriggerEventRequest = z.discriminatedUnion('type', [
   z.object({ type: z.literal('status'),
     status: z.enum(['delivered', 'deferred', 'soft_bounce', 'hard_bounce', 'complained', 'failed']),
     recipient: z.email().optional(), reason: z.string().max(500).optional() }),
-])   // 202 { events, webhookDeliveries: [{ id, endpointId }] }
+])   // 202 TriggerEventResponse { events, webhookDeliveries: [{ id, endpointId }] }
+// One event per targeted recipient, origin `api`; omitted `recipient` = every recipient not
+// suppressed. Unknown recipient 404, suppressed recipient (or all) 409. A forced status
+// does not change the simulation snapshot (D142). Automatic opened / clicked (D143):
+// after a simulation run, each recipient it delivered opens when a draw < `openRate` and
+// clicks when a draw < `clickRate` and the message has links (a click implies an open),
+// 1 ms and 2 ms after `delivered`, origin `simulation`, seeded by the message seed.
 
 export const PurgeQuery = z.object({ connectionId: ConnectionId.optional(),
   before: IsoDateTime.optional(), includeLogs: QueryBool.default(true) })
@@ -687,12 +726,19 @@ Behaviour (#26, propositions D80 to D84):
   `accepted` -> `message.created` (current summary), any other type -> `message.event`.
   Derived frames have no `id:` and are never replayed: the aggregated `message.status`
   (`recipient: null`) after a simulation run, `messages.purged`, `override.changed`,
-  `workspace.deleted`.
+  `workspace.deleted`, `log.api`, `log.smtp`.
 - Publishers: ingestion after its transaction committed (`message.created`, one
   `message.event` per suppressed recipient; nothing for an idempotent replay); the
   `simulate_delivery` job handler (`sent` and final event per recipient, then the
-  aggregated status); `DELETE /capture/messages` (`messages.purged`); the ephemeral GC
-  (`workspace.deleted`, then the stream closes).
+  aggregated status); `DELETE /capture/messages` (`messages.purged`); the Override API
+  after every successful activation and reset, an idempotent reset included, and the
+  override expiry scheduler once per workspace that lost an override in a pass
+  (`override.changed` with the new `OverrideState`, `connectionId` = the changed scope,
+  null for the workspace or when both scopes expired together; nothing when nobody
+  listens, D96); the ephemeral GC and `DELETE /admin/workspaces/:id`
+  (`workspace.deleted`, then the stream closes and `wait=true` answers 404, D97); the log
+  writer once a row is stored (`log.api` per logged call, `log.smtp` per SMTP session,
+  only for rows bound to a workspace; derived frames, no `id:`, D145).
 - `Last-Event-ID` (an `evt_…` id, anything else ignored): the bus subscription is taken
   first and buffered while the replay reads the 500 rows after that id in `(occurred_at,
   id)` order; buffered frames already replayed are dropped. An id the workspace does not
@@ -702,8 +748,9 @@ Behaviour (#26, propositions D80 to D84):
   message frames of other connections (and of none); `messages.purged`,
   `override.changed` and `workspace.deleted` always pass.
 - A client that stops reading while 1 000 frames are queued is disconnected.
-- `webhook.delivery`, `log.api` and `log.smtp` join the union with their view contracts
-  (#33, #35).
+- `connectionId` keeps the `log.api` and `log.smtp` frames of that connection only (a
+  call or session without connection is dropped, like a message without one).
+- `webhook.delivery` joins the union with its view contract (#33).
 
 ```ts
 export const StreamEvent = z.discriminatedUnion('type', [
@@ -722,6 +769,81 @@ export const StreamQuery = z.object({ connectionId: ConnectionId.optional(),
   types: z.preprocess((v) => (typeof v === 'string' ? v.split(',') : v),
     z.array(StreamEventType)).optional() })
 ```
+
+## Logs (`logs.ts`, #35, propositions D145 to D147)
+
+```ts
+export const ApiDialect = z.enum(['native', 'resend', 'brevo', 'admin', 'capture', 'mcp'])
+export const SmtpOutcome = z.enum(['accepted', 'rejected', 'auth_failed', 'error'])
+export function NumberedPage<T extends z.ZodType>(item: T) {
+  return z.object({ data: z.array(item), total: z.number().int().min(0),
+    page: z.number().int().min(1), pageSize: z.number().int().min(1) })
+}
+const paging = { page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(200).default(50) }
+export const StatusFilter = z.string().regex(/^[1-5](\d\d|xx)$/)      // 404 or 4xx
+
+export const ListApiLogsQuery = z.object({ connectionId: ConnectionId.optional(),
+  dialect: csv(ApiDialect).optional(), status: csv(StatusFilter).optional(),
+  errorCode: z.string().optional(), method: z.string().optional(),  // upper-cased
+  path: z.string().optional(),                                      // substring, case-insensitive
+  messageId: MessageId.optional(), since: IsoDateTime.optional(), until: IsoDateTime.optional(),
+  sort: z.enum(['createdAt', '-createdAt', 'durationMs', '-durationMs', 'statusCode',
+    '-statusCode']).default('-createdAt'), ...paging })             // + since <= until
+export const ApiLogSummary = z.object({ id: ApiLogId, connectionId: ConnectionId.nullable(),
+  dialect: ApiDialect, method: z.string(), path: z.string(), statusCode: z.number().int(),
+  durationMs: z.number().int().min(0), errorCode: z.string().nullable(),
+  messageIds: z.array(MessageId), createdAt: IsoDateTime })
+export const ApiLogDetail = ApiLogSummary.extend({
+  requestHeaders: z.record(z.string(), z.string()),                 // credentials redacted
+  requestBody: z.unknown().nullable(), responseBody: z.unknown().nullable(),
+  ip: z.string().nullable() })
+export const ListApiLogsResponse = NumberedPage(ApiLogSummary)
+
+export const ListSmtpSessionsQuery = z.object({ connectionId: ConnectionId.optional(),
+  outcome: csv(SmtpOutcome).optional(),
+  q: z.string().optional(),            // substring of remote address, client hostname, AUTH user
+  messageId: MessageId.optional(), since: IsoDateTime.optional(), until: IsoDateTime.optional(),
+  sort: z.enum(['startedAt', '-startedAt']).default('-startedAt'), ...paging })
+export const TranscriptLine = z.object({ at: z.number(), dir: z.enum(['C', 'S']), line: z.string() })
+export const SmtpSessionSummary = z.object({ id: SmtpSessionId,
+  connectionId: ConnectionId.nullable(), remoteAddress: z.string(),
+  clientHostname: z.string().nullable(), authUser: z.string().nullable(), secure: z.boolean(),
+  outcome: SmtpOutcome, error: z.string().nullable(), messageIds: z.array(MessageId),
+  startedAt: IsoDateTime, endedAt: IsoDateTime.nullable() })
+export const SmtpSessionDetail = SmtpSessionSummary.extend({ transcript: z.array(TranscriptLine) })
+export const ListSmtpSessionsResponse = NumberedPage(SmtpSessionSummary)
+```
+
+Behaviour:
+- **What is logged** (D145): every `defineApi()` call of `/v1`, `/emails`, `/v3`, `/admin`,
+  `/capture` and `/mcp`, refused calls included (`unauthorized`, `forbidden`,
+  `validation_error`, `rate_limited`, `chaos_injected`…, `error_code` = the error code).
+  Not logged: `GET /capture/logs/**` (reading the logs would log itself and, through
+  `log.api`, make a live log view refetch forever), `GET /capture/stream` (long-lived) and
+  `/healthz`. The row id is the `X-Request-Id` of the call. Admin calls and failed
+  authentications have no workspace: they are kept (default retention, D49) but no Capture
+  route reads them.
+- **How** (D146): the `request-log` extension runs first in `DEFAULT_EXTENSIONS`. Once the
+  caller is authenticated, its `afterAuth` starts reading a clone of a JSON or text body
+  (bounded by `MAILSINK_MAX_MESSAGE_BYTES`), so a call refused by a later extension still
+  logs its body; `onResponse` clones a JSON or text response (bounded to 1 MiB) and hands
+  the row to the runtime log writer, which inserts it after the response left. A failed
+  write is logged on the server, never sent. Redaction and truncation rules: doc 02,
+  « `schema/logs.ts` ». `durationMs` is measured up to the built response.
+- **SMTP** (#31 wires it): the SMTP server calls `runtime.logs.recordSmtpSession(session)`
+  once per finished session with `{ workspaceId?, connectionId?, remoteAddress,
+  clientHostname?, authUser?, secure, transcript, messageIds, outcome, error?, startedAt,
+  endedAt }`; the writer caps and redacts the transcript (doc 02).
+- **Reads** (D147): workspace scope (D12); a row of another workspace answers 404
+  `not_found` like a missing id. Filters combine with AND, `status`, `dialect` and
+  `outcome` values with OR; `since` and `until` are inclusive on `createdAt` (API) or
+  `startedAt` (SMTP). Page-number pagination (`page`, `pageSize` up to 200) with the
+  `total` for the pager of the UI DataTable (`LogsSearch`); ties of the sort column are
+  broken by id. The list returns summaries; headers, bodies and transcripts come with
+  `GET …/:id`.
+- **Purge**: `DELETE /capture/messages?includeLogs=true` (default) deletes the rows in
+  the same scope; the retention pass expires them with the message retention (D49).
 
 ## Webhooks (`webhook.ts`)
 
@@ -760,14 +882,88 @@ export function defaultPayloadFormat(scope: { kind: ConnectionKind } | null): Pa
 }
 
 export const WebhookEndpointView = z.object({
-  id: z.string(), connectionId: z.string().nullable(), url: z.string(),
+  id: z.string(), numericId: z.number().int(),  // numericId = Brevo payload `id`
+  connectionId: z.string().nullable(), url: z.string(),
   payloadFormat: PayloadFormat,
   events: z.array(z.string()),            // dialect names of payloadFormat, deduplicated
   canonicalEvents: z.array(CanonicalEvent),
   unsupportedEvents: z.array(CanonicalEvent), // canonical events this format cannot emit
+  description: z.string().nullable(),
+  brevoAuth: z.object({ type: z.enum(['none', 'bearer', 'basic']),
+    username: z.string().optional() }),   // credentials are never returned
+  customHeaders: z.array(CustomHeader),
   secretPreview: z.string().nullable(), enabled: z.boolean(),
+  createdAt: IsoDateTime, updatedAt: IsoDateTime,
 })
+// POST answers 201 WebhookEndpointWithSecret (= view + `secret`, the clear whsec_ shown
+// once, null for brevo); PATCH answers it too, `secret` set only when one was issued.
+export const WebhookEndpointPatch = WebhookEndpointInput.partial()
+  .extend({ description: z.string().max(200).nullable().optional(),
+    rotateSecret: z.literal(true).optional() })
 ```
+
+`webhook-delivery.ts` holds the delivery log contracts:
+
+```ts
+export const WebhookDeliveryView = z.object({ id: WebhookDeliveryId,
+  endpointId: WebhookEndpointId, messageId: MessageId.nullable(),
+  eventId: EventId.nullable(),                       // null for a test send
+  payloadFormat: PayloadFormat, canonicalEvent: CanonicalEvent, dialectEvent: z.string(),
+  recipient: z.string().nullable(),
+  status: z.enum(['pending', 'retrying', 'succeeded', 'failed']),
+  attemptCount: z.number().int(), nextAttemptAt: IsoDateTime.nullable(),
+  lastStatusCode: z.number().int().nullable(),
+  replayOf: WebhookDeliveryId.nullable(), replayMode: ReplayMode.nullable(),
+  createdAt: IsoDateTime })
+export const WebhookDeliveryDetail = WebhookDeliveryView.extend({ body: z.string(),
+  contentType: z.string(), attempts: z.array(WebhookAttemptView) }) // attempt: id,
+  // attemptNo, requestHeaders (exactly as sent), signedAt, responseStatus,
+  // responseBody (4 KB), durationMs, error, createdAt
+export const ListWebhookDeliveriesQuery = z.object({ endpointId, payloadFormat,
+  messageId, status, limit: PageLimit, cursor: WebhookDeliveryId })   // all optional
+```
+
+Behaviour (#32, #33, #34, propositions D135 to D144):
+- Endpoint CRUD: `GET /capture/webhooks[?connectionId=]` lists that scope and the
+  Workspace scope, oldest first; another workspace's endpoint or connection is a 404.
+  Event names are validated against the resolved format: dialect names, canonical names,
+  and for Brevo the aliases `sent`, `soft_bounce`, `hard_bounce`; an unknown name is a 422
+  with `params.code = unknown_webhook_event`. `brevoAuth` other than `none` on another
+  format is refused (`brevo_auth_requires_brevo`); custom headers may not use
+  `content-type`, `content-length`, `host`, `authorization`, `svix-*` or `x-mailsink-*`
+  (`reserved_webhook_header`) and are sent on every format, under the format's own
+  headers. `DELETE` answers `{ id }` (its deliveries cascade).
+- Secrets: the unified HMAC key is the whole `whsec_…` string; `secretPreview` is the
+  prefix plus 4 characters. `PATCH { rotateSecret: true }` issues a new one; leaving the
+  brevo format issues one too, entering it drops it (Brevo credentials live in the same
+  column: the token, or `user:password`).
+- Fan-out: the `simulate_delivery` handler fans out the events of the run once it
+  committed (and the automatic opened / clicked below), in its own transaction; manual
+  events fan out in their own transaction. Disabled endpoints get no new delivery.
+- Attempts: one `deliver_webhook` job per attempt (payload `{ deliveryId, attemptNo,
+  exactAttemptId? }`); a failed attempt enqueues the next one itself after
+  `min(2^(n-1) * 5 s, 1 h) ± 20 %`, the queue backoff (D47) only covers database errors.
+  Redirects are not followed (a 3xx fails); network errors and timeouts are stored in the
+  attempt `error`. A job whose attempt is already recorded does nothing.
+- Replay: `replayOf` always points to the first delivery, whose id stays the signing id
+  (`svix-id`, `X-Mailsink-Delivery-Id`). `exact` copies the headers of one attempt for
+  every attempt of the replay; on a delivery without attempts it is a 409 (use `resign`).
+  The answer is 202 with the pending delivery; the worker sends it.
+- `POST /capture/webhooks/:id/test` (`{ event? }`, default `email.delivered`, dialect or
+  canonical name): a sample message, a delivery with `messageId` and `eventId` null, one
+  attempt sent at once and never retried; answers the `WebhookDeliveryDetail`.
+- Preview: signed with a throwaway secret, then `X-Mailsink-Signature`, `svix-signature`
+  and `Authorization` values are masked (`••••••••`). An event the format cannot emit is
+  a 422.
+- Stream: a `webhook.delivery` frame (no `id:`) when a delivery is created and after each
+  attempt; its `connectionId` is the endpoint scope, so a Workspace-scoped endpoint's
+  frames are dropped by a `connectionId` stream filter.
+- `MessageDetail.webhookDeliveries`: the message's deliveries, newest first (at most
+  200). The delivery log is newest first with a keyset cursor (the last id).
+- Formatter fields: Resend `email_id` is the provider id when it is a UUID, else the UUID
+  body of the `msg_` id; Brevo `message-id` is the provider id when shaped `<…@…>`, else
+  `<uuid@smtp-relay.mailin.fr>`; Brevo `tags` are the tag values (the name when the value
+  is empty); Resend `click.ipAddress` is `127.0.0.1`.
 
 Changing `payloadFormat` (PATCH) keeps the canonical subscription. Events the new format
 cannot represent stay stored but are listed in `unsupportedEvents` and never emitted; the
@@ -1030,8 +1226,9 @@ parsing and ingestion. A refused call reads no body and stores nothing.
   `Rate limit exceeded, retry in Ns`.
 - **Chaos**: with probability `chaos.errorRate` percent (active override only), the call
   fails with one of `chaos.httpCodes` drawn uniformly (`429`, `500`, `502`, `503`), body
-  code `chaos_injected` whatever the status, message `Simulated failure (chaos N)`. The
-  server log line carries `errorCode=chaos_injected` (the `api_logs` row comes with #35).
+  code `chaos_injected` whatever the status, message `Simulated failure (chaos N)`. Both
+  refusals are written to `api_logs` with `error_code` `rate_limited` or `chaos_injected`
+  (request log, #35; the former `console.info` line is gone).
 - **SMTP** (#31 reuses `guardRequest({ surface: 'smtp' })` and `smtpGuardReply`): rate
   limit `451 4.7.1 Rate limit exceeded, retry in Ns`; chaos `421 4.3.2 Service not
   available`, `451 4.3.0 Local error in processing`, `452 4.3.1 Insufficient system

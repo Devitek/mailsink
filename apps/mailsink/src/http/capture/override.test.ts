@@ -79,7 +79,9 @@ describeDb('Override API over HTTP', (ctx) => {
 
   it('publishes override.changed with the new state on activation and reset', async () => {
     const seen: unknown[] = []
-    const off = runtime.bus.subscribe(a.workspace.id, (frame) => seen.push(frame))
+    const off = runtime.bus.subscribe(a.workspace.id, (frame) => {
+      if (frame.event.type !== 'log.api') seen.push(frame) // request log frames (#35)
+    })
     const activated = await (
       await post(postOverride, '/capture/override', {
         connectionId: a.connection.id,

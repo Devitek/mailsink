@@ -82,9 +82,9 @@ describe('bootRuntime / stopRuntime', () => {
       port: runtime.smtpPort,
       ignoreTLS: true,
     })
-    await transport.sendMail({ from: 'a@example.test', to: 'b@example.test', text: 'hi' })
+    // The SMTP server answers (ingestion itself is covered by container.test.ts).
+    await expect(transport.verify()).resolves.toBe(true)
     transport.close()
-    expect(silent.info).toHaveBeenCalledWith(expect.stringContaining('message from a@example.test'))
 
     await stopRuntime()
     const after = createTransport({ host: '127.0.0.1', port: runtime.smtpPort, ignoreTLS: true })
