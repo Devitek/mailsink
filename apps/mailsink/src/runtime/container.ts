@@ -3,9 +3,11 @@ import {
   createActivityTracker,
   createEventBus,
   createJobRunner,
+  createLogWriter,
   createRateLimiter,
   DEFAULT_JOB_SETTINGS,
   type EventBus,
+  type LogWriter,
   publishExpiredOverrides,
   type Random,
   type RateLimiter,
@@ -36,6 +38,8 @@ export type Runtime = {
   rateLimiter: RateLimiter
   /** Source of the request-level chaos draws (#25), injectable in tests. */
   chaosRandom: Random
+  /** Asynchronous writer of api_logs and smtp_sessions (#35), flushed by stop(). */
+  logs: LogWriter
   smtpPort: number
   stop: () => Promise<void>
 }
@@ -71,6 +75,9 @@ export async function createRuntime(
     // HTTP surfaces touch it through the defineApi activity extension; SMTP ingestion
     // (#31) calls activity.touch(workspaceId) once AUTH resolves the connection.
     const activity = createActivityTracker({ db: db.db, log })
+    // api_logs through the defineApi request log extension; smtp_sessions through the
+    // SMTP listener's recordSmtpSession hook (logs.recordSmtpSession).
+    const logs = createLogWriter({ db: db.db, bus, log })
     const smtp = await startSmtpListener({
       host: config.smtpHost,
       port: config.smtpPort,
@@ -122,6 +129,7 @@ export async function createRuntime(
       activity,
       rateLimiter: createRateLimiter(),
       chaosRandom: Math.random,
+      logs,
       smtpPort: smtp.port,
       async stop() {
         // Stop accepting mail, drain the worker that would process it and the retention
@@ -130,6 +138,7 @@ export async function createRuntime(
         await Promise.all([worker.stop(), retention.stop(), gc.stop()])
         await overrideExpiry.stop()
         await activity.stop()
+        await logs.flush()
         await db.close()
       },
     }

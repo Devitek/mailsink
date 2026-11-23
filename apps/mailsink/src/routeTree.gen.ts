@@ -18,9 +18,13 @@ import { Route as CaptureStreamRouteImport } from './routes/capture.stream'
 import { Route as CaptureSuppressionsRouteImport } from './routes/capture.suppressions'
 import { Route as V1EmailsRouteImport } from './routes/v1.emails'
 import { Route as AdminWorkspacesIdRouteImport } from './routes/admin.workspaces.$id'
+import { Route as CaptureLogsApiRouteImport } from './routes/capture.logs.api'
+import { Route as CaptureLogsSmtpRouteImport } from './routes/capture.logs.smtp'
 import { Route as CaptureMessagesIdRouteImport } from './routes/capture.messages.$id'
 import { Route as CaptureOverrideResetRouteImport } from './routes/capture.override.reset'
 import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
+import { Route as CaptureLogsApiIdRouteImport } from './routes/capture.logs.api.$id'
+import { Route as CaptureLogsSmtpIdRouteImport } from './routes/capture.logs.smtp.$id'
 import { Route as CaptureMessagesIdRawRouteImport } from './routes/capture.messages.$id.raw'
 import { Route as CaptureMessagesIdAttachmentsAttIdRouteImport } from './routes/capture.messages.$id.attachments.$attId'
 
@@ -69,6 +73,16 @@ const AdminWorkspacesIdRoute = AdminWorkspacesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminWorkspacesRoute,
 } as any)
+const CaptureLogsApiRoute = CaptureLogsApiRouteImport.update({
+  id: '/capture/logs/api',
+  path: '/capture/logs/api',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureLogsSmtpRoute = CaptureLogsSmtpRouteImport.update({
+  id: '/capture/logs/smtp',
+  path: '/capture/logs/smtp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CaptureMessagesIdRoute = CaptureMessagesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -83,6 +97,16 @@ const V1EmailsBatchRoute = V1EmailsBatchRouteImport.update({
   id: '/batch',
   path: '/batch',
   getParentRoute: () => V1EmailsRoute,
+} as any)
+const CaptureLogsApiIdRoute = CaptureLogsApiIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CaptureLogsApiRoute,
+} as any)
+const CaptureLogsSmtpIdRoute = CaptureLogsSmtpIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CaptureLogsSmtpRoute,
 } as any)
 const CaptureMessagesIdRawRoute = CaptureMessagesIdRawRouteImport.update({
   id: '/raw',
@@ -106,9 +130,13 @@ export interface FileRoutesByFullPath {
   '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
+  '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
+  '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
+  '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
@@ -122,9 +150,13 @@ export interface FileRoutesByTo {
   '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
+  '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
+  '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
+  '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
@@ -139,9 +171,13 @@ export interface FileRoutesById {
   '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
+  '/capture/logs/api': typeof CaptureLogsApiRouteWithChildren
+  '/capture/logs/smtp': typeof CaptureLogsSmtpRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/capture/logs/api/$id': typeof CaptureLogsApiIdRoute
+  '/capture/logs/smtp/$id': typeof CaptureLogsSmtpIdRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
@@ -157,9 +193,13 @@ export interface FileRouteTypes {
     | '/capture/suppressions'
     | '/v1/emails'
     | '/admin/workspaces/$id'
+    | '/capture/logs/api'
+    | '/capture/logs/smtp'
     | '/capture/messages/$id'
     | '/capture/override/reset'
     | '/v1/emails/batch'
+    | '/capture/logs/api/$id'
+    | '/capture/logs/smtp/$id'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
   fileRoutesByTo: FileRoutesByTo
@@ -173,9 +213,13 @@ export interface FileRouteTypes {
     | '/capture/suppressions'
     | '/v1/emails'
     | '/admin/workspaces/$id'
+    | '/capture/logs/api'
+    | '/capture/logs/smtp'
     | '/capture/messages/$id'
     | '/capture/override/reset'
     | '/v1/emails/batch'
+    | '/capture/logs/api/$id'
+    | '/capture/logs/smtp/$id'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
   id:
@@ -189,9 +233,13 @@ export interface FileRouteTypes {
     | '/capture/suppressions'
     | '/v1/emails'
     | '/admin/workspaces/$id'
+    | '/capture/logs/api'
+    | '/capture/logs/smtp'
     | '/capture/messages/$id'
     | '/capture/override/reset'
     | '/v1/emails/batch'
+    | '/capture/logs/api/$id'
+    | '/capture/logs/smtp/$id'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
   fileRoutesById: FileRoutesById
@@ -205,6 +253,8 @@ export interface RootRouteChildren {
   CaptureStreamRoute: typeof CaptureStreamRoute
   CaptureSuppressionsRoute: typeof CaptureSuppressionsRoute
   V1EmailsRoute: typeof V1EmailsRouteWithChildren
+  CaptureLogsApiRoute: typeof CaptureLogsApiRouteWithChildren
+  CaptureLogsSmtpRoute: typeof CaptureLogsSmtpRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +322,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWorkspacesIdRouteImport
       parentRoute: typeof AdminWorkspacesRoute
     }
+    '/capture/logs/api': {
+      id: '/capture/logs/api'
+      path: '/capture/logs/api'
+      fullPath: '/capture/logs/api'
+      preLoaderRoute: typeof CaptureLogsApiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture/logs/smtp': {
+      id: '/capture/logs/smtp'
+      path: '/capture/logs/smtp'
+      fullPath: '/capture/logs/smtp'
+      preLoaderRoute: typeof CaptureLogsSmtpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/capture/messages/$id': {
       id: '/capture/messages/$id'
       path: '/$id'
@@ -292,6 +356,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/v1/emails/batch'
       preLoaderRoute: typeof V1EmailsBatchRouteImport
       parentRoute: typeof V1EmailsRoute
+    }
+    '/capture/logs/api/$id': {
+      id: '/capture/logs/api/$id'
+      path: '/$id'
+      fullPath: '/capture/logs/api/$id'
+      preLoaderRoute: typeof CaptureLogsApiIdRouteImport
+      parentRoute: typeof CaptureLogsApiRoute
+    }
+    '/capture/logs/smtp/$id': {
+      id: '/capture/logs/smtp/$id'
+      path: '/$id'
+      fullPath: '/capture/logs/smtp/$id'
+      preLoaderRoute: typeof CaptureLogsSmtpIdRouteImport
+      parentRoute: typeof CaptureLogsSmtpRoute
     }
     '/capture/messages/$id/raw': {
       id: '/capture/messages/$id/raw'
@@ -372,6 +450,30 @@ const V1EmailsRouteWithChildren = V1EmailsRoute._addFileChildren(
   V1EmailsRouteChildren,
 )
 
+interface CaptureLogsApiRouteChildren {
+  CaptureLogsApiIdRoute: typeof CaptureLogsApiIdRoute
+}
+
+const CaptureLogsApiRouteChildren: CaptureLogsApiRouteChildren = {
+  CaptureLogsApiIdRoute: CaptureLogsApiIdRoute,
+}
+
+const CaptureLogsApiRouteWithChildren = CaptureLogsApiRoute._addFileChildren(
+  CaptureLogsApiRouteChildren,
+)
+
+interface CaptureLogsSmtpRouteChildren {
+  CaptureLogsSmtpIdRoute: typeof CaptureLogsSmtpIdRoute
+}
+
+const CaptureLogsSmtpRouteChildren: CaptureLogsSmtpRouteChildren = {
+  CaptureLogsSmtpIdRoute: CaptureLogsSmtpIdRoute,
+}
+
+const CaptureLogsSmtpRouteWithChildren = CaptureLogsSmtpRoute._addFileChildren(
+  CaptureLogsSmtpRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HealthzRoute: HealthzRoute,
@@ -381,6 +483,8 @@ const rootRouteChildren: RootRouteChildren = {
   CaptureStreamRoute: CaptureStreamRoute,
   CaptureSuppressionsRoute: CaptureSuppressionsRoute,
   V1EmailsRoute: V1EmailsRouteWithChildren,
+  CaptureLogsApiRoute: CaptureLogsApiRouteWithChildren,
+  CaptureLogsSmtpRoute: CaptureLogsSmtpRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
