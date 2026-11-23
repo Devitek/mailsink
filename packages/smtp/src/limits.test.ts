@@ -2,7 +2,7 @@ import { insertOverride, messageRecipients, messages, newId } from '@mailsink/db
 import { createTestSuppression, describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
 import { afterEach, expect, it } from 'vitest'
-import { createSmtpAccount, startTestServer } from './testing'
+import { createSmtpAccount, smtpDialogue, startTestServer } from './testing'
 
 const mail = { from: 'app@example.test', to: 'alice@example.test', subject: 's', text: 'x' }
 
@@ -18,8 +18,13 @@ describeDb('SMTP server limits, chaos and suppression', (ctx) => {
     const account = await createSmtpAccount(ctx.db)
     env = await startTestServer(ctx.db, { maxMessageBytes: 2_000 })
     const transport = env.transport(account)
-    await expect(transport.sendMail({ ...mail, text: 'x'.repeat(5_000) })).rejects.toMatchObject({
+    const error = await transport
+      .sendMail({ ...mail, text: 'x'.repeat(5_000) })
+      .catch((e: { responseCode: number; response: string }) => e)
+    // Undeclared size: Mailsink's own reply once DATA crosses the cap.
+    expect(error).toMatchObject({
       responseCode: 552,
+      response: '552 5.3.4 Message exceeds the 2000 bytes limit',
     })
     transport.close()
     const stored = await ctx.db
@@ -27,6 +32,20 @@ describeDb('SMTP server limits, chaos and suppression', (ctx) => {
       .from(messages)
       .where(eq(messages.workspaceId, account.workspaceId))
     expect(stored).toEqual([])
+  })
+
+  it('refuses a declared SIZE above the cap at MAIL FROM with the smtp-server text', async () => {
+    const account = await createSmtpAccount(ctx.db)
+    env = await startTestServer(ctx.db, { maxMessageBytes: 2_000 })
+    const plain = Buffer.from(`\0${account.user}\0${account.pass}`).toString('base64')
+    const replies = await smtpDialogue(env.server.port, [
+      'EHLO client.test',
+      `AUTH PLAIN ${plain}`,
+      'MAIL FROM:<app@example.test> SIZE=5000',
+      'QUIT',
+    ])
+    // Text fixed by smtp-server before onMailFrom runs, without enhanced code (D159).
+    expect(replies[3]).toBe('552 Error: message exceeds fixed maximum message size 2000')
   })
 
   it('answers 451 4.7.1 once the rate limit of the connection is spent', async () => {
