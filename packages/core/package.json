@@ -15,6 +15,10 @@
     "@mailsink/contracts": "workspace:*",
     "@mailsink/db": "workspace:*",
     "drizzle-orm": "^0.45.4",
+    "mailparser": "^3.15.0",
     "nodemailer": "^10.6.1"
+  },
+  "devDependencies": {
+    "@types/mailparser": "^3.9.0"
   }
 }

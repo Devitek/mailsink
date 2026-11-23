@@ -24,6 +24,7 @@ export {
 } from './connections/snippets'
 export { hashApiKey, secretsEqual } from './crypto'
 export { fromNativeRequest } from './dialects/native'
+export { fromSmtpMessage, type SmtpEnvelope } from './dialects/smtp'
 export { DomainError, type DomainErrorOptions, ERROR_STATUS, isDomainError } from './errors'
 export * from './events'
 export { attachmentContentType, composeEml, messageIdHeader } from './ingestion/compose-eml'

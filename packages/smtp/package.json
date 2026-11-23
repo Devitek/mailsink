@@ -11,6 +11,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@mailsink/core": "workspace:*",
+    "@mailsink/db": "workspace:*",
+    "drizzle-orm": "^0.45.4",
     "smtp-server": "^3.21.7"
   },
   "devDependencies": {
