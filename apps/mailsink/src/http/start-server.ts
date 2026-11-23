@@ -1,5 +1,6 @@
-// Request helpers of TanStack Start (getCookie, setCookie, getRequestHeader), read from the
-// module namespace once it is complete.
+// Request helpers of TanStack Start (getCookie, setCookie, deleteCookie, getRequest,
+// getRequestHeader), read from the module namespace once it is complete. Server code imports
+// them through `startServer()`, never statically (#106).
 //
 // Under `vite dev`, editing the route tree re-evaluates `@tanstack/start-server-core` (it
 // imports the router virtual modules, which import back the modules using it). The module
@@ -35,6 +36,8 @@ export function startServer(): Promise<StartServer> {
     (ns) =>
       typeof ns.getCookie === 'function' &&
       typeof ns.setCookie === 'function' &&
+      typeof ns.deleteCookie === 'function' &&
+      typeof ns.getRequest === 'function' &&
       typeof ns.getRequestHeader === 'function',
   )
 }

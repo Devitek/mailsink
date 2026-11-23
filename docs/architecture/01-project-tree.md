@@ -96,16 +96,28 @@ mailsink/
 │       │   │   ├── index.tsx                         # workspace picker (PickerSearch, D164)
 │       │   │   ├── login.tsx                         # admin-key sign-in page, POST /login handler
 │       │   │   │                                     # (D13, D160 to D163)
-│       │   │   ├── w.$workspaceSlug.tsx              # workspace layout: header, tabs (guarded)
-│       │   │   ├── w.$workspaceSlug.index.tsx        # inbox (virtualized), planned
-│       │   │   ├── w.$workspaceSlug.m.$messageId.tsx # message viewer
-│       │   │   ├── w.$workspaceSlug.logs.tsx         # API / SMTP / webhook logs (tabs)
-│       │   │   ├── w.$workspaceSlug.suppressions.tsx
-│       │   │   ├── w.$workspaceSlug.connections.tsx
-│       │   │   ├── w.$workspaceSlug.webhooks.tsx
-│       │   │   ├── w.$workspaceSlug.settings.tsx     # defaults, retention, rate limit
+│       │   │   ├── w.$workspaceSlug.tsx              # workspace layout (guarded): header, tabs
+│       │   │   │                                     # (own row below 768 px), live indicator,
+│       │   │   │                                     # ephemeral TTL banner, one SSE stream
+│       │   │   ├── w.$workspaceSlug.index.tsx        # inbox + message viewer (InboxSearch: ?m=,
+│       │   │   │                                     # ?tab=, filters; D177, D179)
+│       │   │   ├── w.$workspaceSlug.connections.tsx  # workspace card, workspace key, connections
+│       │   │   │                                     # (ConnectionsSearch, D171)
+│       │   │   ├── w.$workspaceSlug.m.stream.ts      # SSE of the workspace behind the UI session
+│       │   │   ├── w.$workspaceSlug.m.$messageId.raw.ts          # EML download (session)
+│       │   │   ├── w.$workspaceSlug.m.$messageId.html.ts         # preview document (CSP,
+│       │   │   │                                                 # ?remote=blocked, D187)
+│       │   │   ├── w.$workspaceSlug.m.$messageId.attachments.$attachmentId.ts
+│       │   │   ├── w.$workspaceSlug.logs.tsx         # API / SMTP / webhook logs (tabs), planned
+│       │   │   ├── w.$workspaceSlug.suppressions.tsx # planned
+│       │   │   ├── w.$workspaceSlug.webhooks.tsx     # planned
+│       │   │   ├── w.$workspaceSlug.settings.tsx     # defaults, retention, rate limit, planned
 │       │   │   ├── admin.workspaces.ts               # POST, GET
-│       │   │   ├── admin.workspaces.$id.ts           # GET, DELETE
+│       │   │   ├── admin.workspaces.$id.ts           # GET, PATCH (D186), DELETE
+│       │   │   ├── admin.workspaces.$id.key.rotate.ts            # POST: new mskw_ key (D207)
+│       │   │   ├── admin.workspaces.$id.connections.ts           # POST (D186)
+│       │   │   ├── admin.workspaces.$id.connections.$connectionId.ts  # PATCH, DELETE (D186)
+│       │   │   ├── admin.workspaces.$id.connections.$connectionId.rotate.ts  # POST (D172)
 │       │   │   ├── admin.workspaces.$id.templates.ts # Brevo templates: GET, POST (#30)
 │       │   │   ├── admin.workspaces.$id.templates.$templateId.ts # GET, PATCH, DELETE
 │       │   │   ├── admin.logs.api.ts                 # GET API logs without workspace (D151)
@@ -148,25 +160,48 @@ mailsink/
 │       │   │   ├── auth-fns.ts            # server functions: login state, sign out
 │       │   │   ├── guard.ts               # ensureSignedIn(): route guard, back to the page asked
 │       │   │   └── redirect.ts            # safeRedirect(): same-origin paths only
-│       │   ├── server-fns/                # createServerFn wrappers for the UI, by feature
+│       │   ├── server-fns/                # createServerFn wrappers for the UI, by feature;
+│       │   │   │                          # *-fns.ts: session-checked server functions
+│       │   │   │                          # (signedIn), *.server.ts: their server side
 │       │   │   ├── instance-fns.ts        # version (MAILSINK_VERSION) and UI auth mode
-│       │   │   ├── workspaces-fns.ts      # picker list, one workspace (touches its activity)
+│       │   │   ├── workspaces-fns.ts      # picker pages (persistent / ephemeral apart,
+│       │   │   │                          # search, keyset pages, D206), one workspace
 │       │   │   ├── workspaces.server.ts   # their server side, last workspace cookie
+│       │   │   ├── workspaces-manage-fns.ts  workspaces-manage.server.ts  # create (UI),
+│       │   │   │                          # edit, delete, rotate the mskw_ key (D170, D174)
+│       │   │   ├── connections-fns.ts  connections.server.ts  connections-types.ts
+│       │   │   │                          # connections page: list with message counts,
+│       │   │   │                          # create, rename, disable, rotate, delete (D171)
+│       │   │   ├── messages-fns.ts  messages.server.ts  messages-types.ts  # inbox pages,
+│       │   │   │                          # facets, previews, message, raw source, purge
+│       │   │   ├── message-origin.server.ts  # API request or SMTP envelope of a message
+│       │   │   ├── events-fns.ts  events.server.ts  # « Simulate » of the viewer (D180)
 │       │   │   └── workspace-types.ts     # UI views of a workspace
+│       │   ├── http/start-server.ts       # request helpers of TanStack Start (cookies,
+│       │   │                              # request), never imported statically (#99, #106)
 │       │   ├── features/                  # UI, one folder per feature
 │       │   │   ├── login/                 # sign-in screen, key field, banners, countdown
-│       │   │   ├── shell/                 # app header, nav tabs, « Language and session »
-│       │   │   │                          # menu, instance block
-│       │   │   ├── workspaces/            # picker popover and page sections (Base UI Switch
-│       │   │   │                          # "show ephemeral"), ephemeral badge, queries
-│       │   │   ├── inbox/                 # TanStack Virtual list, SSE -> Query cache (planned)
-│       │   │   ├── message-viewer/        # sandboxed iframe, desktop/mobile, MIME, links
+│       │   │   ├── shell/                 # app header, nav tabs (inline or mobile bar),
+│       │   │   │                          # « Language and session » menu, instance block,
+│       │   │   │                          # use-copy.ts (clipboard + toast)
+│       │   │   ├── workspaces/            # picker popover and page sections (search, paged
+│       │   │   │                          # sections, Base UI Switch "show ephemeral"),
+│       │   │   │                          # ephemeral badge and banner, create / edit dialogs
+│       │   │   │                          # (TanStack Form), confirm dialog, queries
+│       │   │   ├── inbox/                 # TanStack Virtual list, filter bar, facets, empty
+│       │   │   │                          # state, search query, session routes, queries
+│       │   │   ├── message-viewer/        # header + Simulate bar, sandboxed preview (desktop /
+│       │   │   │                          # mobile, background, remote images blocked or not),
+│       │   │   │                          # text, links, headers + source (payload / EML),
+│       │   │   │                          # history (events, webhook deliveries), downloads
 │       │   │   ├── logs/                  # TanStack Table DataTable + Sheet inspector
-│       │   │   ├── connections/           # TanStack Form, kind-conditional fields
+│       │   │   ├── connections/           # TanStack Form, kind-conditional fields, panels,
+│       │   │   │                          # credentials shown once, workspace key card
 │       │   │   ├── webhooks/              # scope -> payloadFormat prefill, dialect event
 │       │   │   │                          # labels, live payload/headers preview
 │       │   │   ├── override/              # rates sum <= 100, latency bounds
-│       │   │   └── realtime/              # useWorkspaceStream(): EventSource -> invalidate
+│       │   │   └── realtime/              # useWorkspaceStream(): EventSource -> Query cache
+│       │   │                              # (apply-stream-event.ts, D178), live indicator
 │       │   ├── i18n/                      # Lingui (D17, D18)
 │       │   │   ├── lingui.ts              # i18n instance, dynamic catalog loading
 │       │   │   ├── locales.ts             # supported locales, source locale, cookie name
@@ -193,7 +228,9 @@ mailsink/
 │           ├── web-server.ts              # shared config: ports, admin key, webServer
 │           ├── serve.ts                   # node <entry> on a throwaway PGlite directory
 │           ├── smoke.spec.ts  smoke-theme.spec.ts  locale.spec.ts
-│           ├── ui/                        # sign-in, picker, session menu, contrast; the
+│           ├── inbox.spec.ts  inbox-fixtures.ts  workspaces.spec.ts  workspaces-screens.spec.ts
+│           ├── ui/                        # sign-in, picker (search, banner), session menu,
+│           │                              # contrast, mobile (390 px), workspace key; the
 │           │                              # login-limit.spec.ts scenario runs alone, last
 │           ├── recipe/                    # docs/guides/e2e.md: fixtures.ts (ephemeral workspace
 │           │                              # per worker, reset, cleanup), recipe.spec.ts (send,
@@ -217,7 +254,10 @@ mailsink/
 │   │       ├── webhook-delivery.ts      # deliveries, attempts, replay (#33)
 │   │       ├── webhook-payloads.ts      # unified, Resend and Brevo payload shapes (D21)
 │   │       ├── settings.ts              # retention, rate limit, simulation defaults
-│   │       ├── search-params.ts         # UI search params (PickerSearch; filters, tabs)
+│   │       ├── search-params.ts         # UI search params (PickerSearch, InboxSearch,
+│   │       │                            # ConnectionsSearch)
+│   │       ├── workspace-manage.ts      # workspace / connection edits, CreatedConnection,
+│   │       │                            # RotatedWorkspaceKey, slugify
 │   │       └── version.ts               # MAILSINK_VERSION, from the root package.json (D181)
 │   ├── db/                                # Drizzle (doc 02)
 │   │   ├── drizzle.config.ts
@@ -243,19 +283,27 @@ mailsink/
 │   │                                        # idempotency, jobs, logs-api, logs-smtp,
 │   │                                        # logs-query (shared filters, sort, offset),
 │   │                                        # messages-read, messages-write,
-│   │                                        # messages-status, messages-purge, overrides,
+│   │                                        # messages-status, messages-purge,
+│   │                                        # messages-inbox (inbox pages and facets),
+│   │                                        # overrides,
 │   │                                        # retention, retention-webhooks (D154),
 │   │                                        # suppressions, templates, webhooks,
 │   │                                        # webhooks-context, webhooks-deliveries,
-│   │                                        # workspace-activity (throttled touch), workspaces
+│   │                                        # webhooks-delivery-facts (endpoint URL, last
+│   │                                        # attempt duration, D205),
+│   │                                        # workspace-activity (throttled touch),
+│   │                                        # workspace-message-counts (per workspace, per
+│   │                                        # connection), workspaces, workspaces-write
 │   ├── core/                              # domain services, no HTTP, no React; depends on
 │   │   │                                  # @mailsink/contracts, @mailsink/db, drizzle-orm (query
 │   │   │                                  # builders in services) and nodemailer (EML composer)
 │   │   └── src/
 │   │       ├── clock.ts  errors.ts (DomainError, status per code, D40)
 │   │       ├── crypto.ts (key hash, constant-time compare; scrypt, hmac later)  # ids: db (D27)
-│   │       ├── workspaces/   provision.ts queries.ts views.ts slug.ts activity.ts expiry.ts
-│   │       ├── connections/  credentials.ts snippets.ts
+│   │       ├── workspaces/   provision.ts queries.ts update.ts views.ts slug.ts activity.ts
+│   │       │                 expiry.ts workspace-key.ts (mskw_ rotation, D207)
+│   │       ├── connections/  credentials.ts snippets.ts plan.ts manage.ts (add, rename,
+│   │       │                 disable, rotate, delete; UI and Admin API, D186)
 │   │       ├── ingestion/    pipeline.ts (fans out `suppressed`, D153) prepare.ts normalize.ts
 │   │       │                 native.ts compose-eml.ts links.ts idempotency.ts
 │   │       │                 stream-frames.ts testing/fixtures.ts
@@ -281,7 +329,8 @@ mailsink/
 │   │       │                 publish.ts (webhook.delivery frames) views.ts
 │   │       │   └── formatters/            # Strategy, one per payloadFormat (D20, D21)
 │   │       │       types.ts events-map.ts shared.ts unified.ts resend.ts brevo.ts index.ts
-│   │       ├── capture/      service.ts query.ts cursor.ts views.ts wait.ts
+│   │       ├── capture/      service.ts query.ts cursor.ts views.ts wait.ts inbox.ts (UI
+│   │       │                 inbox pages, facets, previews)
 │   │       │                 publish-purge.ts (purgeAndPublish, D180)
 │   │       │                 testing/fixtures.ts (@mailsink/core/capture-testing)
 │   │       ├── blobs/        store.ts db-store.ts
@@ -304,16 +353,17 @@ mailsink/
 │   │            HTTP, D165, D169) context.ts result.ts schemas.ts urls.ts (absolute URLs)
 │   │            tools/{messages,content,actions,override,logs}.ts testing.ts
 │   ├── ui/                                # shadcn/ui on Base UI + design tokens
-│   │   └── src/ index.ts  components/ (brand, button, card, field, input, menu, popover, sheet,
-│   │            status-badge, switch, tabs)  lib/cn.ts  styles/ (tokens.css, tokens-ext.css
+│   │   └── src/ index.ts  components/ (brand, button, card, dialog, field, input, menu, popover,
+│   │            segmented-control (the only one, D208), sheet, status-badge, switch, tabs,
+│   │            toast (D208))  lib/cn.ts  styles/ (tokens.css, tokens-ext.css
 │   │            with the faint text override D184, theme.css, index.css, css-declarations.ts,
 │   │            contrast.ts)
 │   └── cli/                               # `mailsink` bin: migrate, mcp (stdio proxy, D14)
 │                                          # built by tsdown into dist/bin.mjs (+ migrations)
 ├── docker/
-│   ├── Dockerfile                         # multi-stage: pnpm-spec (pnpm version from
-│   │                                      # package.json) -> base -> deps -> build ->
-│   │                                      # node:24-slim runtime
+│   ├── Dockerfile                         # multi-stage: pnpm-spec (pnpm version and
+│   │                                      # version-less root manifest from package.json)
+│   │                                      # -> base -> deps -> build -> node:24-slim runtime
 │   ├── docker-compose.yml                 # mailsink + postgres (PGlite profile without pg,
 │   │                                      # named volume pglite-data); STARTTLS PEM files
 │   │                                      # mounted from MAILSINK_SMTP_TLS_DIR (D159)

@@ -1,15 +1,10 @@
-import { cn } from '@mailsink/ui'
-import type { ReactNode } from 'react'
+import { SegmentedControl, type SegmentedOption } from '@mailsink/ui'
 
-// Segmented toggle of the prototype (All / Resend…, Desktop / Mobile, light / dark
-// background): 24 px buttons in a bordered well, the pressed one raised.
+// Segmented toggles of the inbox and the viewer (All / Resend…, Desktop / Mobile, light /
+// dark background): the design system SegmentedControl (radio group), filling the width
+// of its container. Kept as a thin adapter so its callers stay unchanged.
 
-export interface SegmentedOption<V extends string> {
-  value: V
-  label: ReactNode
-  /** Accessible name when the label is not plain text (a count next to it). */
-  title?: string
-}
+export type { SegmentedOption }
 
 export function Segmented<V extends string>({
   label,
@@ -25,23 +20,14 @@ export function Segmented<V extends string>({
   className?: string
 }>) {
   return (
-    <fieldset
+    <SegmentedControl
       aria-label={label}
-      className={cn('flex gap-0.5 rounded-md border border-ms-border bg-ms-bg p-0.5', className)}
-    >
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          aria-pressed={option.value === value}
-          aria-label={option.title}
-          onClick={() => onChange(option.value)}
-          className="flex h-control-sm min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xs px-3.5 text-xs whitespace-nowrap text-ms-text-muted transition-colors duration-fast ease-ms outline-none hover:text-ms-text focus-visible:focus-ring aria-pressed:bg-ms-hover aria-pressed:text-ms-text aria-pressed:shadow-[inset_0_0_0_1px_var(--ms-border-strong)]"
-        >
-          {option.label}
-        </button>
-      ))}
-    </fieldset>
+      options={options}
+      value={value}
+      onValueChange={onChange}
+      className={className}
+      fill
+    />
   )
 }
 

@@ -1,10 +1,12 @@
 import { z } from 'zod'
 import { ConnectionCredentials, ConnectionView } from './admin'
 import { issue } from './common'
+import { WorkspaceKey } from './ids'
 import { RateLimitSettings, Retention } from './settings'
 
 // Management of an existing workspace and of its connections (#38): the web UI server
-// functions and `POST /admin/workspaces/:id/connections/:connectionId/rotate`.
+// functions and the Admin API (`PATCH /admin/workspaces/:id`, `/connections` routes, key
+// rotations, #106).
 
 const Name = z.string().trim().min(1).max(80)
 
@@ -52,6 +54,13 @@ export const CreatedConnection = ConnectionView.extend({
   envSnippet: z.string(),
 })
 
+/** `POST /admin/workspaces/:id/key/rotate`: the new `mskw_` key, answered once. */
+export const RotatedWorkspaceKey = z.object({
+  workspaceKey: WorkspaceKey,
+  keyPreview: z.string(), // "mskw_3f9a…"
+})
+
 export type UpdateWorkspaceRequest = z.output<typeof UpdateWorkspaceRequest>
+export type RotatedWorkspaceKey = z.output<typeof RotatedWorkspaceKey>
 export type UpdateConnectionRequest = z.output<typeof UpdateConnectionRequest>
 export type CreatedConnection = z.output<typeof CreatedConnection>
