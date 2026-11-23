@@ -1,7 +1,7 @@
 import { BrevoClient } from '@getbrevo/brevo'
 import { expect, test } from '@playwright/test'
 import { BASE_URL } from '../web-server'
-import { adminContext } from './fixtures'
+import { adminContext, deleteWorkspace } from './fixtures'
 
 // docs/guides/e2e.md, « Sending with the Brevo SDK »: a `brevo` connection seeded with the
 // templates of the app, the official SDK pointed at Mailsink, assertions with wait=true.
@@ -58,7 +58,7 @@ test('the Brevo SDK sends a template, captured rendered with its links', async (
     expect(detail.from).toMatchObject({ email: 'support@app.test' })
   } finally {
     await capture.dispose()
-    await admin.delete(`/admin/workspaces/${body.workspace.id}`)
+    await deleteWorkspace(admin, body.workspace.id)
     await admin.dispose()
   }
 })

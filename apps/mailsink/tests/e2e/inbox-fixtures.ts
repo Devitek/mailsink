@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { APIRequestContext } from '@playwright/test'
-import { adminContext } from './recipe/fixtures'
+import { adminContext, deleteWorkspace } from './recipe/fixtures'
 import { test as base, expect } from './ui/fixtures'
 import { BASE_URL } from './web-server'
 
@@ -42,7 +42,7 @@ export const test = base.extend<{ inbox: () => Promise<InboxWorkspace> }>({
     })
     for (const { id, ingest } of opened) {
       await ingest.dispose()
-      await admin.delete(`/admin/workspaces/${id}`)
+      await deleteWorkspace(admin, id)
     }
     await admin.dispose()
   },

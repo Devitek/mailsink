@@ -24,6 +24,14 @@ const bearer = (key: string) => ({ authorization: `Bearer ${key}` })
 export const adminContext = (playwright: Playwright) =>
   playwright.request.newContext({ baseURL: BASE_URL, extraHTTPHeaders: bearer(ADMIN_KEY) })
 
+/**
+ * `DELETE /admin/workspaces/:id` for teardowns. A context idle for longer than the server
+ * keep-alive timeout may reuse a socket the server is closing: the request then fails with
+ * ECONNRESET before reaching the server, so retrying it is safe (#118).
+ */
+export const deleteWorkspace = (admin: APIRequestContext, idOrSlug: string) =>
+  admin.delete(`/admin/workspaces/${idOrSlug}`, { maxRetries: 3 })
+
 /** `POST /admin/workspaces`: an ephemeral workspace with one native connection. */
 export async function createWorkspace(
   playwright: Playwright,
@@ -67,7 +75,7 @@ export async function createWorkspace(
     async dispose() {
       await Promise.all([capture.dispose(), ingest.dispose()])
       // 404 is fine: a test may have deleted it already.
-      await admin.delete(`/admin/workspaces/${id}`)
+      await deleteWorkspace(admin, id)
     },
   }
 }

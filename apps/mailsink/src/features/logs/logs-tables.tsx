@@ -1,10 +1,9 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { LogsSearch } from '@mailsink/contracts'
-import { DataTable, type DataTableProps } from '@mailsink/ui'
+import { DataTable, type DataTableNarrow, type DataTableProps } from '@mailsink/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import type { LogSources } from '../../server-fns/logs-types'
-import { NARROW_QUERY, useMediaQuery } from '../shell/use-media-query'
 import { useApiColumns } from './api-columns'
 import { PagePager, type SetLogsSearch } from './logs-pager'
 import { apiLogsQuery, deliveriesQuery, smtpSessionsQuery } from './queries'
@@ -39,24 +38,23 @@ const WIDTHS = {
   durationMs: '96px',
 }
 
-/** Below 768 px: time, action and status only, no sideways scroll. */
-const NARROW_HIDDEN = ['type', 'connection', 'durationMs']
-const NARROW_WIDTHS = { createdAt: '84px', status: '96px', statusCode: '96px' }
+/**
+ * Below 768 px: time, action and status only, no sideways scroll. Applied in CSS, so the
+ * server render already has the phone layout (D229).
+ */
+const NARROW: DataTableNarrow = {
+  hiddenColumns: ['type', 'connection', 'durationMs'],
+  widths: { createdAt: '84px', status: '96px', statusCode: '96px' },
+}
 
 function Frame<T extends object>({
   table,
   pager,
 }: Readonly<{ table: DataTableProps<T>; pager: ReactNode }>) {
-  const narrow = useMediaQuery(NARROW_QUERY)
   return (
     <>
       <div className="min-h-0 flex-1 overflow-auto">
-        <DataTable
-          {...table}
-          widths={narrow ? NARROW_WIDTHS : WIDTHS}
-          hiddenColumns={narrow ? NARROW_HIDDEN : undefined}
-          className={narrow ? undefined : 'min-w-[860px]'}
-        />
+        <DataTable {...table} widths={WIDTHS} narrow={NARROW} className="md:min-w-[860px]" />
       </div>
       {pager}
     </>

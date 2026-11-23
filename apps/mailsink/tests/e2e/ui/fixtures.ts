@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { type APIRequestContext, test as base, expect, type Page } from '@playwright/test'
 import { issueSessionToken } from '../../../src/auth/session-token'
-import { adminContext } from '../recipe/fixtures'
+import { adminContext, deleteWorkspace } from '../recipe/fixtures'
 import { ADMIN_KEY, BASE_URL, SESSION_SECRET } from '../web-server'
 
 // Fixtures of the web UI scenarios: workspaces created through the Admin API (deleted after
@@ -33,7 +33,7 @@ export const test = base.extend<Fixtures>({
       created.push(workspace.id)
       return { id: workspace.id, slug: workspace.slug, name: workspace.name }
     })
-    for (const id of created) await admin.delete(`/admin/workspaces/${id}`)
+    for (const id of created) await deleteWorkspace(admin, id)
   },
 })
 
