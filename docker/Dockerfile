@@ -16,7 +16,7 @@
 # dropped), and the root manifest without its `version`. BuildKit keys the COPY --from below
 # on these files' content, so editing package.json elsewhere (scripts...) keeps the pnpm
 # layer cached, and a release bump of `version` keeps the deps layer cached (#106).
-FROM --platform=$BUILDPLATFORM node:24-slim AS pnpm-spec
+FROM --platform=$BUILDPLATFORM node:26-slim AS pnpm-spec
 COPY package.json /tmp/package.json
 RUN node -e "const fs = require('fs'); const pkg = require('/tmp/package.json'); \
       const s = pkg.packageManager.split('+')[0]; \
@@ -27,7 +27,7 @@ RUN node -e "const fs = require('fs'); const pkg = require('/tmp/package.json');
 
 # pnpm installed with npm (shipped with every Node image) rather than corepack, which
 # Node 25+ no longer bundles.
-FROM --platform=$BUILDPLATFORM node:24-slim AS base
+FROM --platform=$BUILDPLATFORM node:26-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 COPY --from=pnpm-spec /pnpm-spec /pnpm-spec
@@ -56,7 +56,7 @@ RUN pnpm --filter @mailsink/cli deploy --prod /deploy/cli
 RUN if find apps/mailsink/.output /deploy/cli -name '*.node' | grep .; then \
       echo 'native addon in the build output: install it in the runtime stage' >&2; exit 1; fi
 
-FROM node:24-slim AS runtime
+FROM node:26-slim AS runtime
 ENV NODE_ENV=production \
     PORT=3000 \
     MAILSINK_SMTP_PORT=1025 \
