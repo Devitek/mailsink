@@ -270,6 +270,9 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
+      '@mailsink/app':
+        specifier: workspace:*
+        version: link:../../apps/mailsink
       '@mailsink/contracts':
         specifier: workspace:*
         version: link:../contracts
