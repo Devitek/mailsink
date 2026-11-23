@@ -7,18 +7,172 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
-#: apps/mailsink/src/routes/index.tsx
-msgid "Catch every email your app sends, without delivering a single one."
-msgstr "Catch every email your app sends, without delivering a single one."
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
+msgstr "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
+
+#: apps/mailsink/src/features/login/key-field.tsx
+msgid "<0>Key rejected.</0> Check that it matches <1>MAILSINK_ADMIN_KEY</1> on the server."
+msgstr "<0>Key rejected.</0> Check that it matches <1>MAILSINK_ADMIN_KEY</1> on the server."
+
+#: apps/mailsink/src/features/login/login-banners.tsx
+msgid "<0>Too many attempts.</0> To protect this instance, sign-in is paused for <1><2>{countdown}</2><3>{total}</3></1>."
+msgstr "<0>Too many attempts.</0> To protect this instance, sign-in is paused for <1><2>{countdown}</2><3>{total}</3></1>."
+
+#: apps/mailsink/src/features/login/login-screen.tsx
+msgid "<0>Where do I find the key?</0> It is set at deployment in the <1>MAILSINK_ADMIN_KEY</1> variable. Ask the instance operator: there are no accounts and no password reset."
+msgstr "<0>Where do I find the key?</0> It is set at deployment in the <1>MAILSINK_ADMIN_KEY</1> variable. Ask the instance operator: there are no accounts and no password reset."
+
+#: apps/mailsink/src/features/login/key-field.tsx
+msgid "Admin key"
+msgstr "Admin key"
+
+#: apps/mailsink/src/features/login/login-form.tsx
+msgid "Checking…"
+msgstr "Checking…"
 
 #: apps/mailsink/src/routes/index.tsx
-msgid "Every email caught. <0>None delivered.</0>"
-msgstr "Every email caught. <0>None delivered.</0>"
+#: apps/mailsink/src/routes/w.$workspaceSlug.tsx
+msgid "Choose a workspace"
+msgstr "Choose a workspace"
 
-#: apps/mailsink/src/i18n/locale-switcher.tsx
+#: apps/mailsink/src/routes/index.tsx
+msgid "Each workspace keeps its own messages, connections and webhooks."
+msgstr "Each workspace keeps its own messages, connections and webhooks."
+
+#: apps/mailsink/src/features/login/login-screen.tsx
+msgid "Enter the admin key the operator of this instance gave you."
+msgstr "Enter the admin key the operator of this instance gave you."
+
+#: apps/mailsink/src/features/workspaces/ephemeral-badge.tsx
+msgid "Ephemeral"
+msgstr "Ephemeral"
+
+#: apps/mailsink/src/features/workspaces/ephemeral-badge.tsx
+msgid "Ephemeral · {left}"
+msgstr "Ephemeral · {left}"
+
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "Ephemeral workspaces"
+msgstr "Ephemeral workspaces"
+
+#: apps/mailsink/src/features/login/login-screen.tsx
+msgid "Every email caught. None delivered."
+msgstr "Every email caught. None delivered."
+
+#: apps/mailsink/src/features/login/key-field.tsx
+msgid "Hide"
+msgstr "Hide"
+
+#: apps/mailsink/src/features/shell/session-menu.tsx
+msgid "Instance"
+msgstr "Instance"
+
+#: apps/mailsink/src/features/shell/session-menu.tsx
+#: apps/mailsink/src/i18n/locale-segmented.tsx
 msgid "Language"
 msgstr "Language"
+
+#: apps/mailsink/src/features/shell/session-menu.tsx
+msgid "Language and session"
+msgstr "Language and session"
+
+#: apps/mailsink/src/features/workspaces/workspace-picker.tsx
+msgid "Loading workspaces…"
+msgstr "Loading workspaces…"
+
+#: apps/mailsink/src/features/shell/nav-tabs.tsx
+msgid "Logs"
+msgstr "Logs"
+
+#: apps/mailsink/src/features/shell/nav-tabs.tsx
+msgid "Messages"
+msgstr "Messages"
+
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "No persistent workspace yet."
+msgstr "No persistent workspace yet."
+
+#: apps/mailsink/src/routes/w.$workspaceSlug.tsx
+msgid "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
+msgstr "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
+
+#: apps/mailsink/src/features/shell/nav-tabs.tsx
+msgid "Not available yet"
+msgstr "Not available yet"
+
+#: apps/mailsink/src/features/login/key-field.tsx
+msgid "Paste"
+msgstr "Paste"
+
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "Persistent workspaces"
+msgstr "Persistent workspaces"
+
+#: apps/mailsink/src/features/shell/session-menu.tsx
+msgid "Protection disabled <0>MAILSINK_UI_AUTH=none</0>: no sign-in and no sign-out."
+msgstr "Protection disabled <0>MAILSINK_UI_AUTH=none</0>: no sign-in and no sign-out."
+
+#: apps/mailsink/src/features/shell/nav-tabs.tsx
+msgid "Settings"
+msgstr "Settings"
+
+#: apps/mailsink/src/features/login/key-field.tsx
+msgid "Show"
+msgstr "Show"
+
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "Show ephemeral workspaces"
+msgstr "Show ephemeral workspaces"
+
+#: apps/mailsink/src/features/login/login-form.tsx
+msgid "Sign in"
+msgstr "Sign in"
+
+#: apps/mailsink/src/features/login/login-screen.tsx
+msgid "Sign in to this instance"
+msgstr "Sign in to this instance"
+
+#: apps/mailsink/src/features/shell/session-menu.tsx
+msgid "Sign out"
+msgstr "Sign out"
+
+#: apps/mailsink/src/features/login/login-banners.tsx
+msgid "Sign-in failed. Check your connection and try again."
+msgstr "Sign-in failed. Check your connection and try again."
+
+#: apps/mailsink/src/features/login/login-screen.tsx
+msgid "The key is never stored in your browser: it is exchanged for a session cookie."
+msgstr "The key is never stored in your browser: it is exchanged for a session cookie."
+
+#: apps/mailsink/src/routes/w.$workspaceSlug.tsx
+msgid "The message list of this workspace is not available yet."
+msgstr "The message list of this workspace is not available yet."
 
 #: apps/mailsink/src/theme/theme-toggle.tsx
 msgid "Toggle light / dark"
 msgstr "Toggle light / dark"
+
+#: apps/mailsink/src/features/login/login-form.tsx
+msgid "Try again in {countdown}"
+msgstr "Try again in {countdown}"
+
+#: apps/mailsink/src/features/shell/nav-tabs.tsx
+msgid "Workspace"
+msgstr "Workspace"
+
+#: apps/mailsink/src/routes/w.$workspaceSlug.tsx
+msgid "Workspace not found"
+msgstr "Workspace not found"
+
+#: apps/mailsink/src/features/workspaces/workspace-picker.tsx
+msgid "Workspace: {slug}"
+msgstr "Workspace: {slug}"
+
+#: apps/mailsink/src/features/login/login-banners.tsx
+msgid "Your session has expired. Sign in again to return to <0>{path}</0>."
+msgstr "Your session has expired. Sign in again to return to <0>{path}</0>."
+
+#: apps/mailsink/src/features/login/login-banners.tsx
+msgid "Your session has expired. Sign in again."
+msgstr "Your session has expired. Sign in again."
