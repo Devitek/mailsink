@@ -5,6 +5,12 @@
 # MAILSINK_ADMIN_KEY protects the Admin API; unset, every Admin API call is refused.
 # SMTP credentials and snippets give MAILSINK_SMTP_HOST_PORT as the port (D66), and
 # MAILSINK_SMTP_PUBLIC_HOST as the host when set (else the hostname of MAILSINK_PUBLIC_URL).
+# STARTTLS (optional): MAILSINK_SMTP_TLS_DIR is a host directory holding the PEM files,
+# mounted read-only on /app/tls (relative paths start from this docker/ directory), and
+# MAILSINK_SMTP_TLS_CERT / MAILSINK_SMTP_TLS_KEY name the files inside the container:
+#   MAILSINK_SMTP_TLS_DIR=./certs MAILSINK_SMTP_TLS_CERT=/app/tls/cert.pem \
+#   MAILSINK_SMTP_TLS_KEY=/app/tls/key.pem docker compose -f docker/docker-compose.yml ...
+# Unset, an empty volume is mounted instead and STARTTLS stays off.
 
 x-mailsink: &mailsink
   image: ${MAILSINK_IMAGE:-mailsink:local}
@@ -23,24 +29,32 @@ x-public-env: &public-env
   MAILSINK_SMTP_PUBLIC_HOST: ${MAILSINK_SMTP_PUBLIC_HOST:-}
   MAILSINK_SMTP_PUBLIC_PORT: ${MAILSINK_SMTP_HOST_PORT:-1025}
 
+# STARTTLS certificate and key, both or neither (empty means unset).
+x-tls-env: &tls-env
+  MAILSINK_SMTP_TLS_CERT: ${MAILSINK_SMTP_TLS_CERT:-}
+  MAILSINK_SMTP_TLS_KEY: ${MAILSINK_SMTP_TLS_KEY:-}
+
 services:
   # Embedded PGlite: the database lives in the `pglite-data` volume, nothing else to run.
   mailsink:
     <<: *mailsink
     profiles: [pglite]
     environment:
-      <<: *public-env
+      <<: [*public-env, *tls-env]
       DATABASE_URL: pglite:///app/data
     volumes:
       - pglite-data:/app/data
+      - ${MAILSINK_SMTP_TLS_DIR:-mailsink-tls}:/app/tls:ro
 
   # PostgreSQL: Mailsink waits for the server, then applies its migrations at boot.
   mailsink-postgres:
     <<: *mailsink
     profiles: [postgres]
     environment:
-      <<: *public-env
+      <<: [*public-env, *tls-env]
       DATABASE_URL: postgres://mailsink:${POSTGRES_PASSWORD:-mailsink}@postgres:5432/mailsink
+    volumes:
+      - ${MAILSINK_SMTP_TLS_DIR:-mailsink-tls}:/app/tls:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -65,3 +79,5 @@ services:
 volumes:
   pglite-data:
   postgres-data:
+  # Empty stand-in for /app/tls when MAILSINK_SMTP_TLS_DIR is unset.
+  mailsink-tls:
