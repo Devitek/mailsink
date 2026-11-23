@@ -1,4 +1,5 @@
 import {
+  countEphemeralWorkspaces,
   countMessagesByWorkspace,
   findWorkspaceByRef,
   listWorkspaces,
@@ -6,7 +7,7 @@ import {
 } from '@mailsink/db'
 import { getCookie, setCookie } from '@tanstack/react-start/server'
 import type { Runtime } from '../runtime/container'
-import type { WorkspaceList, WorkspaceSummary } from './workspace-types'
+import type { WorkspacePage, WorkspaceSummary } from './workspace-types'
 
 // Workspace reads of the UI server functions (not defineApi routes, so the activity touch
 // of D86 is done here explicitly).
@@ -14,8 +15,8 @@ import type { WorkspaceList, WorkspaceSummary } from './workspace-types'
 /** Last workspace opened in this browser: the default page after signing in (L1d). */
 export const LAST_WORKSPACE_COOKIE = 'mailsink_last_workspace'
 
-/** Workspaces listed by the picker; beyond that, CI leftovers are not worth listing. */
-export const PICKER_LIMIT = 500
+/** Workspaces per picker page (each section pages on its own, #104). */
+export const PICKER_PAGE_SIZE = 50
 
 const summary = (w: Workspace): WorkspaceSummary => ({
   id: w.id,
@@ -25,22 +26,47 @@ const summary = (w: Workspace): WorkspaceSummary => ({
   expiresAt: w.expiresAt?.toISOString() ?? null,
 })
 
-export async function readWorkspaceList(
+export type WorkspacePageQuery = {
+  /** The section: ephemeral or persistent workspaces, read apart (#104). */
+  ephemeral: boolean
+  /** Substring of the slug or the name. */
+  q?: string
+  /** `nextCursor` of the previous page. */
+  cursor?: string
+}
+
+/**
+ * One page of a picker section. Persistent and ephemeral workspaces are read apart, so CI
+ * leftovers never push persistent ones out of the list; ephemeral ones are counted by an
+ * aggregate.
+ */
+export async function readWorkspacePage(
   runtime: Runtime,
-  { ephemeral }: { ephemeral: boolean },
-): Promise<WorkspaceList> {
-  const all = await listWorkspaces(runtime.db.db, { includeEphemeral: true, limit: PICKER_LIMIT })
-  const persistent = all.filter((w) => !w.ephemeral)
-  const ephemerals = all.filter((w) => w.ephemeral)
+  { ephemeral, q, cursor }: WorkspacePageQuery,
+): Promise<WorkspacePage> {
+  const db = runtime.db.db
+  const [rows, ephemeralCount] = await Promise.all([
+    listWorkspaces(db, {
+      includeEphemeral: false,
+      onlyEphemeral: ephemeral,
+      search: q,
+      after: cursor,
+      limit: PICKER_PAGE_SIZE + 1,
+    }),
+    countEphemeralWorkspaces(db),
+  ])
+  const page = rows.slice(0, PICKER_PAGE_SIZE)
+  const nextCursor = rows.length > PICKER_PAGE_SIZE ? (page.at(-1)?.id ?? null) : null
+  if (ephemeral) return { data: page.map(summary), nextCursor, ephemeralCount }
   // Ephemeral rows show their TTL instead (prototype), so only persistent ones are counted.
   const counts = await countMessagesByWorkspace(
-    runtime.db.db,
-    persistent.map((w) => w.id),
+    db,
+    page.map((w) => w.id),
   )
   return {
-    persistent: persistent.map((w) => ({ ...summary(w), messageCount: counts.get(w.id) ?? 0 })),
-    ephemeral: ephemeral ? ephemerals.map(summary) : [],
-    ephemeralCount: ephemerals.length,
+    data: page.map((w) => ({ ...summary(w), messageCount: counts.get(w.id) ?? 0 })),
+    nextCursor,
+    ephemeralCount,
   }
 }
 

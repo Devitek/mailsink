@@ -11,9 +11,11 @@ export type WorkspaceSummary = {
   messageCount?: number
 }
 
-export type WorkspaceList = {
-  persistent: WorkspaceSummary[]
-  /** Empty unless asked for (the picker hides them by default). */
-  ephemeral: WorkspaceSummary[]
+/** One page of one picker section (persistent or ephemeral workspaces), newest first. */
+export type WorkspacePage = {
+  data: WorkspaceSummary[]
+  /** Id to pass as `cursor` for the next page; null on the last one. */
+  nextCursor: string | null
+  /** Every ephemeral workspace, whatever the search: the caption of the picker switch. */
   ephemeralCount: number
 }
