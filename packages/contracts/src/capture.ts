@@ -3,6 +3,7 @@ import { AddressOut } from './address'
 import { IsoDateTime, issue, Page, PageLimit, QueryBool, Tag } from './common'
 import { AttachmentId, ConnectionId, EventId, MessageId } from './ids'
 import { DeliveryStatus, EventOrigin, EventType, MessageSource, RecipientKind } from './status'
+import { WebhookDeliveryView } from './webhook-delivery'
 
 export const WAIT_TIMEOUT_MAX_MS = 30_000
 
@@ -79,7 +80,6 @@ export const RecipientView = z.object({
   reason: z.string().nullable(),
 })
 
-// `webhookDeliveries` is added by the webhook delivery issue (Phase 3).
 export const MessageDetail = MessageSummary.extend({
   cc: z.array(AddressOut),
   bcc: z.array(AddressOut),
@@ -94,6 +94,7 @@ export const MessageDetail = MessageSummary.extend({
   events: z.array(MessageEventView),
   rawUrl: z.string(),
   simulation: z.record(z.string(), z.unknown()).nullable(),
+  webhookDeliveries: z.array(WebhookDeliveryView), // newest first (#33)
 })
 
 export const TriggerEventRequest = z.discriminatedUnion('type', [
@@ -108,7 +109,21 @@ export const TriggerEventRequest = z.discriminatedUnion('type', [
     recipient: z.email().optional(),
     userAgent: z.string().optional(),
   }),
-]) // 202 { event, webhookDeliveries: [{ id, endpointId }] }
+  // Forced simulated status (B1-1): recipient status, message aggregate, suppression list
+  // (hard_bounce, complained) and webhooks, like a drawn status.
+  z.object({
+    type: z.literal('status'),
+    status: z.enum(['delivered', 'deferred', 'soft_bounce', 'hard_bounce', 'complained', 'failed']),
+    recipient: z.email().optional(),
+    reason: z.string().max(500).optional(),
+  }),
+])
+
+/** 202: the events written (one per recipient) and the webhook deliveries they created. */
+export const TriggerEventResponse = z.object({
+  events: z.array(MessageEventView),
+  webhookDeliveries: z.array(z.object({ id: z.string(), endpointId: z.string() })),
+})
 
 export const PurgeQuery = z.object({
   connectionId: ConnectionId.optional(),
@@ -123,5 +138,6 @@ export type MessageSummary = z.output<typeof MessageSummary>
 export type MessageEventView = z.output<typeof MessageEventView>
 export type MessageDetail = z.output<typeof MessageDetail>
 export type TriggerEventRequest = z.output<typeof TriggerEventRequest>
+export type TriggerEventResponse = z.output<typeof TriggerEventResponse>
 export type PurgeQuery = z.output<typeof PurgeQuery>
 export type PurgeResponse = z.output<typeof PurgeResponse>

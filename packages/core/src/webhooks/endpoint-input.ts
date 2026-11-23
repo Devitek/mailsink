@@ -1,0 +1,61 @@
+import type { BrevoAuth, CanonicalEvent, CustomHeader, PayloadFormat } from '@mailsink/contracts'
+import { DomainError } from '../errors'
+import { sortCanonical, toCanonical } from './formatters/events-map'
+
+// Validation of endpoint input beyond the Zod contract: the dialect of the event names
+// depends on the resolved payload format (D20, D22).
+
+function bodyError(code: string, message: string, path: (string | number)[]): DomainError {
+  return new DomainError('validation_error', message, {
+    details: { in: 'body', issues: [{ path, code: 'custom', message, params: { code } }] },
+  })
+}
+
+/** Dialect (or canonical) names to the stored canonical events; unknown names are a 422. */
+export function normalizeEvents(format: PayloadFormat, names: readonly string[]): CanonicalEvent[] {
+  const events: CanonicalEvent[] = []
+  names.forEach((name, index) => {
+    const canonical = toCanonical(format, name)
+    if (canonical.length === 0) {
+      throw bodyError('unknown_webhook_event', `Unknown ${format} webhook event "${name}"`, [
+        'events',
+        index,
+      ])
+    }
+    events.push(...canonical)
+  })
+  return sortCanonical(events)
+}
+
+/** Headers a custom header may not set: they carry the content type, auth or signature. */
+const RESERVED = /^(content-type|content-length|host|authorization|svix-.*|x-mailsink-.*)$/i
+
+export function checkCustomHeaders(headers: readonly CustomHeader[]): void {
+  headers.forEach((h, index) => {
+    if (RESERVED.test(h.key)) {
+      throw bodyError('reserved_webhook_header', `Header "${h.key}" is reserved`, [
+        'customHeaders',
+        index,
+        'key',
+      ])
+    }
+  })
+}
+
+export function checkBrevoAuth(format: PayloadFormat, auth: BrevoAuth | undefined): void {
+  if (auth && auth.type !== 'none' && format !== 'brevo') {
+    throw bodyError('brevo_auth_requires_brevo', 'brevoAuth only applies to the brevo format', [
+      'brevoAuth',
+    ])
+  }
+}
+
+/** Stored form of Brevo auth: the type and, in `secret`, the token or "user:password". */
+export function brevoSecret(auth: BrevoAuth | undefined): {
+  brevoAuth: BrevoAuth['type']
+  secret: string | null
+} {
+  if (!auth || auth.type === 'none') return { brevoAuth: 'none', secret: null }
+  if (auth.type === 'bearer') return { brevoAuth: 'bearer', secret: auth.token }
+  return { brevoAuth: 'basic', secret: `${auth.username}:${auth.password}` }
+}

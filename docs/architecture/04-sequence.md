@@ -21,7 +21,8 @@ sequenceDiagram
   C->>R: POST /emails (Resend) | /v3/smtp/email (Brevo) | /v1/emails | SMTP DATA
   R->>R: Dialect schema (Zod) -> NormalizedEmail
   R->>A: resolve credential (msk_ sha256 | SMTP scrypt cache)
-  A-->>R: workspace + connection (401/535 otherwise, logged)
+  A-->>R: workspace + connection (401/535 otherwise, logged without body)
+  R->>R: request log: clone the body (read in the background, D146)
   A--)DB: touch last_activity_at, expires_at (throttled, D16)
 
   R->>S: effective settings(workspace, connection)
@@ -31,9 +32,11 @@ sequenceDiagram
   alt bucket empty
     L-->>R: denied, resetAt
     R-->>C: 429 + Retry-After + X-RateLimit-* | SMTP 451 4.7.1
+    R--)DB: api_logs errorCode=rate_limited (async)
   end
   alt chaos draw hits errorRate
-    R-->>C: 500/503/429 | SMTP 421/451/550 (nothing stored, api_log errorCode=chaos_injected)
+    R-->>C: 429/500/502/503 | SMTP 421/451/452/550 (nothing stored)
+    R--)DB: api_logs errorCode=chaos_injected (async)
   end
 
   R->>P: ingest(normalized, ctx, idempotencyKey)
@@ -43,7 +46,8 @@ sequenceDiagram
   P->>B: after commit: publish message.created (+ message.event suppressed, D81)
   P-->>R: message ids
   R-->>C: 200 {id} | 201 {messageId} | 250 queued as msg_…
-  R--)DB: api_logs / smtp_sessions (async, redacted)
+  R--)DB: api_logs / smtp_sessions (async: headers redacted, attachments stripped,<br/>bodies truncated, transcript capped, D145 to D147)
+  R--)B: publish log.api | log.smtp (derived, no SSE id)
 
   Note over Q: polls jobs FOR UPDATE SKIP LOCKED
   Q->>DB: claim simulate_delivery
@@ -64,7 +68,7 @@ sequenceDiagram
   end
   W->>B: publish webhook.delivery
 
-  B-->>U: SSE event (id = evt_…)
+  B-->>U: SSE event (id = evt_… for message events; none for derived frames)
   U->>U: Query: setQueryData(inbox) / invalidate(message, logs)
   U->>U: wait=true and MCP wait_for_email resolve on match
 
@@ -103,6 +107,16 @@ sequenceDiagram
 - **Duplicated follow-up job**: a crash between the commit of a run and the deletion of
   its job runs the job again; that replay writes no event but may enqueue a second
   follow-up job, which later completes without effect (doc 02, D99).
+- **Request log** (#35): every call of a logged surface writes one `api_logs` row after
+  its response is built, refused calls included (`unauthorized`, `rate_limited`,
+  `chaos_injected`, validation errors); reading the logs and the SSE stream are not
+  logged (D145). The write is asynchronous and never fails the call; the runtime stop
+  waits for the pending writes before closing the database. SMTP sessions are written by
+  `recordSmtpSession` once the session ends.
+- **Dev restart** (`vite dev`, D148): requests arriving while a restart is debounced or
+  running wait for the new runtime; the restart waits up to 10 s for the requests still
+  running on the old one (each keeps the runtime it started on), then stops it and boots
+  the new code.
 - **wait=true** subscribes to the bus *before* running the query, so a message committed
   between the query and the subscription is not missed.
 - **Workspace deletion**: the ephemeral GC and `DELETE /admin/workspaces/:id` (D97) both

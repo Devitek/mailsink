@@ -449,6 +449,24 @@ export const webhookAttempts = pgTable('webhook_attempts', {
 }, (t) => [index('attempts_delivery_idx').on(t.deliveryId)])
 ```
 
+How the webhook tables are written (#32, #33, propositions D135 to D144, no migration):
+- `webhook_endpoints.events` holds canonical events only, sorted in enum order. For the
+  brevo format `secret` holds the bearer token or `user:password` (null with
+  `brevo_auth = 'none'`); leaving brevo writes a fresh `whsec_` secret, so the
+  `webhook_secret_required` check always holds.
+- A delivery row is inserted with its serialized `body` in the same transaction as its
+  first `deliver_webhook` job (`payload = { deliveryId, attemptNo: 1 }`). Each attempt
+  inserts one `webhook_attempts` row (id `wha_…`) and updates the delivery
+  (`attempt_count`, `last_status_code`, `status`, `next_attempt_at`) in one transaction,
+  with the next attempt's job when it is not final. `attempt_count >= attemptNo` makes a
+  replayed job a no-op.
+- `replay_of` always holds the first delivery of a replay chain (its id is the signing id
+  of every replay). A test send (`POST /capture/webhooks/:id/test`) has `event_id` and
+  `message_id` null.
+- Nothing prevents two deliveries for one (endpoint, event) pair: the fan-out runs once
+  per committed simulation run or manual event, and a crash between the run's commit and
+  the fan-out's loses its deliveries rather than duplicating them.
+
 ## `schema/logs.ts`
 
 ```ts
@@ -464,9 +482,9 @@ export const apiLogs = pgTable('api_logs', {
   durationMs: integer('duration_ms').notNull(),
   requestHeaders: jsonb('request_headers').$type<Record<string, string>>(), // redacted
   requestBody: jsonb('request_body'),                            // attachments stripped
-  responseBody: jsonb('response_body'),
+  responseBody: jsonb('response_body'),                          // both bodies truncated
   messageIds: text('message_ids').array(),
-  errorCode: text('error_code'),                                 // rate_limited, chaos_500…
+  errorCode: text('error_code'),                                 // rate_limited, chaos_injected…
   ip: text('ip'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('api_logs_ws_time_idx').on(t.workspaceId, t.createdAt.desc())])
@@ -488,6 +506,35 @@ export const smtpSessions = pgTable('smtp_sessions', {
   endedAt: timestamp('ended_at', { withTimezone: true }),
 }, (t) => [index('smtp_sessions_ws_time_idx').on(t.workspaceId, t.startedAt.desc())])
 ```
+
+Writers (#35, D145 to D147): `core/logs/writer.ts` (`createLogWriter`, one per runtime)
+inserts both tables asynchronously, after the response left or the SMTP session ended;
+a failed insert is logged, never raised (a row whose workspace or connection was deleted
+meanwhile, foreign key violation, is dropped silently). What a row keeps:
+- `request_headers`: every header, `Authorization`, `Proxy-Authorization`, `api-key` and
+  `x-api-key` reduced to their scheme and Mailsink key prefix (`Bearer msk_[redacted]`),
+  cookies `[redacted]`.
+- `request_body`, `response_body`: parsed JSON (raw text otherwise), JSON and text bodies
+  only (downloads and SSE give `null`). Attachment `content` becomes `[omitted: N chars]`
+  (`attachments`, Brevo `attachment`, at any depth); values under secret-looking keys
+  (`password`, `apiKey`, `workspaceKey`, `secret`, `token`) and Mailsink keys inside strings
+  keep only their prefix. Beyond 32 768 characters of JSON the column holds
+  `{ truncated: true, size, preview }`. A request body is read only once the caller is
+  authenticated, and not when it exceeds `MAILSINK_MAX_MESSAGE_BYTES`.
+- `message_ids`: the `msg_…` ids an ingestion response names (`id`, `data[].id`, Brevo
+  `messageId`); empty for the other surfaces.
+- `error_code`: the `DomainError` code of a refused call (`unauthorized`, `rate_limited`,
+  `chaos_injected`, `validation_error`…), `internal_error` for an unexpected failure.
+- `ip`: the socket address when the server exposes it (srvx `request.ip`), else `null`.
+- `transcript`: at most 1 000 lines (first and last halves around a `[… N lines omitted]`
+  marker), 1 000 characters per line; `AUTH <mechanism> <secret>` and every client line
+  answering a `334` challenge are `[redacted]`. `error` is capped at 2 000 characters.
+
+Reads (`repositories/logs-api.ts`, `logs-smtp.ts`) are scoped to one workspace, filtered,
+sorted (`createdAt`, `durationMs`, `statusCode`; sessions by `startedAt`, ties broken by
+id) and paged by offset with a `count(*)` total: the UI pager needs page numbers, and the
+retention keeps the tables small (D147). Rows without a workspace (Admin calls, auth
+failures) are only reachable in the database and expire with the default retention (D49).
 
 ## `schema/idempotency.ts` and `schema/jobs.ts`
 
@@ -544,9 +591,13 @@ from flattening the lateral subquery, which it would then estimate poorly and an
 full table scan. Measured on Postgres 17 with 470 000 messages, 50 workspaces and 200
 connections (steady state, a handful of rows to purge): the former correlated subqueries
 took 5 s per pass (sequential scan, two subplans per row), the range scans 20 ms + 30 ms on
-`messages_ws_connection_idx` and `messages_ws_created_idx`. `max_messages` reads each
-bounded workspace backward on `messages_ws_created_idx` (80 ms for five workspaces capped
-at 1 000).
+`messages_ws_connection_idx` and `messages_ws_created_idx`. `max_messages`
+(`enforceMaxMessages`) reads each bounded workspace backward on `messages_ws_created_idx`:
+80 ms for five workspaces capped at 1 000; on Postgres 18, steady state with nothing to
+purge, 35 ms for 200 workspaces capped at 1 000 (301 000 messages) and 240 ms for 1 000
+such workspaces (1.1 M messages). A set-based rewrite (`row_number() over (partition by
+workspace_id)`) took 1.9 s on the second data set (it sorts every message of the bounded
+workspaces), so the lateral form stays (#77).
 
 Capture full text search (`q`) uses `messages_search_gin`, an expression index on
 `to_tsvector('simple', left(subject || ' ' || text || ' ' || html, 100000))`

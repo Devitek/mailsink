@@ -30,8 +30,30 @@ export {
 } from './dialects/brevo/normalize'
 export { sendBrevoEmail } from './dialects/brevo/send'
 export { fromNativeRequest } from './dialects/native'
+export {
+  fromResendRequest,
+  parseResendEmail,
+  type ResendIssue,
+  type ResendParse,
+  resendError,
+} from './dialects/resend'
+export {
+  messageIdOfResend,
+  readResendIdempotencyKey,
+  resendIdOf,
+  sendResendBatch,
+  sendResendEmail,
+} from './dialects/resend-ingest'
+export { getResendEmail, resendTimestamp } from './dialects/resend-read'
+export { fromSmtpMessage, type SmtpEnvelope } from './dialects/smtp'
 export { DomainError, type DomainErrorOptions, ERROR_STATUS, isDomainError } from './errors'
 export * from './events'
+export {
+  ENGAGEMENT_USER_AGENT,
+  type EngagementOptions,
+  recordEngagement,
+} from './events-api/engagement'
+export { type TriggeredEvents, triggerMessageEvent } from './events-api/manual'
 export { attachmentContentType, composeEml, messageIdHeader } from './ingestion/compose-eml'
 export * from './ingestion/idempotency'
 export { type ExtractedLink, extractLinks } from './ingestion/links'
@@ -50,8 +72,16 @@ export type {
 export * from './ingestion/pipeline'
 export * from './ingestion/prepare'
 export { type BackoffOptions, backoffSeconds } from './jobs/backoff'
+export {
+  type DeliverWebhookOptions,
+  deliverWebhookHandler,
+} from './jobs/handlers/deliver-webhook'
 export { type SimulateDeliveryPayload, simulateDeliveryHandler } from './jobs/handlers/simulate'
 export type { PublishSimulationOptions } from './jobs/handlers/simulate-publish'
+export {
+  fanOutSimulation,
+  type SimulationWebhookOptions,
+} from './jobs/handlers/simulate-webhooks'
 export {
   createJobRunner,
   type JobContext,
@@ -63,6 +93,7 @@ export {
 } from './jobs/queue'
 export { DEFAULT_JOB_SETTINGS, type JobSettings } from './jobs/settings'
 export { startWorker, type Worker, type WorkerOptions } from './jobs/worker'
+export * from './logs'
 export {
   expireOverrides,
   OVERRIDE_EXPIRY_INTERVAL_MS,
@@ -139,6 +170,7 @@ export {
   resolveWorkspaceId,
 } from './templates/service'
 export { planTemplates, toTemplateView } from './templates/views'
+export * from './webhooks'
 export {
   ACTIVITY_THROTTLE_MS,
   type ActivityTracker,

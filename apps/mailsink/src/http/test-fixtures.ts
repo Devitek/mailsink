@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto'
 import {
   createActivityTracker,
   createEventBus,
+  createLogWriter,
   createRateLimiter,
   hashApiKey,
   type Random,
@@ -22,6 +23,7 @@ export function installTestRuntime(
   config: Partial<RuntimeConfig> = {},
   services: { rateLimiter?: RateLimiter; chaosRandom?: Random } = {},
 ) {
+  const bus = createEventBus()
   const runtime: Runtime = {
     config: {
       databaseUrl: 'pglite://memory',
@@ -35,10 +37,11 @@ export function installTestRuntime(
       ...config,
     },
     db,
-    bus: createEventBus(),
+    bus,
     activity: createActivityTracker({ db: db.db }),
     rateLimiter: services.rateLimiter ?? createRateLimiter(),
     chaosRandom: services.chaosRandom ?? Math.random,
+    logs: createLogWriter({ db: db.db, bus }),
     smtpPort: 0,
     stop: async () => {},
   }
