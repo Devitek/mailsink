@@ -1,6 +1,7 @@
 // Public entry point of @mailsink/contracts (docs/architecture/03-contracts.md).
 export * from './address'
 export * from './admin'
+export * from './brevo'
 export * from './capture'
 export * from './common'
 export * from './errors'
@@ -11,3 +12,4 @@ export * from './settings'
 export * from './status'
 export * from './stream'
 export * from './suppression'
+export * from './templates'

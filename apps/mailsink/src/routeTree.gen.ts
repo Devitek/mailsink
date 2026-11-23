@@ -21,7 +21,10 @@ import { Route as AdminWorkspacesIdRouteImport } from './routes/admin.workspaces
 import { Route as CaptureMessagesIdRouteImport } from './routes/capture.messages.$id'
 import { Route as CaptureOverrideResetRouteImport } from './routes/capture.override.reset'
 import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
+import { Route as V3SmtpEmailRouteImport } from './routes/v3.smtp.email'
+import { Route as AdminWorkspacesIdTemplatesRouteImport } from './routes/admin.workspaces.$id.templates'
 import { Route as CaptureMessagesIdRawRouteImport } from './routes/capture.messages.$id.raw'
+import { Route as AdminWorkspacesIdTemplatesTemplateIdRouteImport } from './routes/admin.workspaces.$id.templates.$templateId'
 import { Route as CaptureMessagesIdAttachmentsAttIdRouteImport } from './routes/capture.messages.$id.attachments.$attId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -84,11 +87,28 @@ const V1EmailsBatchRoute = V1EmailsBatchRouteImport.update({
   path: '/batch',
   getParentRoute: () => V1EmailsRoute,
 } as any)
+const V3SmtpEmailRoute = V3SmtpEmailRouteImport.update({
+  id: '/v3/smtp/email',
+  path: '/v3/smtp/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWorkspacesIdTemplatesRoute =
+  AdminWorkspacesIdTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => AdminWorkspacesIdRoute,
+  } as any)
 const CaptureMessagesIdRawRoute = CaptureMessagesIdRawRouteImport.update({
   id: '/raw',
   path: '/raw',
   getParentRoute: () => CaptureMessagesIdRoute,
 } as any)
+const AdminWorkspacesIdTemplatesTemplateIdRoute =
+  AdminWorkspacesIdTemplatesTemplateIdRouteImport.update({
+    id: '/$templateId',
+    path: '/$templateId',
+    getParentRoute: () => AdminWorkspacesIdTemplatesRoute,
+  } as any)
 const CaptureMessagesIdAttachmentsAttIdRoute =
   CaptureMessagesIdAttachmentsAttIdRouteImport.update({
     id: '/attachments/$attId',
@@ -105,11 +125,14 @@ export interface FileRoutesByFullPath {
   '/capture/stream': typeof CaptureStreamRoute
   '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
-  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
 export interface FileRoutesByTo {
@@ -121,11 +144,14 @@ export interface FileRoutesByTo {
   '/capture/stream': typeof CaptureStreamRoute
   '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
-  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
 export interface FileRoutesById {
@@ -138,11 +164,14 @@ export interface FileRoutesById {
   '/capture/stream': typeof CaptureStreamRoute
   '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
-  '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
+  '/admin/workspaces/$id': typeof AdminWorkspacesIdRouteWithChildren
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
   '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/admin/workspaces/$id/templates': typeof AdminWorkspacesIdTemplatesRouteWithChildren
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
+  '/admin/workspaces/$id/templates/$templateId': typeof AdminWorkspacesIdTemplatesTemplateIdRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
 }
 export interface FileRouteTypes {
@@ -160,7 +189,10 @@ export interface FileRouteTypes {
     | '/capture/messages/$id'
     | '/capture/override/reset'
     | '/v1/emails/batch'
+    | '/v3/smtp/email'
+    | '/admin/workspaces/$id/templates'
     | '/capture/messages/$id/raw'
+    | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -176,7 +208,10 @@ export interface FileRouteTypes {
     | '/capture/messages/$id'
     | '/capture/override/reset'
     | '/v1/emails/batch'
+    | '/v3/smtp/email'
+    | '/admin/workspaces/$id/templates'
     | '/capture/messages/$id/raw'
+    | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
   id:
     | '__root__'
@@ -192,7 +227,10 @@ export interface FileRouteTypes {
     | '/capture/messages/$id'
     | '/capture/override/reset'
     | '/v1/emails/batch'
+    | '/v3/smtp/email'
+    | '/admin/workspaces/$id/templates'
     | '/capture/messages/$id/raw'
+    | '/admin/workspaces/$id/templates/$templateId'
     | '/capture/messages/$id/attachments/$attId'
   fileRoutesById: FileRoutesById
 }
@@ -205,6 +243,7 @@ export interface RootRouteChildren {
   CaptureStreamRoute: typeof CaptureStreamRoute
   CaptureSuppressionsRoute: typeof CaptureSuppressionsRoute
   V1EmailsRoute: typeof V1EmailsRouteWithChildren
+  V3SmtpEmailRoute: typeof V3SmtpEmailRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -293,12 +332,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V1EmailsBatchRouteImport
       parentRoute: typeof V1EmailsRoute
     }
+    '/v3/smtp/email': {
+      id: '/v3/smtp/email'
+      path: '/v3/smtp/email'
+      fullPath: '/v3/smtp/email'
+      preLoaderRoute: typeof V3SmtpEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/workspaces/$id/templates': {
+      id: '/admin/workspaces/$id/templates'
+      path: '/templates'
+      fullPath: '/admin/workspaces/$id/templates'
+      preLoaderRoute: typeof AdminWorkspacesIdTemplatesRouteImport
+      parentRoute: typeof AdminWorkspacesIdRoute
+    }
     '/capture/messages/$id/raw': {
       id: '/capture/messages/$id/raw'
       path: '/raw'
       fullPath: '/capture/messages/$id/raw'
       preLoaderRoute: typeof CaptureMessagesIdRawRouteImport
       parentRoute: typeof CaptureMessagesIdRoute
+    }
+    '/admin/workspaces/$id/templates/$templateId': {
+      id: '/admin/workspaces/$id/templates/$templateId'
+      path: '/$templateId'
+      fullPath: '/admin/workspaces/$id/templates/$templateId'
+      preLoaderRoute: typeof AdminWorkspacesIdTemplatesTemplateIdRouteImport
+      parentRoute: typeof AdminWorkspacesIdTemplatesRoute
     }
     '/capture/messages/$id/attachments/$attId': {
       id: '/capture/messages/$id/attachments/$attId'
@@ -310,12 +370,38 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminWorkspacesIdTemplatesRouteChildren {
+  AdminWorkspacesIdTemplatesTemplateIdRoute: typeof AdminWorkspacesIdTemplatesTemplateIdRoute
+}
+
+const AdminWorkspacesIdTemplatesRouteChildren: AdminWorkspacesIdTemplatesRouteChildren =
+  {
+    AdminWorkspacesIdTemplatesTemplateIdRoute:
+      AdminWorkspacesIdTemplatesTemplateIdRoute,
+  }
+
+const AdminWorkspacesIdTemplatesRouteWithChildren =
+  AdminWorkspacesIdTemplatesRoute._addFileChildren(
+    AdminWorkspacesIdTemplatesRouteChildren,
+  )
+
+interface AdminWorkspacesIdRouteChildren {
+  AdminWorkspacesIdTemplatesRoute: typeof AdminWorkspacesIdTemplatesRouteWithChildren
+}
+
+const AdminWorkspacesIdRouteChildren: AdminWorkspacesIdRouteChildren = {
+  AdminWorkspacesIdTemplatesRoute: AdminWorkspacesIdTemplatesRouteWithChildren,
+}
+
+const AdminWorkspacesIdRouteWithChildren =
+  AdminWorkspacesIdRoute._addFileChildren(AdminWorkspacesIdRouteChildren)
+
 interface AdminWorkspacesRouteChildren {
-  AdminWorkspacesIdRoute: typeof AdminWorkspacesIdRoute
+  AdminWorkspacesIdRoute: typeof AdminWorkspacesIdRouteWithChildren
 }
 
 const AdminWorkspacesRouteChildren: AdminWorkspacesRouteChildren = {
-  AdminWorkspacesIdRoute: AdminWorkspacesIdRoute,
+  AdminWorkspacesIdRoute: AdminWorkspacesIdRouteWithChildren,
 }
 
 const AdminWorkspacesRouteWithChildren = AdminWorkspacesRoute._addFileChildren(
@@ -381,6 +467,7 @@ const rootRouteChildren: RootRouteChildren = {
   CaptureStreamRoute: CaptureStreamRoute,
   CaptureSuppressionsRoute: CaptureSuppressionsRoute,
   V1EmailsRoute: V1EmailsRouteWithChildren,
+  V3SmtpEmailRoute: V3SmtpEmailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
