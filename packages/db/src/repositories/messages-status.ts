@@ -11,6 +11,8 @@ export interface SimulatedMessage {
   workspaceId: string
   connectionId: string | null
   status: DeliveryStatusValue
+  /** Decision snapshot of earlier simulation runs (`messages.simulation`). */
+  simulation: Record<string, unknown> | null
 }
 
 export interface SimulatedRecipient {
@@ -34,6 +36,7 @@ export async function lockMessage(
       workspaceId: messages.workspaceId,
       connectionId: messages.connectionId,
       status: messages.status,
+      simulation: messages.simulation,
     })
     .from(messages)
     .where(eq(messages.id, messageId))
@@ -84,4 +87,13 @@ export async function setMessageStatus(
 export async function insertMessageEvents(db: Executor, rows: NewMessageEventRow[]): Promise<void> {
   if (rows.length === 0) return
   await db.insert(messageEvents).values(rows)
+}
+
+/** Stores the decision snapshot of the simulation (`MessageDetail.simulation`). */
+export async function setMessageSimulation(
+  db: Executor,
+  messageId: string,
+  simulation: Record<string, unknown>,
+): Promise<void> {
+  await db.update(messages).set({ simulation }).where(eq(messages.id, messageId))
 }
