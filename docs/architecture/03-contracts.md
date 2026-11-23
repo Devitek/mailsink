@@ -13,7 +13,11 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `POST /admin/workspaces` | Admin key | admin | Create workspace (+ connections) |
 | `GET /admin/workspaces?includeEphemeral=` | Admin key | admin | List |
 | `GET /admin/workspaces/:id` | Admin key | admin | Detail |
+| `PATCH /admin/workspaces/:id` | Admin key | admin | Edit name, description, retention, rate limit (D186) |
 | `DELETE /admin/workspaces/:id` | Admin key | admin | Immediate hard delete |
+| `POST /admin/workspaces/:id/key/rotate` | Admin key | admin | New `mskw_` workspace key, previous one revoked (D207) |
+| `POST /admin/workspaces/:id/connections` | Admin key | admin | Add a connection, secrets once (D186) |
+| `PATCH|DELETE /admin/workspaces/:id/connections/:connectionId` | Admin key | admin | Rename, disable / enable; hard delete (D186) |
 | `POST /admin/workspaces/:id/connections/:connectionId/rotate` | Admin key | admin | New connection secret, previous one revoked (#38) |
 | `POST /v1/emails` · `POST /v1/emails/batch` | `Bearer msk_` (any kind) | native | Native ingestion |
 | `POST /emails` · `POST /emails/batch` · `GET /emails/:id` | `Bearer msk_` (resend) | resend | Resend drop-in |
@@ -357,6 +361,17 @@ Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connecti
   same transaction (no grace period); `smtp` gets a new password, same username. Answers
   200 `CreatedConnection`, the secret shown once; a connection of another workspace is a
   404.
+- Parity with the web UI (owner decision D186, #105, #106), on the same core services:
+  `PATCH /admin/workspaces/:id` (`UpdateWorkspaceRequest`, 200 `WorkspaceView`, an empty
+  patch is a 422 `empty_patch`); `POST /admin/workspaces/:id/connections` (`ConnectionInput`,
+  201 `CreatedConnection`, a taken SMTP username is a 409); `PATCH
+  /admin/workspaces/:id/connections/:connectionId` (`UpdateConnectionRequest`, 200
+  `ConnectionView`); `DELETE` of the same path (204, hard delete, D173). Workspaces by id or
+  slug, a connection of another workspace is a 404.
+- `POST /admin/workspaces/:id/key/rotate` (D207): a new `mskw_` key, every active workspace
+  key of the workspace revoked in the same transaction (no grace period); 200
+  `RotatedWorkspaceKey { workspaceKey, keyPreview }`, the key shown once. The web UI does
+  the same from the connections page (session-checked server function).
 
 ### Workspace and connection management (`workspace-manage.ts`, #38, D170 to D174)
 
@@ -370,6 +385,8 @@ export const UpdateConnectionRequest = z.object({ name: Name.optional(),
   enabled: z.boolean().optional() })                             // at least one key
 export const CreatedConnection = ConnectionView.extend({ credentials: ConnectionCredentials,
   envSnippet: z.string() })                                      // creation or rotation
+export const RotatedWorkspaceKey = z.object({ workspaceKey: WorkspaceKey,
+  keyPreview: z.string() })                                      // "mskw_3f9a…", D207
 ```
 
 Core services (`core/connections/manage.ts`, `core/workspaces/update.ts`), called by the
@@ -864,7 +881,8 @@ Behaviour (#26, propositions D80 to D84):
 - Frames carry no `event:` field (every frame reaches `EventSource.onmessage`); `data:` is
   one `StreamEvent` JSON, told apart by `type`.
 - One `message_events` row gives one frame whose `id:` is the row id, live and on replay:
-  `accepted` -> `message.created` (current summary), any other type -> `message.event`.
+  `accepted` -> `message.created` (current summary), any other type -> `message.event`
+  (with the `messageId` of its message, D205).
   Derived frames have no `id:` and are never replayed: the aggregated `message.status`
   (`recipient: null`) after a simulation run, `messages.purged`, `override.changed`,
   `workspace.deleted`, `log.api`, `log.smtp`, `webhook.delivery`.
@@ -904,7 +922,7 @@ export const StreamEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('message.created'), message: MessageSummary }),
   z.object({ type: z.literal('message.status'), messageId: z.string(),
     status: DeliveryStatus, recipient: z.string().nullable() }),
-  z.object({ type: z.literal('message.event'), event: MessageEventView }),
+  z.object({ type: z.literal('message.event'), messageId: MessageId, event: MessageEventView }),
   z.object({ type: z.literal('webhook.delivery'), delivery: WebhookDeliveryView }),
   z.object({ type: z.literal('log.api'), log: ApiLogSummary }),
   z.object({ type: z.literal('log.smtp'), session: SmtpSessionSummary }),
@@ -1137,6 +1155,8 @@ export const WebhookDeliveryView = z.object({ id: WebhookDeliveryId,
   attemptCount: z.number().int(), nextAttemptAt: IsoDateTime.nullable(),
   lastStatusCode: z.number().int().nullable(),
   replayOf: WebhookDeliveryId.nullable(), replayMode: ReplayMode.nullable(),
+  endpointUrl: z.string().nullable(),   // current URL of the endpoint (D205)
+  durationMs: z.number().int().nullable(), // last attempt; null before the first one
   createdAt: IsoDateTime })
 export const WebhookDeliveryDetail = WebhookDeliveryView.extend({ body: z.string(),
   contentType: z.string(), attempts: z.array(WebhookAttemptView) }) // attempt: id,
@@ -1485,10 +1505,17 @@ export const InboxTab = z.enum(['preview', 'text', 'links', 'headers', 'history'
 export const InboxSearch = z.object({ q: urlText, status: DeliveryStatus.optional(),
   connectionId: ConnectionId.optional(), tag: urlText, m: MessageId.optional(),
   tab: InboxTab.optional() })
-export const LogsSearch = z.object({ tab: z.enum(['api', 'smtp', 'webhooks']).default('api'),
-  status: z.string().optional(), connectionId: z.string().optional(),
-  sort: z.string().default('-createdAt'), page: z.number().int().min(1).default(1),
-  pageSize: z.number().int().min(10).max(200).default(50), inspect: z.string().optional() })
+// Logs explorer (#41, D190): every key optional, invalid values dropped; multi-value facets
+// read an array or comma-separated text. Defaults: tab api, sort -createdAt, page 1, 50 rows.
+export const LogsSearch = z.object({ tab: LogsTab.optional(), q: urlText,  // API path, SMTP peer
+  connectionId: ConnectionId.optional(), dialect: facet(ApiDialect),
+  code: facet(StatusFilter), outcome: facet(SmtpOutcome),            // `404`, `4xx`
+  delivery: WebhookDeliveryStatus.optional(), format: PayloadFormat.optional(),
+  endpointId: WebhookEndpointId.optional(), sort: ApiLogSort.optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(10).max(200).optional(),
+  cursor: WebhookDeliveryId.optional(),                             // webhooks: keyset
+  inspect: z.string().max(80).optional() })                         // row in the sheet
 export const PickerSearch = z.object({ ephemeral: z.boolean().default(false) })
 /** `/w/$workspaceSlug/connections` (#38): connection id in the panel, or `new`. */
 export const ConnectionsSearch = z.object({ connection: z.string().max(64).optional() })
@@ -1511,11 +1538,24 @@ never authenticates `/capture/**`.
 | `GET /w/$workspaceSlug/m/stream` | The `GET /capture/stream` events of the workspace (no filter); `Last-Event-ID` header, or `?lastEventId=` when the inbox reopens the stream itself |
 | `GET /w/$workspaceSlug/m/$messageId/raw` | Raw EML, headers of the Capture downloads |
 | `GET /w/$workspaceSlug/m/$messageId/attachments/$attachmentId` | The attachment, always `Content-Disposition: attachment` |
-| `GET /w/$workspaceSlug/m/$messageId/html?scheme=light\|dark` | The document of the preview iframe (D176), 404 without HTML body |
+| `GET /w/$workspaceSlug/m/$messageId/html?scheme=light\|dark[&remote=blocked]` | The document of the preview iframe (D176), 404 without HTML body; `remote=blocked` narrows its CSP to `style-src 'unsafe-inline'; img-src data:; font-src data:` (D187) |
 
 Without a valid session they answer `401 { error: { code: 'unauthorized' } }`; an unknown
 slug, another workspace's message or a missing part `404 not_found`. Each call touches the
 workspace activity (D16).
+
+« Payload / Source EML » of the Headers & MIME tab (#106, proposition D209): the server
+function `getMessageOriginFn` answers the API log row whose `messageIds` holds the message
+(method, path, status, request body as logged, pretty printed) or, for an SMTP message, the
+client envelope commands (`EHLO`, `MAIL FROM`, `RCPT TO`) of its SMTP session; `null` when
+retention or a purge removed the log. The toggle starts on the payload, as the prototype.
+
+Workspace picker (#104, proposition D206): the server function `listWorkspacesFn({
+ephemeral, q?, cursor? })` reads one section at a time (persistent or ephemeral workspaces,
+never mixed), newest first, 50 per page with a keyset `nextCursor`; `q` is a
+case-insensitive substring of the slug or the name (`%` and `_` taken literally). Each page
+carries `ephemeralCount`, an aggregate count of every ephemeral workspace (the switch
+caption), so CI leftovers can neither hide persistent workspaces nor cap the count.
 
 Preview (D176): `<iframe sandbox="">` (no allowance: no scripts, opaque origin, no popups,
 no forms), document served with `Content-Security-Policy: sandbox; default-src 'none';
@@ -1535,6 +1575,26 @@ Viewer (D179): `?m=` opens a message (the newest one when absent), `?tab=` its t
 « Simulate » Opened / Clicked / Hard Bounce call `triggerMessageEvent` with origin `ui` and
 publish like `POST /capture/messages/:id/events`; « Purge the inbox » deletes every message
 of the workspace and keeps the logs (`includeLogs: false`), then publishes `messages.purged`.
+
+## Web UI logs explorer (#41, propositions D190 to D194)
+
+Page `/w/$workspaceSlug/logs` (`LogsSearch`), code in `apps/mailsink/src/features/logs`,
+server functions `server-fns/logs-fns.ts` (session checked, workspace by slug, activity
+touched) on the services of `GET /capture/logs/api[/:id]`, `GET /capture/logs/smtp[/:id]`,
+`GET /capture/webhooks/deliveries[/:id]` and `POST …/:id/replay` (published on the bus).
+
+- Tabs API / SMTP / Webhooks with their counts; columns timestamp, type (dialect, SMTP or
+  SMTP TLS, payload format), connection (the endpoint scope for webhooks), action / session /
+  event, status, duration (attempts for webhooks). Facets: connection, dialect, status code or
+  class (API); connection, outcome (SMTP); status, `payloadFormat`, endpoint (webhooks). The
+  search box filters the API path or the SMTP peer. API and SMTP: page numbers with the total;
+  webhooks: keyset (« Newest », « Older »).
+- `?inspect=` opens the inspector sheet: API request headers (credentials already reduced,
+  D146) and bodies, response status, error code and body (response headers are not stored);
+  SMTP « SMTP dialogue » (AUTH redacted) and the messages it produced; webhooks D192, with the
+  replay box D193.
+- Live: `log.api`, `log.smtp` and `webhook.delivery` frames of the workspace stream update the
+  cache through `applyLogEvent` (D194).
 
 ## Web UI auth (#37, propositions D160 to D164)
 

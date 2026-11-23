@@ -1,6 +1,9 @@
 import { z } from 'zod'
-import { ConnectionId, MessageId } from './ids'
+import { ConnectionId, MessageId, WebhookDeliveryId, WebhookEndpointId } from './ids'
+import { ApiDialect, ApiLogSort, SmtpOutcome, StatusFilter } from './logs'
 import { DeliveryStatus } from './status'
+import { PayloadFormat } from './webhook'
+import { WebhookDeliveryStatus } from './webhook-delivery'
 
 // Search params of the UI routes (TanStack Router `validateSearch`), validated with Zod.
 // The router parses query values as JSON, so `?ephemeral=true` arrives as a boolean.
@@ -41,6 +44,56 @@ export const InboxSearch = z.object({
 })
 export type InboxSearch = z.infer<typeof InboxSearch>
 
+/** Tabs of the logs explorer (#41). */
+export const LogsTab = z.enum(['api', 'smtp', 'webhooks'])
+export type LogsTab = z.infer<typeof LogsTab>
+
+/** Sort of the log tables: the API sort keys; `createdAt` is `startedAt` for SMTP. */
+export const LogsSort = ApiLogSort
+export type LogsSort = z.infer<typeof LogsSort>
+
+/** A facet with several values: an array (router JSON) or comma-separated text. */
+const facet = <T extends z.ZodType>(item: T) =>
+  z
+    .preprocess(
+      (v) => (typeof v === 'string' ? v.split(',') : v),
+      z.array(item).min(1).max(20).optional(),
+    )
+    .catch(undefined)
+
+const pageNumber = z.coerce.number().int().min(1).max(100_000).optional().catch(undefined)
+
+/**
+ * `/w/$workspaceSlug/logs`: the logs explorer (#41). Every key is optional so links stay
+ * short; `features/logs/search-query.ts` resolves the defaults (tab `api`, sort
+ * `-createdAt`, page 1, 50 rows). An invalid value is dropped, never an error page.
+ * - `q`: API path substring, SMTP address / hostname / AUTH user substring;
+ * - `connectionId`: API and SMTP; `dialect`, `code` (HTTP status `404` or class `4xx`): API;
+ *   `outcome`: SMTP;
+ * - `delivery` (status), `format` (payload format), `endpointId`: webhooks, one value each
+ *   (the delivery log filters on one value);
+ * - `sort`, `page`, `pageSize`: API and SMTP (page-number pagination with a total);
+ * - `cursor`: webhooks (keyset pagination of the delivery log, the last id seen);
+ * - `inspect`: the row open in the inspector sheet.
+ */
+export const LogsSearch = z.object({
+  tab: LogsTab.optional().catch(undefined),
+  q: urlText,
+  connectionId: ConnectionId.optional().catch(undefined),
+  dialect: facet(ApiDialect),
+  code: facet(StatusFilter),
+  outcome: facet(SmtpOutcome),
+  delivery: WebhookDeliveryStatus.optional().catch(undefined),
+  format: PayloadFormat.optional().catch(undefined),
+  endpointId: WebhookEndpointId.optional().catch(undefined),
+  sort: LogsSort.optional().catch(undefined),
+  page: pageNumber,
+  pageSize: z.coerce.number().int().min(10).max(200).optional().catch(undefined),
+  cursor: WebhookDeliveryId.optional().catch(undefined),
+  inspect: z.string().min(1).max(80).optional().catch(undefined),
+})
+export type LogsSearch = z.infer<typeof LogsSearch>
+
 /**
  * `/w/$workspaceSlug/connections`: the connection open in the side panel, by id, or `new`
  * for the creation form (#38). Absent: the first connection.
@@ -64,3 +117,7 @@ export const SettingsSearch = z.object({
   section: SettingsSection.optional().catch(undefined),
 })
 export type SettingsSearch = z.infer<typeof SettingsSearch>
+
+/** `/w/$workspaceSlug/suppressions`: the address filter (case-insensitive substring, #42). */
+export const SuppressionsSearch = z.object({ email: urlText })
+export type SuppressionsSearch = z.infer<typeof SuppressionsSearch>

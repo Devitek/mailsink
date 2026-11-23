@@ -5,6 +5,24 @@ export { Mark, markStrokeWidth, Wordmark } from './components/brand'
 export { Button, type ButtonProps, buttonVariants } from './components/button'
 export { Card } from './components/card'
 export {
+  DataTable,
+  type DataTableColumn,
+  type DataTableFeatures,
+  type DataTableProps,
+  type DataTableSorting,
+  dataTableColumns,
+  dataTableFeatures,
+} from './components/data-table'
+export {
+  DataTableFacet,
+  type DataTableFacetOption,
+  type DataTableFacetProps,
+} from './components/data-table-facet'
+export {
+  DataTablePagination,
+  type DataTablePaginationProps,
+} from './components/data-table-pagination'
+export {
   Dialog,
   DialogBody,
   DialogClose,
@@ -64,4 +82,5 @@ export { StatusBadge, type StatusBadgeProps, statusColorVar } from './components
 export { Switch } from './components/switch'
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs'
 export { Textarea } from './components/textarea'
+export { ToastProvider, useToast } from './components/toast'
 export { cn } from './lib/cn'

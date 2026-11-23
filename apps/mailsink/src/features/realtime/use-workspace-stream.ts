@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { messagePreviewsFn } from '../../server-fns/messages-fns'
 import { inboxKey } from '../inbox/queries'
 import { inboxPaths } from '../inbox/ui-paths'
+import { logsKey } from '../logs/queries'
 import { applyPreviews, applyStreamEvent } from './apply-stream-event'
 import { connectStream, type StreamState } from './stream-connection'
 
@@ -44,7 +45,11 @@ export function useWorkspaceStream(slug: string): { state: StreamState; deleted:
     const stop = connectStream({
       url: (lastEventId) => inboxPaths.stream(slug, lastEventId),
       onState: setState,
-      onResync: () => void qc.invalidateQueries({ queryKey: inboxKey(slug) }),
+      onResync: () => {
+        // Derived frames (logs, deliveries) are never replayed: refetch after a gap.
+        void qc.invalidateQueries({ queryKey: inboxKey(slug) })
+        void qc.invalidateQueries({ queryKey: logsKey(slug) })
+      },
       onEvent: (event) => {
         const effects = applyStreamEvent(qc, slug, event)
         for (const key of effects.invalidate) pendingKeys.set(JSON.stringify(key), key)

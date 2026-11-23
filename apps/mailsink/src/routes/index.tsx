@@ -2,7 +2,6 @@ import { msg } from '@lingui/core/macro'
 import { Trans } from '@lingui/react/macro'
 import { PickerSearch } from '@mailsink/contracts'
 import { Card } from '@mailsink/ui'
-import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
 import { ensureSignedIn } from '../auth/guard'
 import { AppHeader } from '../features/shell/app-header'
@@ -16,8 +15,12 @@ export const Route = createFileRoute('/')({
   search: { middlewares: [stripSearchParams({ ephemeral: false })] },
   beforeLoad: ({ location }) => ensureSignedIn(location),
   loaderDeps: ({ search }) => ({ ephemeral: search.ephemeral }),
-  loader: ({ context, deps }) =>
-    context.queryClient.ensureQueryData(workspacesQuery(deps.ephemeral)),
+  loader: async ({ context, deps }) => {
+    await Promise.all([
+      context.queryClient.ensureInfiniteQueryData(workspacesQuery(false)),
+      deps.ephemeral && context.queryClient.ensureInfiniteQueryData(workspacesQuery(true)),
+    ])
+  },
   head: ({ matches }) => ({ meta: [pageTitle(matches, msg`Choose a workspace`)] }),
   component: WorkspacePickerPage,
 })
@@ -27,7 +30,6 @@ export const Route = createFileRoute('/')({
 function WorkspacePickerPage() {
   const { ephemeral } = Route.useSearch()
   const navigate = Route.useNavigate()
-  const { data } = useSuspenseQuery(workspacesQuery(ephemeral))
   return (
     <div className="flex min-h-dvh flex-col">
       <AppHeader />
@@ -43,7 +45,6 @@ function WorkspacePickerPage() {
           </div>
           <Card className="overflow-hidden max-sm:rounded-none max-sm:border-x-0">
             <WorkspaceSections
-              list={data}
               showEphemeral={ephemeral}
               onShowEphemeralChange={(show) =>
                 navigate({ search: { ephemeral: show }, replace: true })
