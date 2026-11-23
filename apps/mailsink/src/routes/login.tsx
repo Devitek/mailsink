@@ -1,8 +1,10 @@
+import { msg } from '@lingui/core/macro'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { getLoginState } from '../auth/auth-fns'
 import { safeRedirect } from '../auth/redirect'
 import { LoginScreen } from '../features/login/login-screen'
+import { pageTitle } from '../seo/page-title'
 
 /** `?redirect=`: the page to return to (L1d); anything else is dropped. */
 const LoginSearch = z.object({
@@ -31,6 +33,7 @@ export const Route = createFileRoute('/login')({
     }
     return state
   },
+  head: ({ matches }) => ({ meta: [pageTitle(matches, msg`Sign in`)] }),
   component: LoginPage,
 })
 
