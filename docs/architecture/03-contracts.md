@@ -13,7 +13,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `POST /admin/workspaces` | Admin key | admin | Create workspace (+ connections) |
 | `GET /admin/workspaces?includeEphemeral=` | Admin key | admin | List |
 | `GET /admin/workspaces/:id` | Admin key | admin | Detail |
-| `PATCH /admin/workspaces/:id` | Admin key | admin | Edit name, description, retention, rate limit (D186) |
+| `PATCH /admin/workspaces/:id` | Admin key | admin | Edit name, description, retention, rate limit (D186), message quota and default simulation (D217) |
 | `DELETE /admin/workspaces/:id` | Admin key | admin | Immediate hard delete |
 | `POST /admin/workspaces/:id/key/rotate` | Admin key | admin | New `mskw_` workspace key, previous one revoked (D207) |
 | `POST /admin/workspaces/:id/connections` | Admin key | admin | Add a connection, secrets once (D186) |
@@ -276,7 +276,7 @@ export const CreateWorkspaceRequest = z.object({
   maxMessages: z.number().int().positive().optional(),
   rateLimit: RateLimitSettings.nullable().optional(),
   simulation: SimulationSettings.optional(),
-  metadata: z.record(z.string(), z.string().max(256)).optional(),
+  metadata: z.record(z.string(), z.string().max(256)).optional(), // createdBy: D218
   connections: z.array(ConnectionInput).max(20).default([]),
   templates: TemplateSeed.optional(),               // Brevo templates seed (#30)
 }).refine((w) => w.ephemeral || w.idleTtlSeconds === undefined,
@@ -363,11 +363,14 @@ Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connecti
   404.
 - Parity with the web UI (owner decision D186, #105, #106), on the same core services:
   `PATCH /admin/workspaces/:id` (`UpdateWorkspaceRequest`, 200 `WorkspaceView`, an empty
-  patch is a 422 `empty_patch`); `POST /admin/workspaces/:id/connections` (`ConnectionInput`,
+  patch is a 422 `empty_patch`; `maxMessages` and `simulation` too, proposition D217); `POST /admin/workspaces/:id/connections` (`ConnectionInput`,
   201 `CreatedConnection`, a taken SMTP username is a 409); `PATCH
   /admin/workspaces/:id/connections/:connectionId` (`UpdateConnectionRequest`, 200
   `ConnectionView`); `DELETE` of the same path (204, hard delete, D173). Workspaces by id or
   slug, a connection of another workspace is a 404.
+- `metadata.createdBy` (proposition D218): free text naming who created the workspace
+  (« github-actions · run #8841 »); the TTL banner of an ephemeral workspace in the web UI
+  shows it. Nothing else reads it.
 - `POST /admin/workspaces/:id/key/rotate` (D207): a new `mskw_` key, every active workspace
   key of the workspace revoked in the same transaction (no grace period); 200
   `RotatedWorkspaceKey { workspaceKey, keyPreview }`, the key shown once. The web UI does
@@ -822,8 +825,17 @@ export const ListSuppressionsQuery = z.object({ email: z.string().optional(), //
   limit: PageLimit, cursor: SuppressionId.optional() })
 export const DeleteSuppressionsQuery = z.object({ email: Email.optional() }) // omitted = all
 export const SuppressionView = z.object({ id: SuppressionId, email: z.string(),
-  reason: SuppressionReason, messageId: MessageId.nullable(), createdAt: IsoDateTime })
+  reason: SuppressionReason, messageId: MessageId.nullable(),
+  connectionId: ConnectionId.nullable(),    // connection of that message (D214)
+  createdAt: IsoDateTime })
 export const ListSuppressionsResponse = Page(SuppressionView)
+  .extend({ total: z.number().int().min(0) })   // addresses matching the filter (D214)
+
+// demo.ts (#62, propositions D210 to D212)
+export const DemoLocale = z.enum(['en', 'fr'])
+export const SeedDemoRequest = z.object({ locale: DemoLocale.default('en') })
+export const SeedDemoResponse = z.object({ count: z.number().int().min(0),
+  messageIds: z.array(MessageId) })                // oldest first
 export const DeleteSuppressionsResponse = z.object({ count: z.number().int().min(0) })
 ```
 
@@ -836,7 +848,24 @@ Suppression list (#23, proposition D75):
 - `GET /capture/suppressions`: newest first, keyset cursor (the id of the last row),
   `email` is a literal case-insensitive substring. `DELETE /capture/suppressions?email=`
   removes one address (exact, lower-cased), without `email` the whole list of the
-  workspace; both answer `{ count }`.
+  workspace; both answer `{ count }`. Every page carries `total` (addresses matching the
+  filter) and each row the `connectionId` of the message that put it there (null without
+  message or connection), D214.
+
+Demo messages (#62, propositions D210 to D212): `POST /capture/demo` (`SeedDemoRequest`,
+201 `SeedDemoResponse`) stores eight transactional messages of a fictional product in the
+workspace, in English or French, through the ingestion pipeline (`persistEmails`: raw EML,
+blobs, links, suppression check, simulation jobs, webhook fan-out, `message.created`
+frames). They are spread over the last hour (`created_at` 52 to 3 minutes ago), over the
+enabled connections of the workspace in turn (source = the connection kind; no connection:
+`native` without connection), with links, HTML, a PDF and a CSV attachment, an inline
+`cid:` image, several recipients, tags `category` and `demo: true`, `metadata.demo`. Each
+message carries its planned outcomes as a temporary rule set in `messages.simulation.rules`
+(delivered, `hard_bounce` 550, `complained`, `soft_bounce` 452, `failed`, then `*` →
+`delivered`), read by the settings planner ahead of every stored layer for that message only
+(D211), so the statuses do not depend on the workspace settings and no override is touched.
+Seeding twice adds the set twice; bounced addresses then come out `suppressed`. The web UI
+calls the same service through `loadDemoMessagesFn` (session) with the UI locale.
 
 Capture behaviour (#15, owner decisions D59 to D61 of 23/11):
 - Isolation: every query is scoped to the authenticated workspace (D12, D41). A message or
@@ -1032,6 +1061,7 @@ export const ApiLogSummary = z.object({ id: ApiLogId, connectionId: ConnectionId
 export const ApiLogDetail = ApiLogSummary.extend({
   requestHeaders: z.record(z.string(), z.string()),                 // credentials redacted
   requestBody: z.unknown().nullable(), responseBody: z.unknown().nullable(),
+  responseHeaders: z.record(z.string(), z.string()), // D215, {} before migration 0003
   ip: z.string().nullable() })
 export const ListApiLogsResponse = NumberedPage(ApiLogSummary)
 
@@ -1163,7 +1193,10 @@ export const WebhookDeliveryDetail = WebhookDeliveryView.extend({ body: z.string
   // attemptNo, requestHeaders (exactly as sent), signedAt, responseStatus,
   // responseBody (4 KB), durationMs, error, createdAt
 export const ListWebhookDeliveriesQuery = z.object({ endpointId, payloadFormat,
-  messageId, status, limit: PageLimit, cursor: WebhookDeliveryId })   // all optional
+  messageId, status, limit: PageLimit, cursor: WebhookDeliveryId,     // all optional
+  page: z.coerce.number().int().min(1).max(100_000) })  // D213: page numbers, cursor ignored
+export const ListWebhookDeliveriesResponse = Page(WebhookDeliveryView)
+  .extend({ total: z.number().int().min(0) })           // deliveries matching the filters
 ```
 
 Behaviour (#32, #33, #34, D135 to D144, D150 to D155):
@@ -1512,9 +1545,12 @@ export const LogsSearch = z.object({ tab: LogsTab.optional(), q: urlText,  // AP
   code: facet(StatusFilter), outcome: facet(SmtpOutcome),            // `404`, `4xx`
   delivery: WebhookDeliveryStatus.optional(), format: PayloadFormat.optional(),
   endpointId: WebhookEndpointId.optional(), sort: ApiLogSort.optional(),
-  page: z.coerce.number().int().min(1).optional(),
+  messageId: MessageId.optional(),                                  // every tab (D213)
+  since: IsoDateTime.optional(), until: IsoDateTime.optional(),     // API, SMTP
+  method: z.string().optional(), errorCode: z.string().optional(),  // API
+  page: z.coerce.number().int().min(1).optional(),                  // every tab
   pageSize: z.coerce.number().int().min(10).max(200).optional(),
-  cursor: WebhookDeliveryId.optional(),                             // webhooks: keyset
+  cursor: WebhookDeliveryId.optional(),                // webhooks: keyset of older links
   inspect: z.string().max(80).optional() })                         // row in the sheet
 export const PickerSearch = z.object({ ephemeral: z.boolean().default(false) })
 /** `/w/$workspaceSlug/connections` (#38): connection id in the panel, or `new`. */
@@ -1587,10 +1623,13 @@ touched) on the services of `GET /capture/logs/api[/:id]`, `GET /capture/logs/sm
   SMTP TLS, payload format), connection (the endpoint scope for webhooks), action / session /
   event, status, duration (attempts for webhooks). Facets: connection, dialect, status code or
   class (API); connection, outcome (SMTP); status, `payloadFormat`, endpoint (webhooks). The
-  search box filters the API path or the SMTP peer. API and SMTP: page numbers with the total;
-  webhooks: keyset (« Newest », « Older »).
+  search box filters the API path or the SMTP peer. « More filters » (D213): message id
+  (every tab), dates (API, SMTP), method and error code (API). Page numbers with the total on
+  every tab (webhooks too since D213; a `cursor` of an older link still opens its page).
+  Below 768 px the type, connection and duration columns are left out (no sideways scroll),
+  and each row has an explicit accessible name (D216).
 - `?inspect=` opens the inspector sheet: API request headers (credentials already reduced,
-  D146) and bodies, response status, error code and body (response headers are not stored);
+  D146) and bodies, response status, error code, headers (D215) and body;
   SMTP « SMTP dialogue » (AUTH redacted) and the messages it produced; webhooks D192, with the
   replay box D193.
 - Live: `log.api`, `log.smtp` and `webhook.delivery` frames of the workspace stream update the
