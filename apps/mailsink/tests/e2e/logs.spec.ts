@@ -3,6 +3,7 @@ import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { APIRequestContext } from '@playwright/test'
 import { createTransport } from 'nodemailer'
+import { deleteWorkspace } from './recipe/fixtures'
 import { test as base, expect, signIn } from './ui/fixtures'
 import { BASE_URL, SMTP_PORT } from './web-server'
 
@@ -51,7 +52,7 @@ const test = base.extend<{ logs: () => Promise<LogsWorkspace> }>({
       cleanup.push(
         () => capture.dispose(),
         () => ingest.dispose(),
-        () => admin.delete(`/admin/workspaces/${body.workspace.id}`),
+        () => deleteWorkspace(admin, body.workspace.id),
       )
       return {
         slug: body.workspace.slug,
