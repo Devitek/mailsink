@@ -1,5 +1,5 @@
 import { findWorkspaceByRef } from '@mailsink/db'
-import { createTestWorkspace, describeDb } from '@mailsink/db/testing'
+import { createTestMessage, createTestWorkspace, describeDb } from '@mailsink/db/testing'
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { installTestRuntime } from '../http/test-fixtures'
 import { stopRuntime } from '../runtime/boot'
@@ -49,6 +49,16 @@ describeDb('UI workspace server functions', (ctx) => {
       expiresAt: '2026-11-23T10:00:00.000Z',
     })
     expect(shown.persistent.some((w) => w.ephemeral)).toBe(false)
+  })
+
+  it('counts the messages of each persistent workspace (prototype picker rows)', async () => {
+    const busy = await createTestWorkspace(ctx.db, { slug: 'busy-staging' })
+    const idle = await createTestWorkspace(ctx.db, { slug: 'idle-staging' })
+    await createTestMessage(ctx.db, busy.id)
+    await createTestMessage(ctx.db, busy.id)
+    const { persistent } = await readWorkspaceList(runtime, { ephemeral: false })
+    expect(persistent.find((w) => w.id === busy.id)?.messageCount).toBe(2)
+    expect(persistent.find((w) => w.id === idle.id)?.messageCount).toBe(0)
   })
 
   it('opening a workspace touches it and remembers it as the next home', async () => {

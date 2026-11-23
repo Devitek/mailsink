@@ -190,6 +190,7 @@ export {
   deleteExpiredWorkspaces,
   touchWorkspaceActivity,
 } from './repositories/workspace-activity'
+export { countMessagesByWorkspace } from './repositories/workspace-message-counts'
 export {
   deleteWorkspace,
   findWorkspaceByRef,

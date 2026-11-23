@@ -42,6 +42,11 @@ function Row({
       >
         {workspace.slug}
       </span>
+      {workspace.messageCount !== undefined && (
+        <span className="shrink-0 text-xs text-ms-text-faint">
+          <Trans>{workspace.messageCount} msg</Trans>
+        </span>
+      )}
       {workspace.ephemeral && <EphemeralBadge expiresAt={workspace.expiresAt} />}
     </Link>
   )

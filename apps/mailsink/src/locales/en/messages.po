@@ -7,6 +7,11 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
+#. placeholder {0}: workspace.messageCount
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "{0} msg"
+msgstr "{0} msg"
+
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
 msgstr "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
