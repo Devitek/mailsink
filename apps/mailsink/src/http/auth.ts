@@ -46,8 +46,15 @@ export interface AuthDeps {
   adminKey: string | undefined
 }
 
-const unauthorized = (message = 'Missing or invalid API key') =>
-  new DomainError('unauthorized', message, { headers: { 'WWW-Authenticate': 'Bearer' } })
+/**
+ * 401. `details.credential` tells a missing credential from an unknown one, for the
+ * dialects that answer them differently (Resend `missing_api_key`, D158).
+ */
+const unauthorized = (credential: 'missing' | 'invalid', message = 'Missing or invalid API key') =>
+  new DomainError('unauthorized', message, {
+    headers: { 'WWW-Authenticate': 'Bearer' },
+    details: { credential },
+  })
 
 /** `Authorization: Bearer <key>`, else the Brevo `api-key` header. */
 export function readCredential(request: Request): string | undefined {
@@ -67,7 +74,7 @@ export async function authenticate<M extends AuthMode>(
 async function resolve(request: Request, mode: AuthMode, deps: AuthDeps) {
   if (mode === 'none') return null
   const token = readCredential(request)
-  if (!token) throw unauthorized()
+  if (!token) throw unauthorized('missing')
   const wanted = request.headers.get(WORKSPACE_HEADER)?.trim() || undefined
 
   if (deps.adminKey && secretsEqual(token, deps.adminKey)) {
@@ -88,12 +95,12 @@ async function resolve(request: Request, mode: AuthMode, deps: AuthDeps) {
     if (!workspace) throw new DomainError('not_found', 'Workspace not found')
     return { kind: 'workspace', via: 'admin_key', workspace, connection: null, apiKey: null }
   }
-  if (mode === 'admin') throw unauthorized('Missing or invalid admin key')
+  if (mode === 'admin') throw unauthorized('invalid', 'Missing or invalid admin key')
 
   const kind = keyKind(token)
-  if (!kind) throw unauthorized()
+  if (!kind) throw unauthorized('invalid')
   const found = await findActiveApiKeyByHash(deps.db, hashApiKey(token))
-  if (!found || found.key.scope !== kind) throw unauthorized()
+  if (!found || found.key.scope !== kind) throw unauthorized('invalid')
 
   const { key, workspace, connection } = found
   if (wanted && wanted !== workspace.id && wanted !== workspace.slug) {

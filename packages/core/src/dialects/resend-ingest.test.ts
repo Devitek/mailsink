@@ -1,5 +1,5 @@
 import { messages } from '@mailsink/db'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestMessage, describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
 import { beforeAll, expect, it } from 'vitest'
 import { isDomainError } from '../errors'
@@ -65,6 +65,17 @@ describeDb('Resend ingestion', (ctx) => {
       text: null,
     })
     expect(read.created_at).toBe(resendTimestamp(row?.createdAt ?? new Date()))
+  })
+
+  it('GET answers the Message-ID an SMTP message carried itself', async () => {
+    const id = '0190c9a4-0000-7000-8000-00000000abcd'
+    await createTestMessage(ctx.db, target.workspaceId, {
+      id: `msg_${id}`,
+      source: 'smtp',
+      headers: { 'message-id': '<own-123@client.example>' },
+    })
+    const read = await getResendEmail(ctx.db, target.workspaceId, id)
+    expect(read.message_id).toBe('<own-123@client.example>')
   })
 
   it('GET answers invalid_parameter and not_found', async () => {

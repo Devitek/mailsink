@@ -26,6 +26,8 @@ export function webServer({ entry, build }: { entry: string; build?: string }): 
       PORT: String(HTTP_PORT),
       MAILSINK_SMTP_PORT: String(SMTP_PORT),
       MAILSINK_ADMIN_KEY: ADMIN_KEY,
+      // Credentials (Brevo `baseUrl`, `.env` snippets) point at the server under test.
+      MAILSINK_PUBLIC_URL: BASE_URL,
       // Simulation jobs are picked up within 100 ms, so assertions wait less.
       MAILSINK_JOBS_POLL_INTERVAL_MS: '100',
     },

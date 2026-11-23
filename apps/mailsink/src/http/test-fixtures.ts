@@ -8,6 +8,7 @@ import {
   hashApiKey,
   type Random,
   type RateLimiter,
+  type UrlGuard,
 } from '@mailsink/core'
 import { apiKeys, type Database, type DbHandle, newId } from '@mailsink/db'
 import { createTestWorkspaceWithConnection } from '@mailsink/db/testing'
@@ -21,7 +22,7 @@ export const ADMIN_KEY = 'test-admin-key-0123456789'
 export function installTestRuntime(
   db: DbHandle,
   config: Partial<RuntimeConfig> = {},
-  services: { rateLimiter?: RateLimiter; chaosRandom?: Random } = {},
+  services: { rateLimiter?: RateLimiter; chaosRandom?: Random; webhookUrlGuard?: UrlGuard } = {},
 ) {
   const bus = createEventBus()
   const runtime: Runtime = {
@@ -42,6 +43,7 @@ export function installTestRuntime(
     rateLimiter: services.rateLimiter ?? createRateLimiter(),
     chaosRandom: services.chaosRandom ?? Math.random,
     logs: createLogWriter({ db: db.db, bus }),
+    webhookUrlGuard: services.webhookUrlGuard,
     smtpPort: 0,
     stop: async () => {},
   }

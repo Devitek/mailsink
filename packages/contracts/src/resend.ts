@@ -151,6 +151,7 @@ export type ResendLastEvent = z.output<typeof ResendLastEvent>
 
 /** Names Mailsink answers with (a subset of the SDK's `RESEND_ERROR_CODE_KEY`). */
 export const ResendErrorName = z.enum([
+  'missing_api_key',
   'validation_error',
   'missing_required_field',
   'invalid_attachment',

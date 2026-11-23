@@ -19,12 +19,24 @@ import {
   type WebhookEndpointUpdate,
 } from '@mailsink/db'
 import { DomainError } from '../errors'
-import { brevoSecret, checkBrevoAuth, checkCustomHeaders, normalizeEvents } from './endpoint-input'
+import {
+  brevoSecret,
+  checkBrevoAuth,
+  checkCustomHeaders,
+  checkEndpointUrl,
+  normalizeEvents,
+} from './endpoint-input'
 import { generateWebhookSecret } from './secret'
+import type { UrlGuard } from './url-guard'
 import { toEndpointView } from './views'
 
 // Endpoint CRUD (`/capture/webhooks`, #32). Every function is scoped to the caller's
 // workspace: another workspace's endpoint is a 404, like a missing one.
+
+export interface EndpointWriteOptions {
+  /** Refuses private destinations (`MAILSINK_WEBHOOK_BLOCK_PRIVATE`, D150). */
+  urlGuard?: UrlGuard
+}
 
 const endpointNotFound = () => new DomainError('not_found', 'Webhook endpoint not found')
 
@@ -45,12 +57,14 @@ export async function createWebhookEndpoint(
   db: Executor,
   workspaceId: string,
   input: WebhookEndpointInput,
+  options: EndpointWriteOptions = {},
 ): Promise<WebhookEndpointWithSecret> {
   const scope = await scopeOf(db, workspaceId, input.connectionId)
   const payloadFormat = input.payloadFormat ?? defaultPayloadFormat(scope)
   const events = normalizeEvents(payloadFormat, input.events)
   checkBrevoAuth(payloadFormat, input.brevoAuth)
   checkCustomHeaders(input.customHeaders ?? [])
+  await checkEndpointUrl(options.urlGuard, input.url)
   const auth =
     payloadFormat === 'brevo'
       ? brevoSecret(input.brevoAuth)
@@ -97,12 +111,14 @@ export async function patchWebhookEndpoint(
   workspaceId: string,
   id: string,
   patch: WebhookEndpointPatch,
+  options: EndpointWriteOptions = {},
 ): Promise<WebhookEndpointWithSecret> {
   const row = await findOwn(db, workspaceId, id)
   if (patch.connectionId !== undefined) await scopeOf(db, workspaceId, patch.connectionId)
   const format = patch.payloadFormat ?? row.payloadFormat
   checkBrevoAuth(format, patch.brevoAuth)
   if (patch.customHeaders) checkCustomHeaders(patch.customHeaders)
+  if (patch.url !== undefined) await checkEndpointUrl(options.urlGuard, patch.url)
   if (patch.rotateSecret && format === 'brevo') {
     throw new DomainError('validation_error', 'Brevo endpoints have no signing secret')
   }

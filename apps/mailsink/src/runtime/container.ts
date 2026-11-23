@@ -9,6 +9,7 @@ import {
   deliverWebhookHandler,
   type EventBus,
   type LogWriter,
+  privateAddressGuard,
   publishExpiredOverrides,
   type Random,
   type RateLimiter,
@@ -17,6 +18,7 @@ import {
   startOverrideExpiryScheduler,
   startRetentionScheduler,
   startWorker,
+  type UrlGuard,
 } from '@mailsink/core'
 import { createDb, type DbHandle, migrate } from '@mailsink/db'
 import { readTlsFiles, startSmtpServer } from '@mailsink/smtp'
@@ -41,6 +43,8 @@ export type Runtime = {
   chaosRandom: Random
   /** Asynchronous writer of api_logs and smtp_sessions (#35), flushed by stop(). */
   logs: LogWriter
+  /** Set when `MAILSINK_WEBHOOK_BLOCK_PRIVATE` is on (D150): endpoint writes and sends. */
+  webhookUrlGuard?: UrlGuard | undefined
   smtpPort: number
   stop: () => Promise<void>
 }
@@ -53,7 +57,8 @@ export interface CreateRuntimeOptions {
 /**
  * Opens and migrates the database, then starts the SMTP listener, the job worker and the
  * retention scheduler.
- * Called once per process by boot.ts. On failure, whatever was opened is closed again.
+ * Called once per process by boot.ts. On failure, whatever was opened or started (database,
+ * SMTP listener, workers) is closed again.
  */
 export async function createRuntime(
   config: RuntimeConfig,
@@ -68,6 +73,8 @@ export async function createRuntime(
   const db = createDb(config.databaseUrl, {
     onConnectionError: (error) => log.warn(`[mailsink] database connection lost: ${error.message}`),
   })
+  // Services started so far, closed in reverse order if a later step fails.
+  const started: (() => Promise<void>)[] = []
   try {
     await migrate(db, { migrationsFolder: options.migrationsFolder })
     log.info(`[mailsink] database ready (${db.driver}, migrations applied)`)
@@ -80,6 +87,7 @@ export async function createRuntime(
     // SMTP server's recordSmtpSession hook (logs.recordSmtpSession).
     const logs = createLogWriter({ db: db.db, bus, log })
     const rateLimiter = createRateLimiter()
+    const webhookUrlGuard = config.webhookBlockPrivate ? privateAddressGuard() : undefined
     // SMTP ingestion (#31): AUTH against smtp connections, the shared rate limiter and the
     // chaos source of the runtime (read at each draw, so tests can swap it), the ingestion
     // pipeline, and the session journal (#35).
@@ -97,6 +105,7 @@ export async function createRuntime(
       recordSmtpSession: (record) => logs.recordSmtpSession(record),
       log,
     })
+    started.push(() => smtp.close())
 
     // Job queue (D5): handlers join here (deliver_webhook with #33); kinds without a
     // handler stay in the table untouched.
@@ -105,7 +114,7 @@ export async function createRuntime(
       db: db.db,
       handlers: {
         simulate_delivery: simulateDeliveryHandler({ bus }),
-        deliver_webhook: deliverWebhookHandler({ bus }),
+        deliver_webhook: deliverWebhookHandler({ bus, urlGuard: webhookUrlGuard }),
       },
       batchSize: jobs.batchSize,
       lockSeconds: jobs.lockSeconds,
@@ -120,13 +129,16 @@ export async function createRuntime(
       },
       onError: (error) => log.error('[mailsink] worker tick failed', error),
     })
+    started.push(() => worker.stop())
     const retention = startRetentionScheduler({
       db: db.db,
       intervalMs: config.retentionIntervalMs ?? 60_000,
       failedJobRetentionSeconds: jobs.failedRetentionSeconds,
       log,
     })
+    started.push(() => retention.stop())
     const gc = startEphemeralGc({ db: db.db, bus, activity, log })
+    started.push(() => gc.stop())
     // Closes overrides past their TTL (#22); reads already ignore them. Each pass that
     // closes some publishes override.changed on the workspaces concerned (D96).
     const overrideExpiry = startOverrideExpiryScheduler({
@@ -143,6 +155,7 @@ export async function createRuntime(
       rateLimiter,
       chaosRandom: Math.random,
       logs,
+      webhookUrlGuard,
       smtpPort: smtp.port,
       async stop() {
         // Stop accepting mail, drain the worker that would process it and the retention
@@ -157,6 +170,7 @@ export async function createRuntime(
     }
     return self
   } catch (error) {
+    for (const close of started.reverse()) await close().catch(() => {})
     await db.close().catch(() => {})
     throw error
   }
