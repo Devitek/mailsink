@@ -22,6 +22,13 @@
       "when": 1795388484418,
       "tag": "0002_jobs_failed_at_and_message_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795442944547,
+      "tag": "0003_api_log_response_headers",
+      "breakpoints": true
     }
   ]
 }

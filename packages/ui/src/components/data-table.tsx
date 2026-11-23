@@ -7,8 +7,9 @@ import {
   tableFeatures,
   useTable,
 } from '@tanstack/react-table'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { cn } from '../lib/cn'
+import { DataTableRows, type DataTableVirtual } from './data-table-rows'
 
 // Generic DataTable on TanStack Table (headless) with the prototype log table measures:
 // 34 px sticky header in 11 px uppercase faint labels, 38 px mono rows separated by a
@@ -42,8 +43,17 @@ export interface DataTableProps<TData extends RowData> {
   empty?: ReactNode
   /** Dims the rows while the next page loads. */
   pending?: boolean
+  /** Ids of columns left out (narrow screens). */
+  hiddenColumns?: readonly string[]
+  /** Accessible name of a row (the cells concatenated otherwise, cut by some browsers). */
+  rowLabel?: (row: TData) => string
+  /** Renders only the rows in view beyond a threshold (long client-side lists). */
+  virtual?: DataTableVirtual
   className?: string
 }
+
+const columnId = (column: { id?: string; accessorKey?: unknown }) =>
+  column.id ?? (typeof column.accessorKey === 'string' ? column.accessorKey : undefined)
 
 const SORT_ICON = { asc: '↑', desc: '↓' } as const
 
@@ -59,11 +69,17 @@ export function DataTable<TData extends RowData>({
   onRowClick,
   empty,
   pending = false,
+  hiddenColumns,
+  rowLabel,
+  virtual,
   className,
 }: Readonly<DataTableProps<TData>>) {
+  const shownColumns = hiddenColumns?.length
+    ? columns.filter((c) => !hiddenColumns.includes(columnId(c) ?? ''))
+    : columns
   const table = useTable({
     features: dataTableFeatures,
-    columns,
+    columns: shownColumns,
     data,
     getRowId: (row) => getRowId(row),
     manualSorting: true,
@@ -77,11 +93,6 @@ export function DataTable<TData extends RowData>({
     },
   })
   const rows = table.getRowModel().rows
-  const onKey = (event: KeyboardEvent, row: TData) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return
-    event.preventDefault()
-    onRowClick?.(row)
-  }
 
   return (
     <table
@@ -133,32 +144,26 @@ export function DataTable<TData extends RowData>({
       <tbody className={cn(pending && 'opacity-60')}>
         {rows.length === 0 && empty ? (
           <tr>
-            <td colSpan={columns.length} className="px-6 py-12 text-center font-sans">
+            <td colSpan={shownColumns.length} className="px-6 py-12 text-center font-sans">
               {empty}
             </td>
           </tr>
         ) : (
-          rows.map((row) => (
-            <tr
-              key={row.id}
-              tabIndex={onRowClick ? 0 : undefined}
-              aria-current={row.id === selectedRowId ? 'true' : undefined}
-              data-state={row.id === selectedRowId ? 'selected' : undefined}
-              onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-              onKeyDown={onRowClick ? (e) => onKey(e, row.original) : undefined}
-              className={cn(
-                'h-[38px] border-b border-ms-border outline-none transition-colors duration-fast ease-ms focus-visible:bg-ms-hover',
-                onRowClick && 'cursor-pointer hover:bg-ms-hover',
-                row.id === selectedRowId && 'bg-ms-hover',
-              )}
-            >
-              {row.getAllCells().map((cell) => (
+          <DataTableRows
+            rows={rows}
+            columnCount={shownColumns.length}
+            selectedRowId={selectedRowId}
+            onRowClick={onRowClick}
+            rowLabel={rowLabel}
+            virtual={virtual}
+            renderCells={(row) =>
+              row.getAllCells().map((cell) => (
                 <td key={cell.id} className="truncate px-2 first:pl-6 last:pr-6 last:text-right">
                   <table.FlexRender cell={cell} />
                 </td>
-              ))}
-            </tr>
-          ))
+              ))
+            }
+          />
         )}
       </tbody>
     </table>

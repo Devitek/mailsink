@@ -38,12 +38,22 @@ function compact<T extends object>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T
 }
 
+/** Filters of the « More filters » popover (#112) shared by API and SMTP. */
+const sharedMore = (search: LogsSearch) => ({
+  messageId: search.messageId,
+  since: search.since,
+  until: search.until,
+})
+
 export function apiQueryOf(search: LogsSearch): ApiLogsQueryInput {
   return compact({
     connectionId: search.connectionId,
     dialect: search.dialect,
     status: search.code,
     path: search.q,
+    method: search.method,
+    errorCode: search.errorCode,
+    ...sharedMore(search),
     sort: sortOf(search),
     ...paging(search),
   })
@@ -54,6 +64,7 @@ export function smtpQueryOf(search: LogsSearch): SmtpSessionsQueryInput {
     connectionId: search.connectionId,
     outcome: search.outcome,
     q: search.q,
+    ...sharedMore(search),
     sort: sortOf(search) === 'createdAt' ? 'startedAt' : '-startedAt',
     ...paging(search),
   })
@@ -64,8 +75,10 @@ export function deliveriesQueryOf(search: LogsSearch): DeliveriesQueryInput {
     endpointId: search.endpointId,
     payloadFormat: search.format,
     status: search.delivery,
+    messageId: search.messageId,
     limit: search.pageSize ?? DEFAULT_PAGE_SIZE,
-    cursor: search.cursor,
+    // Page numbers since #112; a cursor of an older link still opens its page.
+    ...(search.cursor && !search.page ? { cursor: search.cursor } : { page: search.page ?? 1 }),
   })
 }
 
@@ -80,6 +93,11 @@ const FILTER_KEYS = [
   'delivery',
   'format',
   'endpointId',
+  'messageId',
+  'since',
+  'until',
+  'method',
+  'errorCode',
   'sort',
   'pageSize',
 ] as const

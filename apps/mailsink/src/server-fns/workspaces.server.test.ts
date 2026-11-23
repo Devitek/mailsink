@@ -112,9 +112,11 @@ describeDb('UI workspace server functions', (ctx) => {
       ephemeral: true,
       idleTtlSeconds: 600,
       expiresAt: new Date(Date.now() + 60_000),
+      metadata: { createdBy: ' github-actions · run #8841 ', run: '8841' },
     })
     const opened = await openWorkspace(runtime, ws.slug)
     expect(opened?.idleTtlSeconds).toBe(600)
+    expect(opened?.createdBy).toBe('github-actions · run #8841')
     expect(Date.parse(opened?.expiresAt ?? '')).toBeGreaterThan(Date.now() + 590_000)
   })
 
@@ -126,6 +128,7 @@ describeDb('UI workspace server functions', (ctx) => {
 
     const opened = await openWorkspace(runtime, ws.slug)
     expect(opened?.id).toBe(ws.id)
+    expect(opened?.createdBy).toBeNull()
     expect(jar.get(LAST_WORKSPACE_COOKIE)).toBe(ws.slug)
     expect(await lastWorkspaceHome(runtime)).toBe(`/w/${ws.slug}`)
 

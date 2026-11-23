@@ -1,10 +1,10 @@
 import { useLingui } from '@lingui/react/macro'
 import { DeliveryStatus, type InboxSearch } from '@mailsink/contracts'
 import type { InboxFacets } from '@mailsink/core'
-import { cn, Input, statusColorVar } from '@mailsink/ui'
+import { cn, Input, SegmentedControl, statusColorVar } from '@mailsink/ui'
 import { type CSSProperties, useEffect, useState } from 'react'
+import { Count } from '../shell/count'
 import { connectionChipLabel } from './connection-label'
-import { Count, Segmented } from './segmented'
 
 /** Statuses always offered (the prototype's), others only once a message has them. */
 const ALWAYS = new Set([
@@ -61,10 +61,12 @@ export function FilterBar({
         />
       </div>
       {connections.length > 0 && (
-        <Segmented
-          label={t`Connection`}
+        <SegmentedControl
+          aria-label={t`Connection`}
           value={search.connectionId ?? 'all'}
-          onChange={(v) => setSearch({ connectionId: v === 'all' ? undefined : v, m: undefined })}
+          onValueChange={(v) =>
+            setSearch({ connectionId: v === 'all' ? undefined : v, m: undefined })
+          }
           options={[
             {
               value: 'all',
@@ -88,6 +90,7 @@ export function FilterBar({
               }
             }),
           ]}
+          fill
         />
       )}
       <fieldset aria-label={t`Status`} className="flex flex-wrap gap-[5px]">

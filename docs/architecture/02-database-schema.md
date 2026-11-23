@@ -287,6 +287,7 @@ export const messages = pgTable('messages', {
   sizeBytes: integer('size_bytes').notNull(),
   status: deliveryStatus('status').notNull().default('queued'),  // aggregate of recipients
   // Snapshot of what the simulation decided: overrideId, rule matched, latencyMs…
+  // Demo messages start with `{ rules }`, their own temporary rule set (D211).
   simulation: jsonb('simulation').$type<Record<string, unknown>>(),
   idempotencyKey: text('idempotency_key'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -488,6 +489,8 @@ export const apiLogs = pgTable('api_logs', {
   durationMs: integer('duration_ms').notNull(),
   requestHeaders: jsonb('request_headers').$type<Record<string, string>>(), // redacted
   requestBody: jsonb('request_body'),                            // attachments stripped
+  responseHeaders: jsonb('response_headers')                     // redacted, migration 0003
+    .$type<Record<string, string>>(),
   responseBody: jsonb('response_body'),                          // both bodies truncated
   messageIds: text('message_ids').array(),
   errorCode: text('error_code'),                                 // rate_limited, chaos_injected…
@@ -520,6 +523,9 @@ meanwhile, foreign key violation, is dropped silently). What a row keeps:
 - `request_headers`: every header, `Authorization`, `Proxy-Authorization`, `api-key` and
   `x-api-key` reduced to their scheme and Mailsink key prefix (`Bearer msk_[redacted]`),
   cookies `[redacted]`.
+- `response_headers` (migration 0003, proposition D215): every header of the answer
+  (`X-Request-Id`, rate limit headers, `Retry-After`, `Content-Type`…), reduced by the same
+  rules; null on rows written before the migration (the API answers `{}`).
 - `request_body`, `response_body`: parsed JSON (raw text otherwise), JSON and text bodies
   only (downloads and SSE give `null`). Attachment `content` becomes `[omitted: N chars]`
   (`attachments`, Brevo `attachment`, at any depth); values under secret-looking keys
@@ -583,6 +589,7 @@ messages (cascading to recipients, attachments, events), messages over `max_mess
 `smtp_sessions`, finished webhook deliveries past their retention (D154), then failed jobs
 older than `MAILSINK_JOBS_FAILED_RETENTION_SECONDS`
 (7 days by default). Migration 0002 sets `failed_at = now()` on jobs failed before it.
+Migration 0003 adds `api_logs.response_headers` (nullable, no backfill).
 
 A `simulate_delivery` run commits its writes and its follow-up job (D70) in one
 transaction, but the claimed job is deleted afterwards, by a separate statement. A crash

@@ -63,7 +63,7 @@ export const RateLimitSettings = z.object({
   burst: z.number().int().positive().optional(),
 })
 
-const RecipientRules = z.array(RecipientRule).max(50)
+export const RecipientRules = z.array(RecipientRule).max(50)
 
 /** Partial simulation settings (connection level, override): absent keys inherit. */
 export const SimulationSettingsPatch = z.object({

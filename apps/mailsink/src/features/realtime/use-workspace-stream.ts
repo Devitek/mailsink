@@ -4,6 +4,8 @@ import { messagePreviewsFn } from '../../server-fns/messages-fns'
 import { inboxKey } from '../inbox/queries'
 import { inboxPaths } from '../inbox/ui-paths'
 import { logsKey } from '../logs/queries'
+import { overrideKey } from '../override/queries'
+import { suppressionsKey } from '../suppressions/queries'
 import { applyPreviews, applyStreamEvent } from './apply-stream-event'
 import { connectStream, type StreamState } from './stream-connection'
 
@@ -46,9 +48,16 @@ export function useWorkspaceStream(slug: string): { state: StreamState; deleted:
       url: (lastEventId) => inboxPaths.stream(slug, lastEventId),
       onState: setState,
       onResync: () => {
-        // Derived frames (logs, deliveries) are never replayed: refetch after a gap.
-        void qc.invalidateQueries({ queryKey: inboxKey(slug) })
-        void qc.invalidateQueries({ queryKey: logsKey(slug) })
+        // Derived frames (logs, deliveries, override changes) are never replayed: refetch
+        // after a gap, and the suppression list the simulation may have grown meanwhile.
+        for (const queryKey of [
+          inboxKey(slug),
+          logsKey(slug),
+          overrideKey(slug),
+          suppressionsKey(slug),
+        ]) {
+          void qc.invalidateQueries({ queryKey })
+        }
       },
       onEvent: (event) => {
         const effects = applyStreamEvent(qc, slug, event)

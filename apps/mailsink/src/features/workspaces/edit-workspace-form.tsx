@@ -2,25 +2,20 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { DialogBody, DialogDescription, DialogHeader, DialogTitle } from '@mailsink/ui'
 import { useForm, useStore } from '@tanstack/react-form'
 import { useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { WorkspaceSettings } from '../../server-fns/connections-types'
 import { updateWorkspaceFn } from '../../server-fns/workspaces-manage-fns'
 import { firstError, TextField } from './form-fields'
-import { DialogFormFooter, FormFailure, RateLimitField } from './form-parts'
-import { RetentionField } from './retention-field'
-import {
-  type EditWorkspaceValues,
-  editWorkspaceSchema,
-  rateLimitText,
-  retentionChoice,
-  toUpdateRequest,
-} from './workspace-form'
+import { DialogFormFooter, FormFailure } from './form-parts'
+import { type EditWorkspaceValues, editWorkspaceSchema, toUpdateRequest } from './workspace-form'
 
 const touchedError = (meta: { isTouched: boolean; errors: readonly unknown[] }) =>
   meta.isTouched ? firstError(meta.errors) : undefined
 
-// Settings of a workspace (#38): name, description, default retention and rate limit. The
-// slug stays: it is in every URL, snippet and CI configuration.
+// Identity of a workspace (#38): name and description. The slug stays: it is in every URL,
+// snippet and CI configuration. The defaults (retention, quota, rate limit, simulation)
+// are edited in one place, the settings page, linked from here.
 export function EditWorkspaceForm({
   workspace,
   onSaved,
@@ -32,14 +27,8 @@ export function EditWorkspaceForm({
   const defaultValues: EditWorkspaceValues = {
     name: workspace.name,
     description: workspace.description ?? '',
-    retention: retentionChoice(workspace.retentionSeconds),
-    rateLimit: rateLimitText(workspace.rateLimit),
   }
-  const schema = editWorkspaceSchema({
-    nameRequired: t`Give it a name.`,
-    slugInvalid: '',
-    rateInvalid: t`A whole number of requests per second, or empty.`,
-  })
+  const schema = editWorkspaceSchema({ nameRequired: t`Give it a name.` })
   const form = useForm({
     defaultValues,
     validators: { onBlur: schema, onSubmit: schema },
@@ -102,22 +91,21 @@ export function EditWorkspaceForm({
             />
           )}
         </form.Field>
-        <div className="flex flex-wrap gap-[21px]">
-          <form.Field name="retention">
-            {(field) => <RetentionField value={field.state.value} onChange={field.handleChange} />}
-          </form.Field>
-          <form.Field name="rateLimit">
-            {(field) => (
-              <RateLimitField
-                name={field.name}
-                value={field.state.value}
-                onChange={field.handleChange}
-                onBlur={field.handleBlur}
-                error={touchedError(field.state.meta)}
-              />
-            )}
-          </form.Field>
-        </div>
+        <p className="text-sm text-ms-text-muted">
+          <Trans>
+            Retention, message quota, rate limit and simulation are workspace defaults:{' '}
+            <Link
+              to="/w/$workspaceSlug/settings"
+              params={{ workspaceSlug: slug }}
+              search={{ section: 'retention' }}
+              onClick={onSaved}
+              className="text-ms-accent-text underline-offset-4 hover:underline"
+            >
+              edit them in the settings
+            </Link>
+            .
+          </Trans>
+        </p>
         {failed && (
           <FormFailure>
             <Trans>The workspace could not be saved. Try again.</Trans>

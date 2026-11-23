@@ -1,7 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@mailsink/ui'
-import { Link, useLocation } from '@tanstack/react-router'
-import { workspacePagePaths } from '../inbox/workspace-pages'
+import { Link } from '@tanstack/react-router'
 
 const tab =
   'flex h-full items-center gap-2 border-b-2 px-3.5 font-medium whitespace-nowrap outline-none transition-colors duration-fast ease-ms focus-visible:text-ms-text'
@@ -16,20 +15,18 @@ function Count({ value }: Readonly<{ value: number | undefined }>) {
   return <span className="font-mono text-badge font-medium text-ms-text-faint">{value}</span>
 }
 
+const anySearch = { includeSearch: false } as const
+
 // Workspace tabs of the prototype header, with the message and log counts: Messages (the
 // inbox), Logs, Settings and Connections. `inline` sits in the header from 768 px; `bar` is
 // the row under the header below 768 px, scrolling sideways when the tabs do not fit.
-// Logs and Settings stay plain links until their routes exist on main (other Phase 4 lots).
 export function NavTabs({
   workspaceSlug,
   counts = {},
   variant = 'inline',
 }: Readonly<{ workspaceSlug: string; counts?: NavCounts; variant?: 'inline' | 'bar' }>) {
   const { t } = useLingui()
-  const { pathname } = useLocation()
-  const page = (path: string) => (pathname.startsWith(path) ? 'page' : undefined)
-  const logs = workspacePagePaths.logs(workspaceSlug)
-  const settings = workspacePagePaths.settings(workspaceSlug)
+  const params = { workspaceSlug }
   return (
     <nav
       aria-label={t`Workspace`}
@@ -42,24 +39,34 @@ export function NavTabs({
     >
       <Link
         to="/w/$workspaceSlug"
-        params={{ workspaceSlug }}
+        params={params}
         activeOptions={{ exact: true, includeSearch: false }}
         className={tabClass}
       >
         <Trans>Messages</Trans>
         <Count value={counts.messages} />
       </Link>
-      <a href={logs} aria-current={page(logs)} className={tabClass}>
+      <Link
+        to="/w/$workspaceSlug/logs"
+        params={params}
+        activeOptions={anySearch}
+        className={tabClass}
+      >
         <Trans>Logs</Trans>
         <Count value={counts.logs} />
-      </a>
-      <a href={settings} aria-current={page(settings)} className={tabClass}>
+      </Link>
+      <Link
+        to="/w/$workspaceSlug/settings"
+        params={params}
+        activeOptions={anySearch}
+        className={tabClass}
+      >
         <Trans>Settings</Trans>
-      </a>
+      </Link>
       <Link
         to="/w/$workspaceSlug/connections"
-        params={{ workspaceSlug }}
-        activeOptions={{ includeSearch: false }}
+        params={params}
+        activeOptions={anySearch}
         className={tabClass}
       >
         <Trans>Connections</Trans>

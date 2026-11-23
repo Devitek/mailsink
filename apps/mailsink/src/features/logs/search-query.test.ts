@@ -15,7 +15,7 @@ describe('logs search queries', () => {
     expect(tabOf({})).toBe('api')
     expect(apiQueryOf({})).toEqual({ sort: '-createdAt', page: 1, pageSize: 50 })
     expect(smtpQueryOf({})).toEqual({ sort: '-startedAt', page: 1, pageSize: 50 })
-    expect(deliveriesQueryOf({})).toEqual({ limit: 50 })
+    expect(deliveriesQueryOf({})).toEqual({ limit: 50, page: 1 })
   })
 
   it('maps the API filters, the search box on the path', () => {
@@ -40,6 +40,32 @@ describe('logs search queries', () => {
     })
   })
 
+  it('maps the filters of the « More filters » popover (#112)', () => {
+    const since = '2026-11-23T10:00:00.000Z'
+    const until = '2026-11-23T11:00:00.000Z'
+    const more = { messageId: 'msg_1', since, until, method: 'POST', errorCode: 'rate_limited' }
+    expect(apiQueryOf(more)).toMatchObject(more)
+    expect(smtpQueryOf({ ...more, tab: 'smtp' })).toEqual({
+      messageId: 'msg_1',
+      since,
+      until,
+      sort: '-startedAt',
+      page: 1,
+      pageSize: 50,
+    })
+    expect(deliveriesQueryOf({ ...more, tab: 'webhooks' })).toEqual({
+      messageId: 'msg_1',
+      limit: 50,
+      page: 1,
+    })
+    expect(changeSearch({ page: 2, ...more }, { method: undefined })).toEqual({
+      messageId: 'msg_1',
+      since,
+      until,
+      errorCode: 'rate_limited',
+    })
+  })
+
   it('maps the SMTP filters and its time-only sort', () => {
     expect(
       smtpQueryOf({ tab: 'smtp', q: 'relay', outcome: ['auth_failed'], sort: 'createdAt' }),
@@ -48,23 +74,18 @@ describe('logs search queries', () => {
     expect(sortOf({ tab: 'api', sort: 'durationMs' })).toBe('durationMs')
   })
 
-  it('maps the webhook facets and the keyset cursor', () => {
+  it('maps the webhook facets and pages by number, a cursor of an old link kept alone', () => {
+    const facets = { tab: 'webhooks' as const, endpointId: 'whe_1', format: 'brevo' as const }
     expect(
-      deliveriesQueryOf({
-        tab: 'webhooks',
-        endpointId: 'whe_1',
-        format: 'brevo',
-        delivery: 'failed',
-        cursor: 'whd_9',
-        pageSize: 100,
-      }),
+      deliveriesQueryOf({ ...facets, delivery: 'failed', page: 3, cursor: 'whd_9', pageSize: 100 }),
     ).toEqual({
       endpointId: 'whe_1',
       payloadFormat: 'brevo',
       status: 'failed',
-      cursor: 'whd_9',
+      page: 3,
       limit: 100,
     })
+    expect(deliveriesQueryOf({ ...facets, cursor: 'whd_9' })).toMatchObject({ cursor: 'whd_9' })
   })
 
   it('goes back to the first page and closes the sheet when a filter changes', () => {

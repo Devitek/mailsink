@@ -53,10 +53,11 @@ export async function createTestSuppression(
   workspaceId: string,
   email: string,
   reason: (typeof suppressions.$inferInsert)['reason'] = 'hard_bounce',
+  messageId: string | null = null,
 ) {
   const [row] = await db
     .insert(suppressions)
-    .values({ id: newId('sup'), workspaceId, email, reason })
+    .values({ id: newId('sup'), workspaceId, email, reason, messageId })
     .returning()
   if (!row) throw new Error('suppression not inserted')
   return row

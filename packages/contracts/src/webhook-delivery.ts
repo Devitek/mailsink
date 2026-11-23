@@ -56,8 +56,13 @@ export const ListWebhookDeliveriesQuery = z.object({
   status: WebhookDeliveryStatus.optional(),
   limit: PageLimit,
   cursor: WebhookDeliveryId.optional(), // id of the last row of the previous page
+  /** Page number (pages of `limit`); when given, `cursor` is ignored (UI pager, #112). */
+  page: z.coerce.number().int().min(1).max(100_000).optional(),
 })
-export const ListWebhookDeliveriesResponse = Page(WebhookDeliveryView)
+/** One page, its keyset cursor and the number of deliveries matching the filters. */
+export const ListWebhookDeliveriesResponse = Page(WebhookDeliveryView).extend({
+  total: z.number().int().min(0),
+})
 
 export const ReplayRequest = z.object({
   mode: ReplayMode.default('exact'),

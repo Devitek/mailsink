@@ -26,6 +26,7 @@ export function toApiLogDetail(row: ApiLog): ApiLogDetail {
     ...toApiLogSummary(row),
     requestHeaders: row.requestHeaders ?? {},
     requestBody: row.requestBody ?? null,
+    responseHeaders: row.responseHeaders ?? {},
     responseBody: row.responseBody ?? null,
     ip: row.ip,
   }

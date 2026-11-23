@@ -93,6 +93,10 @@ describeDb('request log extension', (ctx) => {
       responseBody: { id },
     })
     expect(row?.requestHeaders?.authorization).toBe('Bearer msk_[redacted]')
+    expect(row?.responseHeaders).toMatchObject({
+      'content-type': expect.stringContaining('application/json'),
+      'x-request-id': res.headers.get('x-request-id'),
+    })
     expect(row?.requestBody).toMatchObject({
       subject: 'Hi',
       attachments: [{ filename: 'a.txt', content: '[omitted: 16 chars]' }],
@@ -141,7 +145,9 @@ describeDb('request log extension', (ctx) => {
       request: request(`/capture/logs/api/${ids[0]}`, { bearer: workspaceKey }),
       params: { id: ids[0] },
     })
-    expect((await detail.json()).requestHeaders.authorization).toBe('Bearer mskw_[redacted]')
+    const body = await detail.json()
+    expect(body.requestHeaders.authorization).toBe('Bearer mskw_[redacted]')
+    expect(body.responseHeaders['content-type']).toContain('application/json')
   })
 
   it('logs the forwarded address only with MAILSINK_TRUST_PROXY', async () => {

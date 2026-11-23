@@ -67,6 +67,8 @@ export const test = base.extend<{ mailsink: Mailsink }, { workerMailsink: Mailsi
           name: `e2e-${workerInfo.workerIndex}`,
           ephemeral: true,
           idleTtlSeconds: 600, // deleted 10 min after its last call if the teardown never runs
+          // Shown by the web UI banner of the workspace: who created it.
+          metadata: { createdBy: `playwright · worker ${workerInfo.workerIndex}` },
           connections: [{ kind: 'resend', name: 'app' }],
         },
       })

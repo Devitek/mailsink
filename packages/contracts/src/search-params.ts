@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { IsoDateTime } from './common'
 import { ConnectionId, MessageId, WebhookDeliveryId, WebhookEndpointId } from './ids'
 import { ApiDialect, ApiLogSort, SmtpOutcome, StatusFilter } from './logs'
 import { DeliveryStatus } from './status'
@@ -72,8 +73,10 @@ const pageNumber = z.coerce.number().int().min(1).max(100_000).optional().catch(
  *   `outcome`: SMTP;
  * - `delivery` (status), `format` (payload format), `endpointId`: webhooks, one value each
  *   (the delivery log filters on one value);
- * - `sort`, `page`, `pageSize`: API and SMTP (page-number pagination with a total);
- * - `cursor`: webhooks (keyset pagination of the delivery log, the last id seen);
+ * - `messageId`: every tab (rows naming that message); `since`, `until`: API and SMTP (ISO
+ *   dates, inclusive); `method`, `errorCode`: API (#112);
+ * - `sort`: API and SMTP; `page`, `pageSize`: every tab (page numbers with a total);
+ * - `cursor`: webhooks, keyset of the delivery log, kept for old links (`page` wins, #112);
  * - `inspect`: the row open in the inspector sheet.
  */
 export const LogsSearch = z.object({
@@ -86,6 +89,20 @@ export const LogsSearch = z.object({
   delivery: WebhookDeliveryStatus.optional().catch(undefined),
   format: PayloadFormat.optional().catch(undefined),
   endpointId: WebhookEndpointId.optional().catch(undefined),
+  messageId: MessageId.optional().catch(undefined),
+  since: IsoDateTime.optional().catch(undefined),
+  until: IsoDateTime.optional().catch(undefined),
+  method: z
+    .string()
+    .regex(/^[A-Za-z]{3,7}$/)
+    .transform((m) => m.toUpperCase())
+    .optional()
+    .catch(undefined),
+  errorCode: z
+    .string()
+    .regex(/^[a-z0-9_]{1,64}$/)
+    .optional()
+    .catch(undefined),
   sort: LogsSort.optional().catch(undefined),
   page: pageNumber,
   pageSize: z.coerce.number().int().min(10).max(200).optional().catch(undefined),

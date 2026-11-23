@@ -8,6 +8,9 @@ Thanks for helping. This guide covers code contributions and translations.
   French, but English issues and comments are welcome.
 - **Never push to `main`.** Fork, branch, open a pull request.
 - **Conventional Commits** with the issue number: `fix(smtp): handle AUTH LOGIN (#42)`.
+- **Pull requests are squash merged**: the PR title becomes the commit on `main`, so it
+  must be a Conventional Commit too (`type(scope): description (#N)`, no space before the
+  colon). It is what lands in the changelog.
 - **Green CI**: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm i18n:check`.
 - Fill in the pull request template (summary, checks, follow-ups, linked issues).
 
