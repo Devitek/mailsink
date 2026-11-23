@@ -1,6 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Button, type ButtonProps } from '@mailsink/ui'
-import { useCopy } from '../shell/use-copy'
+import { useCopy } from './use-copy'
 
 type CopyButtonProps = Omit<ButtonProps, 'onClick' | 'children' | 'value'> & {
   value: string

@@ -52,6 +52,28 @@ describeDb('Admin API: workspace edit and key rotation', (ctx) => {
     })
   })
 
+  it('edits the message quota and the default simulation (#112)', async () => {
+    const simulation = {
+      rates: { delivered: 90, hard_bounce: 10 },
+      rules: [{ match: '*+bounce@*', status: 'hard_bounce' }],
+      latency: { minMs: 10, maxMs: 50 },
+      openRate: 20,
+    }
+    const res = await call(patchWorkspace, 'PATCH', seeded.workspace.id, {
+      maxMessages: 500,
+      simulation,
+    })
+    expect(res.status).toBe(200)
+    expect(WorkspaceView.parse(res.body)).toMatchObject({
+      maxMessages: 500,
+      simulation: { ...simulation, clickRate: 0 },
+    })
+    const cleared = await call(patchWorkspace, 'PATCH', seeded.workspace.id, { maxMessages: null })
+    expect(cleared.body).toMatchObject({ maxMessages: null, simulation: { openRate: 20 } })
+    const invalid = await call(patchWorkspace, 'PATCH', seeded.workspace.id, { maxMessages: 0 })
+    expect(invalid.status).toBe(422)
+  })
+
   it('validates the patch and answers 404 for an unknown workspace', async () => {
     expect((await call(patchWorkspace, 'PATCH', seeded.workspace.id, {})).status).toBe(422)
     const res = await call(patchWorkspace, 'PATCH', 'nope', { name: 'x' })

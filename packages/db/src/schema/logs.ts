@@ -21,6 +21,7 @@ export const apiLogs = pgTable(
     durationMs: integer('duration_ms').notNull(),
     requestHeaders: jsonb('request_headers').$type<Record<string, string>>(), // redacted
     requestBody: jsonb('request_body'), // attachments stripped
+    responseHeaders: jsonb('response_headers').$type<Record<string, string>>(), // #112
     responseBody: jsonb('response_body'),
     messageIds: text('message_ids').array(),
     errorCode: text('error_code'), // rate_limited, chaos_500…

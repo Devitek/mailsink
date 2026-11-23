@@ -14,6 +14,11 @@ export interface PreparedEmail {
   raw: Uint8Array
   links: ExtractedLink[]
   createdAt: Date
+  /**
+   * Initial `messages.simulation` (null by default). The demo seeder (#62) puts a temporary
+   * rule set there (`{ rules }`), read by the settings planner for this message only.
+   */
+  simulation?: Record<string, unknown>
 }
 
 export interface PrepareOptions {

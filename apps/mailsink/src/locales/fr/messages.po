@@ -52,10 +52,6 @@ msgstr "{count} portées"
 msgid "{kind} · created {created}"
 msgstr "{kind} · créée le {created}"
 
-#: apps/mailsink/src/features/logs/logs-pager.tsx
-msgid "{rows} shown"
-msgstr "{rows} affichées"
-
 #: apps/mailsink/src/features/override/rates-section.tsx
 msgid "{status} rate"
 msgstr "Taux {status}"
@@ -63,6 +59,11 @@ msgstr "Taux {status}"
 #: apps/mailsink/src/features/override/rates-section.tsx
 msgid "{status} rate (slider)"
 msgstr "Taux {status} (curseur)"
+
+#: apps/mailsink/src/features/settings/suppression-card.tsx
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+msgid "{total, plural, one {# address} other {# addresses}}"
+msgstr "{total, plural, one {# adresse} other {# adresses}}"
 
 #: apps/mailsink/src/features/mcp-config/mcp-section.tsx
 msgid "{transport} · <0>{file}</0>"
@@ -145,6 +146,10 @@ msgstr "80 caractères au maximum."
 msgid "A JSON object, such as {\"name\": \"Julie\"}."
 msgstr "Un objet JSON, par exemple {\"name\": \"Julie\"}."
 
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "A message id starts with msg_."
+msgstr "Un id de message commence par msg_."
+
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 msgid "A new secret is generated and shown once. The current one stops working at once: update every client using it."
 msgstr "Un nouveau secret est généré et affiché une seule fois. L'actuel cesse de fonctionner immédiatement : mettez à jour chaque client qui l'utilise."
@@ -175,7 +180,6 @@ msgid "A whole number above 0."
 msgstr "Un nombre entier supérieur à 0."
 
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
-#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "A whole number of requests per second, or empty."
 msgstr "Un nombre entier de requêtes par seconde, ou vide."
@@ -195,6 +199,10 @@ msgstr "Actions"
 #: apps/mailsink/src/features/override/override-sheet.tsx
 msgid "active"
 msgstr "actif"
+
+#: apps/mailsink/src/features/connections/connection-webhooks.tsx
+msgid "Active webhooks ({active})"
+msgstr "Webhooks actifs ({active})"
 
 #: apps/mailsink/src/features/workspaces/first-connection-fields.tsx
 msgid "Add a first connection"
@@ -228,6 +236,10 @@ msgstr "Une URL http(s)."
 msgid "An msk_… key is generated on creation. Point the provider SDK at the Mailsink base URL: no application code change."
 msgstr "Une clé msk_… sera générée à la création. Pointez le SDK du provider vers l'URL de base Mailsink : aucun changement de code applicatif."
 
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "Any"
+msgstr "Toutes"
+
 #: apps/mailsink/src/features/logs/logs-toolbar.tsx
 msgid "API / Providers"
 msgstr "API / Providers"
@@ -244,6 +256,10 @@ msgstr "Clé API"
 #: apps/mailsink/src/features/settings/simulation-section.tsx
 msgid "Applied to each connection that sets none (HTTP 429, SMTP 451)."
 msgstr "Appliqué à chaque connexion qui n'en définit pas (HTTP 429, SMTP 451)."
+
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "Apply"
+msgstr "Appliquer"
 
 #: apps/mailsink/src/features/override/panel-footer.tsx
 msgid "Apply the override"
@@ -336,6 +352,10 @@ msgstr "Choisissez au moins un événement."
 msgid "Choose the provider to emulate"
 msgstr "Choisissez le type de provider à émuler"
 
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "Clear"
+msgstr "Effacer"
+
 #: apps/mailsink/src/features/logs/logs-facets.tsx
 msgid "Clear filter"
 msgstr "Effacer le filtre"
@@ -374,6 +394,7 @@ msgstr "Connexion…"
 #: apps/mailsink/src/features/logs/logs-facets.tsx
 #: apps/mailsink/src/features/logs/smtp-columns.tsx
 #: apps/mailsink/src/features/logs/webhook-columns.tsx
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
 msgid "Connection"
 msgstr "Connexion"
 
@@ -401,8 +422,7 @@ msgstr "Connexions · {slug}"
 msgid "Copied to the clipboard"
 msgstr "Copié dans le presse-papiers"
 
-#: apps/mailsink/src/features/connections/copy-button.tsx
-#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+#: apps/mailsink/src/features/shell/copy-button.tsx
 msgid "Copy"
 msgstr "Copier"
 
@@ -477,6 +497,11 @@ msgstr "Créer le template"
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Create the workspace"
 msgstr "Créer le workspace"
+
+#. placeholder {0}: workspace.createdBy
+#: apps/mailsink/src/features/workspaces/ephemeral-banner.tsx
+msgid "created by <0>{0}</0> through <1>POST /admin/workspaces</1> · hidden from the main list by default · purged automatically after inactivity."
+msgstr "créé par <0>{0}</0> via <1>POST /admin/workspaces</1> · masqué de la liste principale par défaut · purgé automatiquement après inactivité."
 
 #: apps/mailsink/src/features/workspaces/ephemeral-banner.tsx
 msgid "created through <0>POST /admin/workspaces</0> · hidden from the main list by default · purged automatically after inactivity."
@@ -703,6 +728,10 @@ msgstr "Workspace éphémère"
 msgid "Ephemeral workspaces"
 msgstr "Workspaces éphémères"
 
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "Error code"
+msgstr "Code d'erreur"
+
 #: apps/mailsink/src/features/override/rules-section.tsx
 msgid "Evaluated in order, before the random draw. <0>*</0> wildcards allowed. No rule: the inherited rules are switched off."
 msgstr "Évaluées dans l'ordre, avant le tirage aléatoire. Jokers <0>*</0> acceptés. Aucune règle : les règles héritées sont désactivées."
@@ -809,6 +838,10 @@ msgstr "GTFS Manager - Staging"
 #: apps/mailsink/src/features/override/override-panel.tsx
 msgid "Hard bounces and complaints add the address to the <0>suppression list</0>."
 msgstr "Les hard bounces et les plaintes ajoutent l'adresse à la <0>suppression list</0>."
+
+#: apps/mailsink/src/features/settings/suppression-card.tsx
+msgid "Hard bounces and complaints of the simulation add the address here."
+msgstr "Les hard bounces et les plaintes de la simulation ajoutent l'adresse ici."
 
 #: apps/mailsink/src/features/webhooks/custom-headers-field.tsx
 msgid "Header name {row}"
@@ -948,7 +981,12 @@ msgstr "Liens extraits du message ({0})"
 msgid "Live"
 msgstr "Live"
 
+#: apps/mailsink/src/features/inbox/empty-inbox.tsx
+msgid "Load demo messages"
+msgstr "Charger des messages de démo"
+
 #: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+#: apps/mailsink/src/features/templates/templates-section.tsx
 msgid "Load more"
 msgstr "Charger plus"
 
@@ -964,6 +1002,7 @@ msgstr "Chargement des messages plus anciens…"
 msgid "Loading workspaces…"
 msgstr "Chargement des workspaces…"
 
+#: apps/mailsink/src/features/inbox/empty-inbox.tsx
 #: apps/mailsink/src/features/logs/inspector-state.tsx
 #: apps/mailsink/src/features/message-viewer/source-panel.tsx
 #: apps/mailsink/src/features/workspaces/workspace-section-list.tsx
@@ -981,6 +1020,10 @@ msgstr "Type de log"
 msgid "Logs"
 msgstr "Logs"
 
+#: apps/mailsink/src/features/connections/connection-webhooks.tsx
+msgid "Manage / Add a webhook →"
+msgstr "Gérer / Ajouter un webhook →"
+
 #: apps/mailsink/src/features/inbox/empty-inbox.tsx
 msgid "Manage connections →"
 msgstr "Gérer les connexions →"
@@ -988,6 +1031,10 @@ msgstr "Gérer les connexions →"
 #: apps/mailsink/src/features/settings/connections-section.tsx
 msgid "Manage the connections →"
 msgstr "Gérer les connexions →"
+
+#: apps/mailsink/src/features/settings/suppression-card.tsx
+msgid "Manage the suppression list →"
+msgstr "Gérer la suppression list →"
 
 #: apps/mailsink/src/features/settings/retention-section.tsx
 msgid "Maximum messages"
@@ -1011,15 +1058,27 @@ msgstr "Client MCP"
 msgid "Message"
 msgstr "Message"
 
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "Message id"
+msgstr "Id du message"
+
 #: apps/mailsink/src/features/inbox/message-list.tsx
 #: apps/mailsink/src/features/logs/inspector-parts.tsx
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Messages"
 msgstr "Messages"
 
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "Method"
+msgstr "Méthode"
+
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Mobile"
 msgstr "Mobile"
+
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "More filters"
+msgstr "Plus de filtres"
 
 #: apps/mailsink/src/features/connections/connection-name.tsx
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
@@ -1049,10 +1108,6 @@ msgstr "Nouvel endpoint webhook"
 #: apps/mailsink/src/features/workspaces/new-workspace-dialog.tsx
 msgid "New workspace"
 msgstr "Nouveau workspace"
-
-#: apps/mailsink/src/features/logs/logs-pager.tsx
-msgid "Newest"
-msgstr "Plus récentes"
 
 #: apps/mailsink/src/features/logs/logs-pager.tsx
 msgid "Next"
@@ -1150,6 +1205,10 @@ msgstr "Aucune livraison webhook pour ce message."
 msgid "No webhook endpoint yet: add one to receive delivery events."
 msgstr "Aucun endpoint webhook pour l'instant : ajoutez-en un pour recevoir les événements de livraison."
 
+#: apps/mailsink/src/features/connections/connection-webhooks.tsx
+msgid "No webhook is scoped to this connection (workspace-wide ones also apply)."
+msgstr "Aucun webhook n'est rattaché à cette connexion (ceux du workspace s'appliquent aussi)."
+
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 msgstr "Aucun workspace ne s'appelle <0>{workspaceSlug}</0>. Il a peut-être expiré."
@@ -1186,10 +1245,6 @@ msgstr "Rien de journalisé pour le moment."
 #: apps/mailsink/src/features/inbox/relative-time.tsx
 msgid "now"
 msgstr "à l'instant"
-
-#: apps/mailsink/src/features/logs/logs-pager.tsx
-msgid "Older"
-msgstr "Plus anciennes"
 
 #: apps/mailsink/src/features/settings/retention-section.tsx
 msgid "Older messages and logs are purged automatically."
@@ -1409,7 +1464,7 @@ msgstr "Régénérer SMTP_PASS ?"
 msgid "Remainder"
 msgstr "Reste"
 
-#. placeholder {0}: row.email
+#. placeholder {0}: row.original.email
 #: apps/mailsink/src/features/suppressions/suppression-table.tsx
 msgid "Remove {0} from the suppression list"
 msgstr "Retirer {0} de la suppression list"
@@ -1522,15 +1577,26 @@ msgstr "Réinitialiser aux valeurs par défaut"
 msgid "Response"
 msgstr "Réponse"
 
+#: apps/mailsink/src/features/logs/api-inspector.tsx
+msgid "Response headers"
+msgstr "En-têtes de réponse"
+
 #: apps/mailsink/src/features/override/panel-footer.tsx
 msgid "Restore the settings of this target?"
 msgstr "Restaurer les paramètres de cette cible ?"
 
 #: apps/mailsink/src/features/settings/retention-section.tsx
-#: apps/mailsink/src/features/settings/section-nav.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Retention"
 msgstr "Rétention"
+
+#: apps/mailsink/src/features/settings/section-nav.tsx
+msgid "Retention & suppression"
+msgstr "Rétention & suppression"
+
+#: apps/mailsink/src/features/workspaces/edit-workspace-form.tsx
+msgid "Retention, message quota, rate limit and simulation are workspace defaults: <0>edit them in the settings</0>."
+msgstr "Rétention, quota de messages, rate limit et simulation sont des défauts du workspace : <0>modifiez-les dans les paramètres</0>."
 
 #: apps/mailsink/src/features/webhooks/secret-line.tsx
 msgid "Reveal"
@@ -1623,6 +1689,7 @@ msgstr "Sélectionnez une connexion."
 msgid "Sends the body and the headers of the last attempt byte for byte, signature included: tests replay protection."
 msgstr "Renvoie le corps et les headers de la dernière tentative à l'octet près, signature comprise : teste la protection contre le rejeu."
 
+#: apps/mailsink/src/features/settings/suppression-card.tsx
 #: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
 msgid "Sends to these addresses are stored <0>suppressed</0> without drawing a status."
 msgstr "Les envois vers ces adresses sont marqués <0>suppressed</0> sans tirage de statut."
@@ -1721,6 +1788,7 @@ msgstr "Simulation et rate limit"
 msgid "Simulation refused: {0}"
 msgstr "Simulation refusée : {0}"
 
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
 #: apps/mailsink/src/features/suppressions/suppression-table.tsx
 msgid "Since"
 msgstr "Depuis"
@@ -1791,6 +1859,8 @@ msgstr "Endpoint Streamable HTTP"
 msgid "Subject"
 msgstr "Sujet"
 
+#: apps/mailsink/src/features/settings/suppression-card.tsx
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
 #: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
 #: apps/mailsink/src/routes/w.$workspaceSlug.suppressions.tsx
 msgid "Suppression list"
@@ -1842,6 +1912,14 @@ msgstr "La signature copiée date de {stale} min : les vérificateurs Svix (SDK 
 #: apps/mailsink/src/features/connections/workspace-key-card.tsx
 msgid "The current mskw_ key stops working at once: every CI job, script or MCP client using it must get the new one."
 msgstr "La clé mskw_ actuelle cesse de fonctionner immédiatement : chaque job de CI, script ou client MCP qui l'utilise doit recevoir la nouvelle."
+
+#: apps/mailsink/src/features/inbox/empty-inbox.tsx
+msgid "The demo messages could not be loaded. Try again."
+msgstr "Les messages de démo n'ont pas pu être chargés. Réessayez."
+
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "The end comes before the start."
+msgstr "La fin précède le début."
 
 #: apps/mailsink/src/features/webhooks/endpoint-form-view.tsx
 msgid "The endpoint could not be saved. Try again."
@@ -2010,6 +2088,10 @@ msgstr "inchangé"
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "unlimited"
 msgstr "illimité"
+
+#: apps/mailsink/src/features/logs/logs-more-filters.tsx
+msgid "Until"
+msgstr "Jusqu'à"
 
 #: apps/mailsink/src/features/override/target-section.tsx
 msgid "Until reset"

@@ -96,4 +96,29 @@ describe('stream frames in the query cache', () => {
     ])
     expect(event({ type: 'workspace.deleted', workspaceId: 'ws_1' }).deleted).toBe(true)
   })
+
+  it('refetches the suppression list when a recipient bounces hard or complains', () => {
+    const status = (s: 'hard_bounce' | 'complained' | 'soft_bounce') =>
+      applyStreamEvent(qc, 'qa', {
+        type: 'message.status',
+        messageId: 'msg_1',
+        status: s,
+        recipient: 'jane@example.com',
+      }).invalidate
+    expect(status('hard_bounce')).toContainEqual(['suppressions', 'qa'])
+    expect(status('complained')).toContainEqual(['suppressions', 'qa'])
+    expect(status('soft_bounce')).not.toContainEqual(['suppressions', 'qa'])
+  })
+
+  it('restarts the idle TTL of an ephemeral workspace on activity, never backwards', () => {
+    const base = { id: 'ws_1', slug: 'qa', name: 'QA', ephemeral: true, idleTtlSeconds: 600 }
+    const later = new Date(Date.now() + 3_600_000).toISOString()
+    qc.setQueryData(['workspace', 'qa'], { ...base, expiresAt: '2026-01-01T00:00:00.000Z' })
+    applyStreamEvent(qc, 'qa', { type: 'log.api' } as StreamEvent)
+    const expiry = () => qc.getQueryData<{ expiresAt: string }>(['workspace', 'qa'])?.expiresAt
+    expect(Date.parse(expiry() ?? '')).toBeGreaterThan(Date.now() + 590_000)
+    qc.setQueryData(['workspace', 'qa'], { ...base, expiresAt: later })
+    applyStreamEvent(qc, 'qa', { type: 'message.created', message: summary('msg_3') })
+    expect(expiry()).toBe(later)
+  })
 })

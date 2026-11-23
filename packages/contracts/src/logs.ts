@@ -84,6 +84,8 @@ export const ApiLogSummary = z.object({
 export const ApiLogDetail = ApiLogSummary.extend({
   requestHeaders: z.record(z.string(), z.string()), // credentials redacted
   requestBody: z.unknown().nullable(), // attachments stripped, truncated
+  /** Headers of the answer (rate limit, request id…); empty for calls logged before #112. */
+  responseHeaders: z.record(z.string(), z.string()),
   responseBody: z.unknown().nullable(), // truncated
   ip: z.string().nullable(),
 })

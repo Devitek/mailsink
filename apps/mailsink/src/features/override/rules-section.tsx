@@ -1,6 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { SimulatedStatus } from '@mailsink/contracts'
-import { Button, Input, statusColorVar } from '@mailsink/ui'
+import { Button, Input, Select, statusColorVar } from '@mailsink/ui'
 import type { CSSProperties } from 'react'
 import { firstError } from '../workspaces/form-fields'
 import { NumberInput } from './number-input'
@@ -71,10 +71,8 @@ export function RulesSection({ form }: Readonly<{ form: OverrideForm }>) {
                     </span>
                     <form.Field name={`rules[${i}].effect`}>
                       {(field) => (
-                        <select
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value as RuleEffect)}
-                          aria-label={t`Effect of rule ${i + 1}`}
+                        <span
+                          className="contents"
                           style={
                             {
                               '--status':
@@ -83,14 +81,19 @@ export function RulesSection({ form }: Readonly<{ form: OverrideForm }>) {
                                   : statusColorVar(field.state.value),
                             } as CSSProperties
                           }
-                          className="h-control-md rounded-md border border-ms-border-strong bg-ms-bg px-[11px] font-mono text-xs text-(--status) outline-none focus-visible:focus-ring"
                         >
-                          {EFFECTS.map((effect) => (
-                            <option key={effect} value={effect}>
-                              {effect === 'delay' ? t`delay +ms` : effect}
-                            </option>
-                          ))}
-                        </select>
+                          <Select
+                            value={field.state.value}
+                            onValueChange={(v) => field.handleChange(v)}
+                            aria-label={t`Effect of rule ${i + 1}`}
+                            options={EFFECTS.map((effect) => ({
+                              value: effect,
+                              label: effect === 'delay' ? t`delay +ms` : effect,
+                            }))}
+                            mono
+                            className="h-control-md rounded-md text-(--status)"
+                          />
+                        </span>
                       )}
                     </form.Field>
                     <form.Subscribe selector={(s) => s.values.rules[i]?.effect}>

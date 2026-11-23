@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { Email, IsoDateTime, Page, PageLimit } from './common'
-import { MessageId, prefixedId } from './ids'
+import { ConnectionId, MessageId, prefixedId } from './ids'
 
 export const SuppressionId = prefixedId('sup')
 
@@ -22,10 +22,15 @@ export const SuppressionView = z.object({
   email: z.string(),
   reason: SuppressionReason,
   messageId: MessageId.nullable(),
+  /** Connection of the message that put the address on the list; null without one. */
+  connectionId: ConnectionId.nullable(),
   createdAt: IsoDateTime,
 })
 
-export const ListSuppressionsResponse = Page(SuppressionView)
+/** One page plus the number of addresses matching the filter (every page). */
+export const ListSuppressionsResponse = Page(SuppressionView).extend({
+  total: z.number().int().min(0),
+})
 export const DeleteSuppressionsResponse = z.object({ count: z.number().int().min(0) })
 
 export type SuppressionReason = z.output<typeof SuppressionReason>

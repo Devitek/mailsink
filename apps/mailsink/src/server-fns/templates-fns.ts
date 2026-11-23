@@ -17,8 +17,8 @@ const Target = z.object({ slug: Slug, externalId: TemplateExternalId })
 
 export const listTemplatesFn = createServerFn({ method: 'GET' })
   .middleware([signedIn])
-  .validator(z.object({ slug: Slug }))
-  .handler(({ context, data }) => listTemplates(context.runtime, data.slug))
+  .validator(z.object({ slug: Slug, cursor: z.number().int().min(0).optional() }))
+  .handler(({ context, data }) => listTemplates(context.runtime, data.slug, data.cursor))
 
 export const createTemplateFn = createServerFn({ method: 'POST' })
   .middleware([signedIn])

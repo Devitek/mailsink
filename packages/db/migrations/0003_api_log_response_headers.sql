@@ -1,0 +1,1 @@
+ALTER TABLE "api_logs" ADD COLUMN "response_headers" jsonb;

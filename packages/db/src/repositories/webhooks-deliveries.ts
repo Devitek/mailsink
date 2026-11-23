@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, lt, type SQL } from 'drizzle-orm'
+import { and, asc, count, desc, eq, lt, type SQL } from 'drizzle-orm'
 import type { Executor } from '../client'
 import { webhookAttempts, webhookDeliveries } from '../schema/webhook-deliveries'
 import { webhookEndpoints } from '../schema/webhooks'
@@ -42,14 +42,28 @@ export async function findDeliveryWithEndpoint(
   return row
 }
 
-export interface ListDeliveriesOptions {
+export interface DeliveryFilters {
   endpointId?: string
   payloadFormat?: WebhookDelivery['payloadFormat']
   messageId?: string
   status?: WebhookDelivery['status']
+}
+
+export interface ListDeliveriesOptions extends DeliveryFilters {
   /** Id of the last row of the previous page (exclusive). */
   after?: string
+  /** Rows to skip (page-number pagination); used without `after`. */
+  offset?: number
   limit: number
+}
+
+function deliveryFilters(workspaceId: string, options: DeliveryFilters): SQL[] {
+  const where: SQL[] = [eq(webhookDeliveries.workspaceId, workspaceId)]
+  if (options.endpointId) where.push(eq(webhookDeliveries.endpointId, options.endpointId))
+  if (options.payloadFormat) where.push(eq(webhookDeliveries.payloadFormat, options.payloadFormat))
+  if (options.messageId) where.push(eq(webhookDeliveries.messageId, options.messageId))
+  if (options.status) where.push(eq(webhookDeliveries.status, options.status))
+  return where
 }
 
 /** Newest first: ids are UUIDv7 text (D25), so the last id of a page is the cursor. */
@@ -58,11 +72,7 @@ export async function listWebhookDeliveries(
   workspaceId: string,
   options: ListDeliveriesOptions,
 ): Promise<WebhookDelivery[]> {
-  const where: SQL[] = [eq(webhookDeliveries.workspaceId, workspaceId)]
-  if (options.endpointId) where.push(eq(webhookDeliveries.endpointId, options.endpointId))
-  if (options.payloadFormat) where.push(eq(webhookDeliveries.payloadFormat, options.payloadFormat))
-  if (options.messageId) where.push(eq(webhookDeliveries.messageId, options.messageId))
-  if (options.status) where.push(eq(webhookDeliveries.status, options.status))
+  const where = deliveryFilters(workspaceId, options)
   if (options.after) where.push(lt(webhookDeliveries.id, options.after))
   return db
     .select()
@@ -70,6 +80,20 @@ export async function listWebhookDeliveries(
     .where(and(...where))
     .orderBy(desc(webhookDeliveries.id))
     .limit(options.limit)
+    .offset(options.offset ?? 0)
+}
+
+/** Deliveries matching the filters (the total of the delivery log pager). */
+export async function countWebhookDeliveries(
+  db: Executor,
+  workspaceId: string,
+  options: DeliveryFilters,
+): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(webhookDeliveries)
+    .where(and(...deliveryFilters(workspaceId, options)))
+  return row?.n ?? 0
 }
 
 export async function updateWebhookDelivery(

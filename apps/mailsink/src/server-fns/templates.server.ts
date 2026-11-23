@@ -15,8 +15,11 @@ import type { FieldIssue } from './webhooks-types'
 // Brevo templates of the settings screen (#43): the core services of the Admin template
 // API (#30) with the UI session, workspace by slug, activity touched (D163).
 
-/** At most this many templates listed (pages of 200 read in a row). */
-export const TEMPLATE_LIST_LIMIT = 1000
+/** Templates per page of the settings list (« Load more » reads the next one). */
+export const TEMPLATE_PAGE_SIZE = 200
+
+/** One page of templates by `externalId`; `nextCursor` reads the next one. */
+export type TemplatePage = { data: TemplateView[]; nextCursor: string | null }
 
 export type TemplateSaved =
   | { ok: true; template: TemplateView }
@@ -32,16 +35,14 @@ export type TemplatePreviewInput = {
 
 export type TemplatePreview = { subject: string; html: string; text: string }
 
-export async function listTemplates(runtime: Runtime, slug: string): Promise<TemplateView[]> {
+export async function listTemplates(
+  runtime: Runtime,
+  slug: string,
+  cursor?: number,
+  limit = TEMPLATE_PAGE_SIZE,
+): Promise<TemplatePage> {
   const workspaceId = await touchWorkspace(runtime, slug)
-  const all: TemplateView[] = []
-  let cursor: number | undefined
-  do {
-    const page = await listTemplateViews(runtime.db.db, workspaceId, { cursor, limit: 200 })
-    all.push(...page.data)
-    cursor = page.nextCursor === null ? undefined : Number(page.nextCursor)
-  } while (cursor !== undefined && all.length < TEMPLATE_LIST_LIMIT)
-  return all
+  return listTemplateViews(runtime.db.db, workspaceId, { cursor, limit })
 }
 
 async function saving(write: () => Promise<TemplateView>): Promise<TemplateSaved> {
