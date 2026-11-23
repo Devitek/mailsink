@@ -529,8 +529,7 @@ export const MessageDetail = MessageSummary.extend({
   events: z.array(MessageEventView),
   rawUrl: z.string(), simulation: z.record(z.string(), z.unknown()).nullable(),
 })
-// Phase 3 (webhook delivery issue #33) adds `webhookDeliveries: z.array(WebhookDeliveryView)`.
-// Until then the detail already carries `webhookDeliveries: []` (always empty).
+// + webhookDeliveries: z.array(WebhookDeliveryView), newest first (#33, see « Webhooks »).
 
 export const TriggerEventRequest = z.discriminatedUnion('type', [
   z.object({ type: z.literal('opened'), recipient: z.email().optional(),
@@ -543,7 +542,13 @@ export const TriggerEventRequest = z.discriminatedUnion('type', [
   z.object({ type: z.literal('status'),
     status: z.enum(['delivered', 'deferred', 'soft_bounce', 'hard_bounce', 'complained', 'failed']),
     recipient: z.email().optional(), reason: z.string().max(500).optional() }),
-])   // 202 { events, webhookDeliveries: [{ id, endpointId }] }
+])   // 202 TriggerEventResponse { events, webhookDeliveries: [{ id, endpointId }] }
+// One event per targeted recipient, origin `api`; omitted `recipient` = every recipient not
+// suppressed. Unknown recipient 404, suppressed recipient (or all) 409. A forced status
+// does not change the simulation snapshot (D142). Automatic opened / clicked (D143):
+// after a simulation run, each recipient it delivered opens when a draw < `openRate` and
+// clicks when a draw < `clickRate` and the message has links (a click implies an open),
+// 1 ms and 2 ms after `delivered`, origin `simulation`, seeded by the message seed.
 
 export const PurgeQuery = z.object({ connectionId: ConnectionId.optional(),
   before: IsoDateTime.optional(), includeLogs: QueryBool.default(true) })
@@ -691,14 +696,88 @@ export function defaultPayloadFormat(scope: { kind: ConnectionKind } | null): Pa
 }
 
 export const WebhookEndpointView = z.object({
-  id: z.string(), connectionId: z.string().nullable(), url: z.string(),
+  id: z.string(), numericId: z.number().int(),  // numericId = Brevo payload `id`
+  connectionId: z.string().nullable(), url: z.string(),
   payloadFormat: PayloadFormat,
   events: z.array(z.string()),            // dialect names of payloadFormat, deduplicated
   canonicalEvents: z.array(CanonicalEvent),
   unsupportedEvents: z.array(CanonicalEvent), // canonical events this format cannot emit
+  description: z.string().nullable(),
+  brevoAuth: z.object({ type: z.enum(['none', 'bearer', 'basic']),
+    username: z.string().optional() }),   // credentials are never returned
+  customHeaders: z.array(CustomHeader),
   secretPreview: z.string().nullable(), enabled: z.boolean(),
+  createdAt: IsoDateTime, updatedAt: IsoDateTime,
 })
+// POST answers 201 WebhookEndpointWithSecret (= view + `secret`, the clear whsec_ shown
+// once, null for brevo); PATCH answers it too, `secret` set only when one was issued.
+export const WebhookEndpointPatch = WebhookEndpointInput.partial()
+  .extend({ description: z.string().max(200).nullable().optional(),
+    rotateSecret: z.literal(true).optional() })
 ```
+
+`webhook-delivery.ts` holds the delivery log contracts:
+
+```ts
+export const WebhookDeliveryView = z.object({ id: WebhookDeliveryId,
+  endpointId: WebhookEndpointId, messageId: MessageId.nullable(),
+  eventId: EventId.nullable(),                       // null for a test send
+  payloadFormat: PayloadFormat, canonicalEvent: CanonicalEvent, dialectEvent: z.string(),
+  recipient: z.string().nullable(),
+  status: z.enum(['pending', 'retrying', 'succeeded', 'failed']),
+  attemptCount: z.number().int(), nextAttemptAt: IsoDateTime.nullable(),
+  lastStatusCode: z.number().int().nullable(),
+  replayOf: WebhookDeliveryId.nullable(), replayMode: ReplayMode.nullable(),
+  createdAt: IsoDateTime })
+export const WebhookDeliveryDetail = WebhookDeliveryView.extend({ body: z.string(),
+  contentType: z.string(), attempts: z.array(WebhookAttemptView) }) // attempt: id,
+  // attemptNo, requestHeaders (exactly as sent), signedAt, responseStatus,
+  // responseBody (4 KB), durationMs, error, createdAt
+export const ListWebhookDeliveriesQuery = z.object({ endpointId, payloadFormat,
+  messageId, status, limit: PageLimit, cursor: WebhookDeliveryId })   // all optional
+```
+
+Behaviour (#32, #33, #34, propositions D135 to D144):
+- Endpoint CRUD: `GET /capture/webhooks[?connectionId=]` lists that scope and the
+  Workspace scope, oldest first; another workspace's endpoint or connection is a 404.
+  Event names are validated against the resolved format: dialect names, canonical names,
+  and for Brevo the aliases `sent`, `soft_bounce`, `hard_bounce`; an unknown name is a 422
+  with `params.code = unknown_webhook_event`. `brevoAuth` other than `none` on another
+  format is refused (`brevo_auth_requires_brevo`); custom headers may not use
+  `content-type`, `content-length`, `host`, `authorization`, `svix-*` or `x-mailsink-*`
+  (`reserved_webhook_header`) and are sent on every format, under the format's own
+  headers. `DELETE` answers `{ id }` (its deliveries cascade).
+- Secrets: the unified HMAC key is the whole `whsec_…` string; `secretPreview` is the
+  prefix plus 4 characters. `PATCH { rotateSecret: true }` issues a new one; leaving the
+  brevo format issues one too, entering it drops it (Brevo credentials live in the same
+  column: the token, or `user:password`).
+- Fan-out: the `simulate_delivery` handler fans out the events of the run once it
+  committed (and the automatic opened / clicked below), in its own transaction; manual
+  events fan out in their own transaction. Disabled endpoints get no new delivery.
+- Attempts: one `deliver_webhook` job per attempt (payload `{ deliveryId, attemptNo,
+  exactAttemptId? }`); a failed attempt enqueues the next one itself after
+  `min(2^(n-1) * 5 s, 1 h) ± 20 %`, the queue backoff (D47) only covers database errors.
+  Redirects are not followed (a 3xx fails); network errors and timeouts are stored in the
+  attempt `error`. A job whose attempt is already recorded does nothing.
+- Replay: `replayOf` always points to the first delivery, whose id stays the signing id
+  (`svix-id`, `X-Mailsink-Delivery-Id`). `exact` copies the headers of one attempt for
+  every attempt of the replay; on a delivery without attempts it is a 409 (use `resign`).
+  The answer is 202 with the pending delivery; the worker sends it.
+- `POST /capture/webhooks/:id/test` (`{ event? }`, default `email.delivered`, dialect or
+  canonical name): a sample message, a delivery with `messageId` and `eventId` null, one
+  attempt sent at once and never retried; answers the `WebhookDeliveryDetail`.
+- Preview: signed with a throwaway secret, then `X-Mailsink-Signature`, `svix-signature`
+  and `Authorization` values are masked (`••••••••`). An event the format cannot emit is
+  a 422.
+- Stream: a `webhook.delivery` frame (no `id:`) when a delivery is created and after each
+  attempt; its `connectionId` is the endpoint scope, so a Workspace-scoped endpoint's
+  frames are dropped by a `connectionId` stream filter.
+- `MessageDetail.webhookDeliveries`: the message's deliveries, newest first (at most
+  200). The delivery log is newest first with a keyset cursor (the last id).
+- Formatter fields: Resend `email_id` is the provider id when it is a UUID, else the UUID
+  body of the `msg_` id; Brevo `message-id` is the provider id when shaped `<…@…>`, else
+  `<uuid@smtp-relay.mailin.fr>`; Brevo `tags` are the tag values (the name when the value
+  is empty); Resend `click.ipAddress` is `127.0.0.1`.
 
 Changing `payloadFormat` (PATCH) keeps the canonical subscription. Events the new format
 cannot represent stay stored but are listed in `unsupportedEvents` and never emitted; the

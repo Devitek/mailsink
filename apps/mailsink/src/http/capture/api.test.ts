@@ -95,7 +95,7 @@ describeDb('Capture API over HTTP', (ctx) => {
     expect(await res.json()).toMatchObject({
       id: msgA.id,
       subject: 'From A',
-      webhookDeliveries: [], // filled by #33
+      webhookDeliveries: [], // no webhook endpoint
     })
   })
 
