@@ -1,9 +1,26 @@
-import { Trans } from '@lingui/react/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
+import { Button } from '@mailsink/ui'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useLoaderData } from '@tanstack/react-router'
+import { loadDemoMessagesFn } from '../../server-fns/demo-fns'
+import { inboxKey } from './queries'
 
-// Empty inbox of the prototype: what to send to see a message appear here in real time.
-// The « Load demo messages » button lands with its endpoint (#62).
+/** « Load demo messages » (#62): the demo set in the UI locale, through the pipeline. */
+function useLoadDemo(slug: string) {
+  const { i18n } = useLingui()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      loadDemoMessagesFn({ data: { slug, locale: i18n.locale === 'fr' ? 'fr' : 'en' } }),
+    // The stream inserts the rows; a refetch covers a stream not connected yet.
+    onSuccess: () => qc.invalidateQueries({ queryKey: inboxKey(slug) }),
+  })
+}
+
+// Empty inbox of the prototype: what to send to see a message appear here in real time,
+// or a set of demo messages to look around first.
 export function EmptyInbox({ slug }: Readonly<{ slug: string }>) {
+  const demo = useLoadDemo(slug)
   const { publicUrl } = useLoaderData({ from: '__root__' })
   const base = (publicUrl ?? '').replace(/\/$/, '')
   const snippet = [
@@ -29,13 +46,23 @@ export function EmptyInbox({ slug }: Readonly<{ slug: string }>) {
         <pre className="m-0 rounded-md border border-ms-border bg-ms-panel px-[22px] py-[19px] font-mono text-xs leading-[1.65] break-all whitespace-pre-wrap text-ms-text-muted">
           {snippet}
         </pre>
-        <Link
-          to="/w/$workspaceSlug/connections"
-          params={{ workspaceSlug: slug }}
-          className="text-sm text-ms-accent-text underline-offset-4 hover:underline"
-        >
-          <Trans>Manage connections →</Trans>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button disabled={demo.isPending} onClick={() => demo.mutate()}>
+            {demo.isPending ? <Trans>Loading…</Trans> : <Trans>Load demo messages</Trans>}
+          </Button>
+          <Link
+            to="/w/$workspaceSlug/connections"
+            params={{ workspaceSlug: slug }}
+            className="px-4 text-sm text-ms-accent-text underline-offset-4 hover:underline"
+          >
+            <Trans>Manage connections →</Trans>
+          </Link>
+        </div>
+        {demo.isError && (
+          <p role="alert" className="text-sm text-ms-danger">
+            <Trans>The demo messages could not be loaded. Try again.</Trans>
+          </p>
+        )}
       </div>
     </div>
   )

@@ -73,7 +73,7 @@ export async function persistEmails(
   const jobs: { messageId: string }[] = []
   const written: FanOutEvent[] = []
 
-  for (const { id, email, raw, links, createdAt } of prepared) {
+  for (const { id, email, raw, links, createdAt, simulation } of prepared) {
     const rawBlob = await blobs.put(target.workspaceId, raw)
     const attachmentRows: NewAttachment[] = []
     for (const a of email.attachments) {
@@ -136,6 +136,7 @@ export async function persistEmails(
         metadata: email.metadata,
         templateRef: email.templateRef ?? null,
         links,
+        simulation: simulation ?? null,
         rawBlobId: rawBlob.id,
         sizeBytes: raw.byteLength,
         status,

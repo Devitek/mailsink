@@ -40,6 +40,8 @@ export {
   type PublicEndpoints,
 } from './connections/snippets'
 export { hashApiKey, secretsEqual } from './crypto'
+export { demoMessages } from './demo/catalog'
+export { seedDemoMessages } from './demo/seed'
 export {
   BREVO_TAG_NAME,
   brevoFieldError,
