@@ -1,14 +1,31 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { Link } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
+import { workspacePagePaths } from '../inbox/workspace-pages'
 
 const tab =
-  'flex h-full items-center border-b-2 px-3.5 font-medium whitespace-nowrap outline-none transition-colors duration-fast ease-ms focus-visible:text-ms-text'
+  'flex h-full items-center gap-2 border-b-2 px-3.5 font-medium whitespace-nowrap outline-none transition-colors duration-fast ease-ms focus-visible:text-ms-text'
+const idle = 'border-transparent text-ms-text-muted hover:text-ms-text'
+const current = 'aria-[current=page]:border-ms-accent-text aria-[current=page]:text-ms-text'
 
-// Workspace tabs of the prototype header. Messages is the workspace page; Logs and Settings
-// are placeholders until their screens land (#39 and the Phase 4 issues): shown, inert.
-export function NavTabs({ workspaceSlug }: Readonly<{ workspaceSlug: string }>) {
+export type NavCounts = { messages?: number; logs?: number }
+
+function Count({ value }: Readonly<{ value: number | undefined }>) {
+  if (value === undefined) return null
+  return <span className="font-mono text-badge font-medium text-ms-text-faint">{value}</span>
+}
+
+// Workspace tabs of the prototype header, with the message and log counts. Messages is the
+// inbox; Logs and Settings are plain links to the pages of the other Phase 4 lots until
+// their routes exist (then typed links can replace them).
+export function NavTabs({
+  workspaceSlug,
+  counts = {},
+}: Readonly<{ workspaceSlug: string; counts?: NavCounts }>) {
   const { t } = useLingui()
-  const soon = t`Not available yet`
+  const { pathname } = useLocation()
+  const page = (path: string) => (pathname.startsWith(path) ? 'page' : undefined)
+  const logs = workspacePagePaths.logs(workspaceSlug)
+  const settings = workspacePagePaths.settings(workspaceSlug)
   return (
     <nav
       aria-label={t`Workspace`}
@@ -17,21 +34,19 @@ export function NavTabs({ workspaceSlug }: Readonly<{ workspaceSlug: string }>) 
       <Link
         to="/w/$workspaceSlug"
         params={{ workspaceSlug }}
-        activeOptions={{ exact: true }}
-        className={`${tab} border-transparent text-ms-text-muted hover:text-ms-text aria-[current=page]:border-ms-accent-text aria-[current=page]:text-ms-text`}
+        activeOptions={{ exact: true, includeSearch: false }}
+        className={`${tab} ${idle} ${current}`}
       >
         <Trans>Messages</Trans>
+        <Count value={counts.messages} />
       </Link>
-      {[t`Logs`, t`Settings`].map((label) => (
-        <span
-          key={label}
-          aria-disabled="true"
-          title={soon}
-          className={`${tab} cursor-not-allowed border-transparent text-ms-text-faint`}
-        >
-          {label}
-        </span>
-      ))}
+      <a href={logs} aria-current={page(logs)} className={`${tab} ${idle} ${current}`}>
+        <Trans>Logs</Trans>
+        <Count value={counts.logs} />
+      </a>
+      <a href={settings} aria-current={page(settings)} className={`${tab} ${idle} ${current}`}>
+        <Trans>Settings</Trans>
+      </a>
     </nav>
   )
 }

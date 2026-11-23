@@ -7,9 +7,27 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: fr\n"
 
+#: apps/mailsink/src/features/inbox/message-row.tsx
+#: apps/mailsink/src/features/message-viewer/viewer-header.tsx
+msgid "(no subject)"
+msgstr "(sans objet)"
+
+#. placeholder {0}: d.attemptCount
+#: apps/mailsink/src/features/message-viewer/history-tab.tsx
+msgid "{0} att."
+msgstr "{0} tent."
+
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
 msgstr "{count, plural, one {# créé via l'API Admin (CI / E2E)} other {# créés via l'API Admin (CI / E2E)}}"
+
+#: apps/mailsink/src/features/inbox/inbox-page.tsx
+msgid "← Inbox"
+msgstr "← Boîte de réception"
+
+#: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
+msgid "→ updates the status and delivers the subscribed webhooks"
+msgstr "→ met à jour le statut et livre les webhooks abonnés"
 
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "<0>Key rejected.</0> Check that it matches <1>MAILSINK_ADMIN_KEY</1> on the server."
@@ -27,6 +45,19 @@ msgstr "<0>Où trouver la clé ?</0> Elle est définie au déploiement dans la v
 msgid "Admin key"
 msgstr "Clé d'administration"
 
+#: apps/mailsink/src/features/inbox/filter-bar.tsx
+msgid "All"
+msgstr "Tous"
+
+#. placeholder {0}: files.length
+#: apps/mailsink/src/features/message-viewer/links-tab.tsx
+msgid "Attachments · {0}"
+msgstr "Pièces jointes · {0}"
+
+#: apps/mailsink/src/features/message-viewer/purge-button.tsx
+msgid "Cancel"
+msgstr "Annuler"
+
 #: apps/mailsink/src/features/login/login-form.tsx
 msgid "Checking…"
 msgstr "Vérification…"
@@ -36,9 +67,65 @@ msgstr "Vérification…"
 msgid "Choose a workspace"
 msgstr "Choisir un workspace"
 
+#: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
+msgid "Clicked: choose a link"
+msgstr "Clicked : choisir un lien"
+
+#: apps/mailsink/src/features/message-viewer/purge-button.tsx
+msgid "Confirm the purge ({count})"
+msgstr "Confirmer la purge ({count})"
+
+#: apps/mailsink/src/features/realtime/live-indicator.tsx
+msgid "Connecting…"
+msgstr "Connexion…"
+
+#: apps/mailsink/src/features/inbox/filter-bar.tsx
+msgid "Connection"
+msgstr "Connexion"
+
+#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+msgid "Copied"
+msgstr "Copié"
+
+#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+msgid "Copy"
+msgstr "Copier"
+
+#: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
+msgid "Custom URL"
+msgstr "URL personnalisée"
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Dark background"
+msgstr "Fond sombre"
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Desktop"
+msgstr "Desktop"
+
+#: apps/mailsink/src/features/message-viewer/links-tab.tsx
+msgid "Download"
+msgstr "Télécharger"
+
+#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+msgid "Download .eml"
+msgstr "Télécharger le .eml"
+
 #: apps/mailsink/src/routes/index.tsx
 msgid "Each workspace keeps its own messages, connections and webhooks."
 msgstr "Chaque workspace a ses propres messages, connexions et webhooks."
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Email preview"
+msgstr "Aperçu de l'email"
+
+#: apps/mailsink/src/features/inbox/empty-inbox.tsx
+msgid "Emails sent through a connection of this workspace show up here in real time. No message ever leaves Mailsink."
+msgstr "Les emails envoyés via une connexion de ce workspace apparaissent ici en temps réel. Aucun message ne quitte Mailsink."
+
+#: apps/mailsink/src/features/inbox/empty-inbox.tsx
+msgid "Empty inbox for <0>{slug}</0>"
+msgstr "Boîte vide pour <0>{slug}</0>"
 
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "Enter the admin key the operator of this instance gave you."
@@ -56,13 +143,55 @@ msgstr "Éphémère · {left}"
 msgid "Ephemeral workspaces"
 msgstr "Workspaces éphémères"
 
+#: apps/mailsink/src/features/message-viewer/use-simulate.ts
+msgid "Events recorded: {events}. Webhook deliveries queued: {deliveries}."
+msgstr "Événements enregistrés : {events}. Livraisons webhook en file : {deliveries}."
+
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "Every email caught. None delivered."
 msgstr "Tout arrive. Rien ne part."
 
+#. placeholder {0}: formatBytes(raw.sizeBytes, i18n.locale)
+#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+msgid "First 512 KB of {0}: download the file for the whole source."
+msgstr "Premiers 512 Ko sur {0} : téléchargez le fichier pour la source complète."
+
+#: apps/mailsink/src/features/message-viewer/viewer-header.tsx
+msgid "From"
+msgstr "De"
+
+#. placeholder {0}: headers.length
+#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+msgid "Headers · {0}"
+msgstr "Headers · {0}"
+
+#: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+msgid "Headers & MIME"
+msgstr "Headers & MIME"
+
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Hide"
 msgstr "Masquer"
+
+#: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+msgid "History"
+msgstr "Historique"
+
+#: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
+msgid "https://… custom URL"
+msgstr "https://… URL personnalisée"
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "iframe sandbox · scripts blocked · 375 px"
+msgstr "iframe sandbox · scripts bloqués · 375 px"
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "iframe sandbox · scripts blocked · fluid"
+msgstr "iframe sandbox · scripts bloqués · fluide"
+
+#: apps/mailsink/src/features/inbox/inbox-page.tsx
+msgid "Inbox"
+msgstr "Boîte de réception"
 
 #: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Instance"
@@ -77,29 +206,104 @@ msgstr "Langue"
 msgid "Language and session"
 msgstr "Langue et session"
 
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Light background"
+msgstr "Fond clair"
+
+#: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+msgid "Links & attachments"
+msgstr "Liens & PJ"
+
+#. placeholder {0}: message.links.length
+#: apps/mailsink/src/features/message-viewer/links-tab.tsx
+msgid "Links found · {0}"
+msgstr "Liens détectés · {0}"
+
+#. placeholder {0}: message.links.length
+#: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
+msgid "Links found in the message ({0})"
+msgstr "Liens extraits du message ({0})"
+
+#: apps/mailsink/src/features/realtime/live-indicator.tsx
+msgid "Live"
+msgstr "Live"
+
+#: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+msgid "Loading message…"
+msgstr "Chargement du message…"
+
+#: apps/mailsink/src/features/inbox/message-list.tsx
+msgid "Loading older messages…"
+msgstr "Chargement des messages plus anciens…"
+
 #: apps/mailsink/src/features/workspaces/workspace-picker.tsx
 msgid "Loading workspaces…"
 msgstr "Chargement des workspaces…"
+
+#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+msgid "Loading…"
+msgstr "Chargement…"
 
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Logs"
 msgstr "Logs"
 
+#: apps/mailsink/src/features/inbox/empty-inbox.tsx
+msgid "Manage connections →"
+msgstr "Gérer les connexions →"
+
+#: apps/mailsink/src/features/inbox/inbox-page.tsx
+msgid "Message"
+msgstr "Message"
+
+#: apps/mailsink/src/features/inbox/message-list.tsx
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Messages"
 msgstr "Messages"
+
+#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+msgid "MIME source (EML)"
+msgstr "Source MIME (EML)"
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Mobile"
+msgstr "Mobile"
+
+#: apps/mailsink/src/features/message-viewer/links-tab.tsx
+msgid "No attachment."
+msgstr "Aucune pièce jointe."
+
+#: apps/mailsink/src/features/message-viewer/links-tab.tsx
+msgid "No link."
+msgstr "Aucun lien."
+
+#: apps/mailsink/src/features/inbox/message-list.tsx
+msgid "No message matches."
+msgstr "Aucun message ne correspond."
+
+#: apps/mailsink/src/features/inbox/inbox-page.tsx
+msgid "No message to show with these filters."
+msgstr "Aucun message à afficher avec ces filtres."
+
+#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+msgid "No MIME source was kept for this message."
+msgstr "Aucune source MIME n'a été conservée pour ce message."
 
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "No persistent workspace yet."
 msgstr "Aucun workspace persistant pour l'instant."
 
+#: apps/mailsink/src/features/message-viewer/history-tab.tsx
+msgid "No webhook delivery for this message."
+msgstr "Aucune livraison webhook pour ce message."
+
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 msgstr "Aucun workspace ne s'appelle <0>{workspaceSlug}</0>. Il a peut-être expiré."
 
-#: apps/mailsink/src/features/shell/nav-tabs.tsx
-msgid "Not available yet"
-msgstr "Pas encore disponible"
+#: apps/mailsink/src/features/inbox/relative-time.tsx
+msgid "now"
+msgstr "à l'instant"
 
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Paste"
@@ -109,9 +313,54 @@ msgstr "Coller"
 msgid "Persistent workspaces"
 msgstr "Workspaces persistants"
 
+#: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+msgid "Preview"
+msgstr "Aperçu"
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Preview background"
+msgstr "Fond de l'aperçu"
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Preview width"
+msgstr "Largeur de l'aperçu"
+
 #: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Protection disabled <0>MAILSINK_UI_AUTH=none</0>: no sign-in and no sign-out."
 msgstr "Protection désactivée <0>MAILSINK_UI_AUTH=none</0> : pas de connexion ni de déconnexion."
+
+#: apps/mailsink/src/features/message-viewer/purge-button.tsx
+msgid "Purge the inbox"
+msgstr "Purger la boîte"
+
+#: apps/mailsink/src/features/realtime/live-indicator.tsx
+msgid "Real-time stream (Server-Sent Events) connected"
+msgstr "Flux temps réel (Server-Sent Events) connecté"
+
+#: apps/mailsink/src/features/message-viewer/viewer-header.tsx
+msgid "Received"
+msgstr "Reçu"
+
+#: apps/mailsink/src/features/realtime/live-indicator.tsx
+msgid "Reconnecting…"
+msgstr "Reconnexion…"
+
+#. placeholder {0}: search.tag
+#: apps/mailsink/src/features/inbox/filter-bar.tsx
+msgid "Remove the tag filter {0}"
+msgstr "Retirer le filtre de tag {0}"
+
+#: apps/mailsink/src/features/inbox/filter-bar.tsx
+msgid "Search messages"
+msgstr "Rechercher des messages"
+
+#: apps/mailsink/src/features/inbox/filter-bar.tsx
+msgid "Search subject, body, to:, from:…"
+msgstr "Rechercher sujet, corps, to:, from:…"
+
+#: apps/mailsink/src/features/message-viewer/history-tab.tsx
+msgid "See in the logs explorer →"
+msgstr "Voir dans l'explorateur de logs →"
 
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Settings"
@@ -124,6 +373,14 @@ msgstr "Afficher"
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Show ephemeral workspaces"
 msgstr "Afficher les workspaces éphémères"
+
+#: apps/mailsink/src/features/message-viewer/viewer-header.tsx
+msgid "Show the messages tagged {value}"
+msgstr "Afficher les messages tagués {value}"
+
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Show the text body"
+msgstr "Afficher le texte brut"
 
 #: apps/mailsink/src/features/login/login-form.tsx
 msgid "Sign in"
@@ -141,13 +398,67 @@ msgstr "Se déconnecter"
 msgid "Sign-in failed. Check your connection and try again."
 msgstr "La connexion a échoué. Vérifiez votre réseau et réessayez."
 
+#: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
+msgid "Simulate"
+msgstr "Simuler"
+
+#. placeholder {0}: link.url
+#: apps/mailsink/src/features/message-viewer/links-tab.tsx
+msgid "Simulate a click on {0}"
+msgstr "Simuler un clic sur {0}"
+
+#: apps/mailsink/src/features/message-viewer/links-tab.tsx
+msgid "Simulate click"
+msgstr "Simuler clic webhook"
+
+#. placeholder {0}: mutation.error.message
+#: apps/mailsink/src/features/message-viewer/use-simulate.ts
+msgid "Simulation refused: {0}"
+msgstr "Simulation refusée : {0}"
+
+#: apps/mailsink/src/features/message-viewer/viewer-header.tsx
+msgid "Source"
+msgstr "Source"
+
+#: apps/mailsink/src/features/inbox/filter-bar.tsx
+msgid "Status"
+msgstr "Statut"
+
+#: apps/mailsink/src/features/message-viewer/history-tab.tsx
+msgid "Status timeline"
+msgstr "Timeline des statuts"
+
+#: apps/mailsink/src/features/message-viewer/viewer-header.tsx
+msgid "Tags"
+msgstr "Tags"
+
+#: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+msgid "Text"
+msgstr "Texte"
+
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "The key is never stored in your browser: it is exchanged for a session cookie."
 msgstr "La clé n'est jamais stockée dans le navigateur : elle est échangée contre un cookie de session."
 
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "This message has no HTML body."
+msgstr "Ce message n'a pas de corps HTML."
+
+#: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+msgid "This message has no text body."
+msgstr "Ce message n'a pas de corps texte."
+
+#: apps/mailsink/src/features/message-viewer/message-viewer.tsx
+msgid "This message no longer exists. It may have been purged."
+msgstr "Ce message n'existe plus. Il a peut-être été purgé."
+
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
-msgid "The message list of this workspace is not available yet."
-msgstr "La liste des messages de ce workspace n'est pas encore disponible."
+msgid "This workspace was deleted (expired or removed through the Admin API)."
+msgstr "Ce workspace a été supprimé (expiré ou retiré via l'Admin API)."
+
+#: apps/mailsink/src/features/message-viewer/viewer-header.tsx
+msgid "To"
+msgstr "À"
 
 #: apps/mailsink/src/theme/theme-toggle.tsx
 msgid "Toggle light / dark"
@@ -156,6 +467,11 @@ msgstr "Basculer clair / sombre"
 #: apps/mailsink/src/features/login/login-form.tsx
 msgid "Try again in {countdown}"
 msgstr "Réessayer dans {countdown}"
+
+#. placeholder {0}: deliveries.length
+#: apps/mailsink/src/features/message-viewer/history-tab.tsx
+msgid "Webhook deliveries · {0}"
+msgstr "Livraisons webhook · {0}"
 
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Workspace"
