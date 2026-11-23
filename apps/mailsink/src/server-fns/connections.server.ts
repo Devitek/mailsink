@@ -16,8 +16,9 @@ import {
   removeConnection,
   rotateConnectionCredentials,
   updateConnectionSettings,
+  workspaceKeyPreview,
 } from '@mailsink/core'
-import { findWorkspaceByRef } from '@mailsink/db'
+import { countMessagesByConnection, findWorkspaceByRef } from '@mailsink/db'
 import { publicEndpoints } from '../http/admin/public-endpoints'
 import type { Runtime } from '../runtime/container'
 import type {
@@ -54,7 +55,11 @@ function setupOf(view: ConnectionView, endpoints: PublicEndpoints): ConnectionSe
   return { kind: view.kind, baseUrl: credentials.kind === 'smtp' ? '' : credentials.baseUrl }
 }
 
-export function toConnectionRow(view: ConnectionView, endpoints: PublicEndpoints): ConnectionRow {
+export function toConnectionRow(
+  view: ConnectionView,
+  endpoints: PublicEndpoints,
+  messageCount = 0,
+): ConnectionRow {
   const secrets =
     view.kind === 'smtp'
       ? { kind: 'smtp' as const, smtpUser: view.smtpUsername ?? '', smtpPass: MASKED_PASSWORD }
@@ -63,6 +68,7 @@ export function toConnectionRow(view: ConnectionView, endpoints: PublicEndpoints
     ...view,
     setup: setupOf(view, endpoints),
     maskedSnippet: envSnippet(buildCredentials(secrets, endpoints)),
+    messageCount,
   }
 }
 
@@ -84,11 +90,15 @@ export async function readConnectionsPage(
   const workspace = await findWorkspaceByRef(runtime.db.db, slug)
   if (!workspace || workspace.slug !== slug) return null
   await runtime.activity.touch(workspace.id)
-  const detail = await getWorkspaceDetail(runtime.db.db, workspace.id, runtime.config.publicUrl)
+  const [detail, counts, keyPreview] = await Promise.all([
+    getWorkspaceDetail(runtime.db.db, workspace.id, runtime.config.publicUrl),
+    countMessagesByConnection(runtime.db.db, workspace.id),
+    workspaceKeyPreview(runtime.db.db, workspace.id),
+  ])
   const endpoints = publicEndpoints(runtime)
   return {
-    workspace: toWorkspaceSettings(detail),
-    connections: detail.connections.map((c) => toConnectionRow(c, endpoints)),
+    workspace: { ...toWorkspaceSettings(detail), keyPreview },
+    connections: detail.connections.map((c) => toConnectionRow(c, endpoints, counts.get(c.id))),
   }
 }
 

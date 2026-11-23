@@ -47,6 +47,7 @@ export function pageTitle(
   values?: Record<string, unknown>,
 ): { title: string } {
   const i18n = headI18n(matches)
-  const text = i18n ? i18n._(page.id, values, { message: page.message }) : (page.message ?? page.id)
+  const vars = values ?? page.values
+  const text = i18n ? i18n._(page.id, vars, { message: page.message }) : (page.message ?? page.id)
   return { title: documentTitle(text) }
 }

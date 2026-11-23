@@ -8,6 +8,7 @@ import { ConnectionList } from './connection-list'
 import { ConnectionPanel } from './connection-panel'
 import { NewConnectionForm } from './new-connection-form'
 import { Panel } from './panel'
+import { WorkspaceKeyCard } from './workspace-key-card'
 
 type ConnectionsScreenProps = {
   page: ConnectionsPage
@@ -42,6 +43,7 @@ export function ConnectionsScreen({ page, selected }: ConnectionsScreenProps) {
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-[23px] px-[27px] py-[30px] max-sm:px-4">
         <WorkspaceSummary workspace={page.workspace} />
+        <WorkspaceKeyCard slug={slug} keyPreview={page.workspace.keyPreview ?? null} />
         <div className="flex flex-wrap items-start gap-[23px]">
           <ConnectionList
             slug={slug}

@@ -5,13 +5,17 @@
 # runtime (node:24-slim, non-root).
 
 # The pnpm version pinned by `packageManager` in package.json (`pnpm@x.y.z`, hash suffix
-# dropped). BuildKit keys the COPY below on this file's content, so editing package.json
-# elsewhere (scripts...) keeps the pnpm layer cached.
+# dropped), and the root manifest without its `version`. BuildKit keys the COPY --from below
+# on these files' content, so editing package.json elsewhere (scripts...) keeps the pnpm
+# layer cached, and a release bump of `version` keeps the deps layer cached (#106).
 FROM node:24-slim AS pnpm-spec
 COPY package.json /tmp/package.json
-RUN node -e "const s = require('/tmp/package.json').packageManager.split('+')[0]; \
+RUN node -e "const fs = require('fs'); const pkg = require('/tmp/package.json'); \
+      const s = pkg.packageManager.split('+')[0]; \
       if (!/^pnpm@\d+\.\d+\.\d+$/.test(s)) throw new Error('packageManager: ' + s); \
-      require('fs').writeFileSync('/pnpm-spec', s)"
+      fs.writeFileSync('/pnpm-spec', s); delete pkg.version; \
+      fs.mkdirSync('/manifest'); \
+      fs.writeFileSync('/manifest/package.json', JSON.stringify(pkg, null, 2) + '\\n')"
 
 # pnpm installed with npm (shipped with every Node image) rather than corepack, which
 # Node 25+ no longer bundles.
@@ -23,10 +27,11 @@ RUN npm install --global --no-fund --no-audit "$(cat /pnpm-spec)" && pnpm --vers
 WORKDIR /repo
 
 # Dependencies: the pnpm store (in $PNPM_HOME/store, kept in this layer rather than in a
-# cache mount so a cached layer always comes with its store) only depends on the lockfile,
-# so source edits keep this layer.
+# cache mount so a cached layer always comes with its store) only depends on the lockfile
+# and the version-less root manifest, so source edits and release bumps keep this layer.
 FROM base AS deps
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --from=pnpm-spec /manifest/package.json ./package.json
 RUN pnpm fetch --frozen-lockfile
 
 # Build: the app (Nitro output, self-contained with its traced node_modules) and the CLI.

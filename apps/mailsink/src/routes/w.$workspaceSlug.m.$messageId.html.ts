@@ -5,11 +5,13 @@ export const Route = createFileRoute('/w/$workspaceSlug/m/$messageId/html')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
-        const scheme = new URL(request.url).searchParams.get('scheme') === 'dark' ? 'dark' : 'light'
+        const search = new URL(request.url).searchParams
+        const scheme = search.get('scheme') === 'dark' ? 'dark' : 'light'
         return (await import('../features/message-viewer/download-routes.server')).htmlForSession(
           params.workspaceSlug,
           params.messageId,
           scheme,
+          { blockRemote: search.get('remote') === 'blocked' },
         )
       },
     },

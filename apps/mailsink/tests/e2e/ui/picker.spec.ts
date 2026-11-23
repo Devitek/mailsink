@@ -29,6 +29,29 @@ test('the picker hides ephemeral workspaces until the switch reveals them', asyn
   await ephemeral.getByRole('link', { name: ci.slug }).click()
   await expect(page).toHaveURL(`/w/${ci.slug}`)
   await expect(page.getByRole('heading', { name: ci.name })).toBeVisible()
+
+  // The TTL banner of an ephemeral workspace, under the header.
+  const banner = page.getByRole('region', { name: 'Ephemeral workspace' })
+  await expect(banner).toContainText('Purged in')
+  await expect(banner).toContainText('TTL 10m')
+})
+
+test('the picker searches by slug or name across both sections', async ({ page, workspace }) => {
+  const qa = await workspace()
+  const ci = await workspace({ ephemeral: true })
+  await signIn(page)
+  await page.goto('/?ephemeral=true')
+
+  await page.getByRole('searchbox', { name: 'Search workspaces' }).fill(ci.slug)
+  const ephemeral = page.getByRole('navigation', { name: 'Ephemeral workspaces' })
+  await expect(ephemeral.getByRole('link', { name: ci.slug })).toBeVisible()
+  const persistent = page.getByRole('navigation', { name: 'Persistent workspaces' })
+  await expect(persistent.getByRole('link')).toHaveCount(0)
+  await expect(persistent.getByText('No workspace matches.')).toBeVisible()
+
+  await page.getByRole('searchbox', { name: 'Search workspaces' }).fill(qa.name)
+  await expect(persistent.getByRole('link', { name: qa.slug })).toBeVisible()
+  await expect(ephemeral.getByRole('link')).toHaveCount(0)
 })
 
 test('opening a workspace touches its activity and makes it the next home', async ({

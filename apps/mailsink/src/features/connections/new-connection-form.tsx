@@ -5,9 +5,13 @@ import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 import { firstError, TextField } from '../workspaces/form-fields'
 import { connectionDefaults, connectionSchema } from './connection-form'
+import { ConnectionKindHint } from './connection-kind-hint'
 import { KIND_OPTIONS } from './kinds'
 import { PanelHeader } from './panel'
 import { useConnectionMutations } from './queries'
+
+const touchedError = (meta: { isTouched: boolean; errors: readonly unknown[] }) =>
+  meta.isTouched ? firstError(meta.errors) : undefined
 
 type NewConnectionFormProps = {
   slug: string
@@ -68,7 +72,7 @@ export function NewConnectionForm({ slug, onCreated, onCancel }: NewConnectionFo
               value={field.state.value}
               onChange={field.handleChange}
               onBlur={field.handleBlur}
-              error={field.state.meta.isTouched ? firstError(field.state.meta.errors) : undefined}
+              error={touchedError(field.state.meta)}
               placeholder={t`e.g. resend-transactional`}
               mono
               autoFocus
@@ -93,9 +97,7 @@ export function NewConnectionForm({ slug, onCreated, onCancel }: NewConnectionFo
                       error={
                         usernameTaken
                           ? t`This SMTP username is already taken.`
-                          : field.state.meta.isTouched
-                            ? firstError(field.state.meta.errors)
-                            : undefined
+                          : touchedError(field.state.meta)
                       }
                       description={<Trans>Optional: generated from the workspace slug.</Trans>}
                       mono
@@ -111,9 +113,7 @@ export function NewConnectionForm({ slug, onCreated, onCancel }: NewConnectionFo
                     value={field.state.value}
                     onChange={field.handleChange}
                     onBlur={field.handleBlur}
-                    error={
-                      field.state.meta.isTouched ? firstError(field.state.meta.errors) : undefined
-                    }
+                    error={touchedError(field.state.meta)}
                     description={<Trans>Optional, else the workspace value.</Trans>}
                     inputMode="numeric"
                     suffix="req/s"
@@ -121,19 +121,7 @@ export function NewConnectionForm({ slug, onCreated, onCancel }: NewConnectionFo
                   />
                 )}
               </form.Field>
-              <p className="rounded-md border border-dashed border-ms-border-strong p-4 text-sm text-pretty text-ms-text-muted">
-                {kind === 'smtp' ? (
-                  <Trans>
-                    SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS are generated on creation. Works
-                    with Nodemailer, Symfony Mailer, Django…
-                  </Trans>
-                ) : (
-                  <Trans>
-                    An msk_… key is generated on creation. Point the provider SDK at the Mailsink
-                    base URL: no application code change.
-                  </Trans>
-                )}
-              </p>
+              <ConnectionKindHint kind={kind} />
             </>
           )}
         </form.Subscribe>
