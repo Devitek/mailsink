@@ -22,6 +22,7 @@ export {
   DataTablePagination,
   type DataTablePaginationProps,
 } from './components/data-table-pagination'
+export type { DataTableVirtual } from './components/data-table-rows'
 export {
   Dialog,
   DialogBody,

@@ -8,9 +8,11 @@ import { type RetentionValues, retentionSchema, toRetentionPatch } from './defau
 import { useSaveDefaults } from './queries'
 import { SaveState } from './save-state'
 import { SectionHeader, SettingsCard } from './section-header'
+import { SuppressionCard } from './suppression-card'
 
-// « Rétention » section (#43, D49): default retention of messages and logs, and the message
-// quota of the workspace (the oldest go first beyond it), with the current fill.
+// « Rétention & suppression » section (#43, D49): default retention of messages and logs,
+// the message quota of the workspace (the oldest go first beyond it) with the current fill,
+// then the suppression list (count and link to its page).
 export function RetentionSection({ page }: Readonly<{ page: SettingsPage }>) {
   const { t, i18n } = useLingui()
   const { workspace } = page
@@ -90,6 +92,7 @@ export function RetentionSection({ page }: Readonly<{ page: SettingsPage }>) {
       <form.Subscribe selector={(state) => state.isSubmitting}>
         {(pending) => <SaveState pending={pending} saved={save.isSuccess} failed={save.isError} />}
       </form.Subscribe>
+      <SuppressionCard slug={workspace.slug} />
     </form>
   )
 }

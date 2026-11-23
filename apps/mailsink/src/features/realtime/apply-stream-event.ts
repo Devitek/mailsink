@@ -2,10 +2,12 @@ import type { DeliveryStatus, StreamEvent } from '@mailsink/contracts'
 import type { InboxPage, InboxRow } from '@mailsink/core'
 import type { InfiniteData, QueryClient, QueryKey } from '@tanstack/react-query'
 import type { ViewerMessage } from '../../server-fns/messages-types'
+import type { WorkspaceSummary } from '../../server-fns/workspace-types'
 import { inboxKey } from '../inbox/queries'
 import { type InboxFilters, matchesFilters } from '../inbox/search-query'
 import { applyLogEvent } from '../logs/apply-log-event'
 import { setOverrideState } from '../override/queries'
+import { suppressionsKey } from '../suppressions/queries'
 
 // How one stream frame changes the TanStack Query cache of the inbox (#39). Cheap changes
 // are written in place (a new row, a status); the rest is returned as keys to invalidate,
@@ -52,6 +54,21 @@ function insertRow(qc: QueryClient, slug: string, row: InboxRow, effects: Stream
   }
 }
 
+/** Statuses that put the address on the suppression list (simulation/recorder.ts). */
+const SUPPRESSING = new Set<DeliveryStatus>(['hard_bounce', 'complained'])
+
+/**
+ * An ingestion or an authenticated API call touched the workspace (D16): the idle TTL of an
+ * ephemeral workspace starts over, so its banner countdown does too. Never moved back.
+ */
+export function refreshExpiry(qc: QueryClient, slug: string, now = Date.now()) {
+  qc.setQueryData<WorkspaceSummary | null>(['workspace', slug], (w) => {
+    if (!w?.ephemeral || !w.idleTtlSeconds || !w.expiresAt) return w
+    const next = now + w.idleTtlSeconds * 1000
+    return next > Date.parse(w.expiresAt) ? { ...w, expiresAt: new Date(next).toISOString() } : w
+  })
+}
+
 export function applyStreamEvent(qc: QueryClient, slug: string, event: StreamEvent): StreamEffects {
   const effects: StreamEffects = { invalidate: [], previews: [], deleted: false }
   switch (event.type) {
@@ -59,11 +76,13 @@ export function applyStreamEvent(qc: QueryClient, slug: string, event: StreamEve
       insertRow(qc, slug, { ...event.message, preview: '' }, effects)
       effects.previews.push(event.message.id)
       effects.invalidate.push(facetsKey(slug))
+      refreshExpiry(qc, slug)
       break
     case 'message.status':
       // Per recipient statuses arrive as message.event; this one is the aggregate.
       if (event.recipient === null) setStatus(qc, slug, event.messageId, event.status)
       effects.invalidate.push(facetsKey(slug), [...messagesKey(slug), event.messageId])
+      if (SUPPRESSING.has(event.status)) effects.invalidate.push(suppressionsKey(slug))
       break
     case 'message.event':
       effects.invalidate.push([...messagesKey(slug), event.messageId])
@@ -75,6 +94,9 @@ export function applyStreamEvent(qc: QueryClient, slug: string, event: StreamEve
       effects.invalidate.push(facetsKey(slug))
       break
     case 'log.api':
+      refreshExpiry(qc, slug)
+      effects.invalidate.push(facetsKey(slug))
+      break
     case 'log.smtp':
       effects.invalidate.push(facetsKey(slug))
       break

@@ -33,7 +33,13 @@ export async function createWorkspace(
   const res = await admin.post('/admin/workspaces', {
     // The idle TTL is the safety net: a worker killed before its teardown leaves a
     // workspace the GC deletes 10 minutes after its last call.
-    data: { name, ephemeral: true, idleTtlSeconds: 600, connections: [{ kind: 'resend', name }] },
+    data: {
+      name,
+      ephemeral: true,
+      idleTtlSeconds: 600,
+      metadata: { createdBy: `playwright · ${name}` },
+      connections: [{ kind: 'resend', name }],
+    },
   })
   if (res.status() !== 201)
     throw new Error(`workspace creation: ${res.status()} ${await res.text()}`)

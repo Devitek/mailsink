@@ -1,6 +1,6 @@
 import { cn } from '@mailsink/ui'
 import type { ReactNode } from 'react'
-import { CopyButton } from './copy-button'
+import { CopyButton } from '../shell/copy-button'
 
 // Read-only credential values of the prototype connection panel: a mono box on the page
 // background, then its actions (copy, rotate). Labels such as SMTP_HOST stay in mono.
