@@ -5,6 +5,7 @@ import {
   createJobRunner,
   DEFAULT_JOB_SETTINGS,
   type EventBus,
+  publishExpiredOverrides,
   simulateDeliveryHandler,
   startEphemeralGc,
   startOverrideExpiryScheduler,
@@ -99,8 +100,13 @@ export async function createRuntime(
       log,
     })
     const gc = startEphemeralGc({ db: db.db, bus, activity, log })
-    // Closes overrides past their TTL (#22); reads already ignore them.
-    const overrideExpiry = startOverrideExpiryScheduler({ db: db.db, log })
+    // Closes overrides past their TTL (#22); reads already ignore them. Each pass that
+    // closes some publishes override.changed on the workspaces concerned (D96).
+    const overrideExpiry = startOverrideExpiryScheduler({
+      db: db.db,
+      log,
+      onExpired: (closed) => publishExpiredOverrides(db.db, bus, closed),
+    })
 
     return {
       config,

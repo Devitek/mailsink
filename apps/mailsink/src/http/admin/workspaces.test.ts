@@ -6,6 +6,7 @@ import {
 import { describeDb } from '@mailsink/db/testing'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { stopRuntime } from '../../runtime/boot'
+import type { Runtime } from '../../runtime/container'
 import { ADMIN_KEY, installTestRuntime, request, seedWorkspace } from '../test-fixtures'
 import { deleteWorkspace, getWorkspace, listWorkspaces, postWorkspace } from './workspaces'
 
@@ -28,8 +29,12 @@ async function call(
 
 describeDb('Admin API: workspaces', (ctx) => {
   let seeded: Awaited<ReturnType<typeof seedWorkspace>>
+  let runtime: Runtime
   beforeAll(async () => {
-    await installTestRuntime(ctx.handle, { publicUrl: 'https://mail.test', smtpPort: 2525 })
+    runtime = await installTestRuntime(ctx.handle, {
+      publicUrl: 'https://mail.test',
+      smtpPort: 2525,
+    })
     seeded = await seedWorkspace(ctx.db)
   })
   afterAll(() => stopRuntime())
@@ -105,11 +110,18 @@ describeDb('Admin API: workspaces', (ctx) => {
     expect(bad.status).toBe(422)
   })
 
-  it('deletes a workspace (204) then answers 404', async () => {
+  it('deletes a workspace (204), publishes workspace.deleted, then answers 404', async () => {
     const id = seeded.workspace.id
+    const seen: unknown[] = []
+    const off = runtime.bus.subscribe(id, (frame) => seen.push(frame))
+    const slug = seeded.workspace.slug
     expect(
-      await call(deleteWorkspace, `/admin/workspaces/${id}`, { method: 'DELETE' }, { id }),
+      await call(deleteWorkspace, `/admin/workspaces/${slug}`, { method: 'DELETE' }, { id: slug }),
     ).toEqual({ status: 204, body: null })
+    off()
+    expect(seen).toEqual([
+      { id: null, connectionId: null, event: { type: 'workspace.deleted', workspaceId: id } },
+    ])
     const again = await call(
       deleteWorkspace,
       `/admin/workspaces/${id}`,

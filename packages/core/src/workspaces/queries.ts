@@ -55,8 +55,12 @@ export async function getWorkspaceDetail(
   }
 }
 
-/** Immediate hard delete by id or slug; connections, keys, messages and logs cascade. */
-export async function removeWorkspace(db: Database, ref: string): Promise<void> {
+/**
+ * Immediate hard delete by id or slug; connections, keys, messages and logs cascade.
+ * Resolves with the deleted id, the channel on which `workspace.deleted` goes (D97).
+ */
+export async function removeWorkspace(db: Database, ref: string): Promise<string> {
   const workspace = await findWorkspaceByRef(db, ref)
   if (!workspace || !(await deleteWorkspace(db, workspace.id))) throw notFound()
+  return workspace.id
 }

@@ -4,6 +4,7 @@ import {
   enqueueJobs,
   listRecipientsForSimulation,
   lockMessage,
+  type MessageEventRow,
   type SimulatedRecipient,
   setMessageSimulation,
   setMessageStatus,
@@ -37,8 +38,13 @@ export type SimulationResult =
   | {
       kind: 'done'
       messageStatus: DeliveryStatus | undefined
-      /** In write order: what #26 publishes on the event bus. */
+      /** Connection of the message (stream filter of the published frames). */
+      connectionId: string | null
+      /** In write order, each with the id of its `message_events` row. */
       transitions: RecipientTransition[]
+      /** The `message_events` rows written by the run, in write order: what the job handler
+       * publishes on the event bus without reading them back (D95). */
+      events: MessageEventRow[]
       /** Addresses added to the suppression list by this run. */
       suppressed: string[]
       /** When the follow-up job runs (a decision is still pending), else null. */
@@ -138,7 +144,15 @@ export async function simulateDelivery(
         },
       ])
     }
-    return { kind: 'done', messageStatus, transitions: recorder.transitions, suppressed, nextRunAt }
+    return {
+      kind: 'done',
+      messageStatus,
+      connectionId: message.connectionId,
+      transitions: recorder.transitions,
+      events: recorder.events,
+      suppressed,
+      nextRunAt,
+    }
   })
 }
 
