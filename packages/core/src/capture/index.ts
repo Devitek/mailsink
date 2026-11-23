@@ -10,3 +10,4 @@ export {
   readRawMessage,
 } from './service'
 export { type CapturedMessageDetail, capturePaths } from './views'
+export { type WaitDeps, waitForMessages } from './wait'

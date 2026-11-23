@@ -18,6 +18,7 @@ export {
 export { hashApiKey, secretsEqual } from './crypto'
 export { fromNativeRequest } from './dialects/native'
 export { DomainError, type DomainErrorOptions, ERROR_STATUS, isDomainError } from './errors'
+export * from './events'
 export { attachmentContentType, composeEml, messageIdHeader } from './ingestion/compose-eml'
 export * from './ingestion/idempotency'
 export { type ExtractedLink, extractLinks } from './ingestion/links'
@@ -37,6 +38,7 @@ export * from './ingestion/pipeline'
 export * from './ingestion/prepare'
 export { type BackoffOptions, backoffSeconds } from './jobs/backoff'
 export { type SimulateDeliveryPayload, simulateDeliveryHandler } from './jobs/handlers/simulate'
+export type { PublishSimulationOptions } from './jobs/handlers/simulate-publish'
 export {
   createJobRunner,
   type JobContext,
@@ -98,6 +100,19 @@ export {
   resetSuppressions,
   toSuppressionView,
 } from './suppression/service'
+export {
+  ACTIVITY_THROTTLE_MS,
+  type ActivityTracker,
+  type ActivityTrackerOptions,
+  createActivityTracker,
+} from './workspaces/activity'
+export {
+  EPHEMERAL_GC_INTERVAL_MS,
+  type EphemeralGcOptions,
+  type EphemeralGcSchedulerOptions,
+  runEphemeralGc,
+  startEphemeralGc,
+} from './workspaces/expiry'
 export { createWorkspace, type ProvisionOptions } from './workspaces/provision'
 export {
   getWorkspaceDetail,

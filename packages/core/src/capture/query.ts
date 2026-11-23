@@ -1,6 +1,6 @@
 import type { ListMessagesQuery } from '@mailsink/contracts'
 import type { MessageSearch } from '@mailsink/db'
-import { decodeCursor, queryError } from './cursor'
+import { decodeCursor } from './cursor'
 
 /** `name` or `name:value` (split on the first colon, so values may contain colons). */
 export function parseTagFilter(tag: string): { name: string; value?: string } {
@@ -9,14 +9,10 @@ export function parseTagFilter(tag: string): { name: string; value?: string } {
 }
 
 /**
- * Turns the validated query string into repository filters for one workspace.
- * `wait=true` (long polling) lands with #26: until then it is refused with a 422
- * (`wait_not_supported`) rather than silently answering without waiting.
+ * Turns the validated query string into repository filters for one workspace. `wait` and
+ * `timeout` are not filters: `waitForMessages` (wait.ts) handles them.
  */
 export function toMessageSearch(workspaceId: string, query: ListMessagesQuery): MessageSearch {
-  if (query.wait) {
-    throw queryError('wait', 'wait_not_supported', 'wait=true is not supported yet')
-  }
   return {
     workspaceId,
     to: query.to || undefined,
