@@ -15,9 +15,11 @@ export {
   type ActiveApiKey,
   type ApiKey,
   activeKeyPrefixes,
+  activeWorkspaceKeyPrefix,
   findActiveApiKeyByHash,
   insertApiKeys,
   type NewApiKey,
+  revokeWorkspaceKeys,
 } from './repositories/api-keys'
 export {
   getBlobData,

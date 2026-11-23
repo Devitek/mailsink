@@ -59,3 +59,43 @@ export async function activeKeyPrefixes(
   }
   return out
 }
+
+/** Revokes every active workspace key (`mskw_`) of a workspace; resolves with the count. */
+export async function revokeWorkspaceKeys(
+  db: Executor,
+  workspaceId: string,
+  at: Date,
+): Promise<number> {
+  const rows = await db
+    .update(apiKeys)
+    .set({ revokedAt: at })
+    .where(
+      and(
+        eq(apiKeys.workspaceId, workspaceId),
+        eq(apiKeys.scope, 'workspace'),
+        isNull(apiKeys.revokedAt),
+      ),
+    )
+    .returning({ id: apiKeys.id })
+  return rows.length
+}
+
+/** `display_prefix` of the newest active workspace key, or null when none is active. */
+export async function activeWorkspaceKeyPrefix(
+  db: Executor,
+  workspaceId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ displayPrefix: apiKeys.displayPrefix })
+    .from(apiKeys)
+    .where(
+      and(
+        eq(apiKeys.workspaceId, workspaceId),
+        eq(apiKeys.scope, 'workspace'),
+        isNull(apiKeys.revokedAt),
+      ),
+    )
+    .orderBy(desc(apiKeys.createdAt), desc(apiKeys.id))
+    .limit(1)
+  return row?.displayPrefix ?? null
+}
