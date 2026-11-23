@@ -96,6 +96,7 @@ const Env = z
     MAILSINK_UI_LOGIN_MAX_ATTEMPTS: Int(1, 1000, 'a number of attempts').default(5),
     MAILSINK_UI_LOGIN_LOCK_SECONDS: Int(1, 86_400, 'a number of seconds').default(60),
     MAILSINK_WEBHOOK_BLOCK_PRIVATE: z.stringbool({ error: 'must be true or false' }).default(false),
+    MAILSINK_TRUST_PROXY: z.stringbool({ error: 'must be true or false' }).default(false),
   })
   .refine(
     (e) => (e.MAILSINK_SMTP_TLS_CERT === undefined) === (e.MAILSINK_SMTP_TLS_KEY === undefined),
@@ -144,6 +145,11 @@ export type RuntimeConfig = {
    * loopback or link-local addresses, at creation and at send time. Off when unset.
    */
   webhookBlockPrivate?: boolean
+  /**
+   * `MAILSINK_TRUST_PROXY` (D185): read `X-Forwarded-For` for the client address of the
+   * sign-in limiter and of the request log. Off when unset.
+   */
+  trustProxy?: boolean
   /**
    * Web UI sign-in (#37, D13). Always set by readRuntimeConfig; optional so hand-built test
    * configs need not list it (UI_AUTH_DEFAULTS applies).
@@ -206,6 +212,7 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
       loginLockSeconds: e.MAILSINK_UI_LOGIN_LOCK_SECONDS,
     },
     webhookBlockPrivate: e.MAILSINK_WEBHOOK_BLOCK_PRIVATE,
+    trustProxy: e.MAILSINK_TRUST_PROXY,
     jobs: {
       batchSize: e.MAILSINK_JOBS_BATCH_SIZE,
       lockSeconds: e.MAILSINK_JOBS_LOCK_SECONDS,
