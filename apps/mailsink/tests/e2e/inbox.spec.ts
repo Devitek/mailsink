@@ -56,7 +56,10 @@ test('filters live in the URL and survive a reload', async ({ page, inbox }) => 
   await expect(list.getByRole('link')).toHaveCount(2)
   // A tag of the viewer filters the inbox.
   await list.getByRole('link', { name: booking.subject }).click()
-  await page.getByRole('list', { name: 'Tags' }).getByRole('link', { name: 'category booking' }).click()
+  await page
+    .getByRole('list', { name: 'Tags' })
+    .getByRole('link', { name: 'category booking' })
+    .click()
   await expect(page).toHaveURL(/tag=category%3Abooking/)
   await expect(list.getByRole('link')).toHaveCount(1)
   await page.getByRole('button', { name: 'Remove the tag filter category:booking' }).click()
