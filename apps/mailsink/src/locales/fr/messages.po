@@ -126,6 +126,7 @@ msgid "Show ephemeral workspaces"
 msgstr "Afficher les workspaces éphémères"
 
 #: apps/mailsink/src/features/login/login-form.tsx
+#: apps/mailsink/src/routes/login.tsx
 msgid "Sign in"
 msgstr "Se connecter"
 

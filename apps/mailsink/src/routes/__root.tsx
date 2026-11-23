@@ -5,6 +5,7 @@ import { createI18n, loadCatalog } from '../i18n/lingui'
 import { getRequestLocale } from '../i18n/locale-fns'
 import type { Locale } from '../i18n/locales'
 import type { RouterContext } from '../router'
+import { documentTitle } from '../seo/page-title'
 import { getPublicUrl } from '../seo/public-url-fns'
 import { socialMeta } from '../seo/social-meta'
 import { getInstanceInfo } from '../server-fns/instance-fns'
@@ -18,9 +19,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Mailsink' },
+      { title: documentTitle() },
       { name: 'description', content: 'Every email caught. None delivered.' },
-      ...socialMeta(loaderData?.publicUrl, matches.at(-1)?.pathname ?? '/'),
+      ...socialMeta(loaderData?.publicUrl, matches.at(-1)?.pathname ?? '/', loaderData?.locale),
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
