@@ -217,3 +217,4 @@ export {
 export { generateSlug, slugify } from './workspaces/slug'
 export { updateWorkspaceSettings } from './workspaces/update'
 export { toConnectionView, toWorkspaceView, workspaceUrls } from './workspaces/views'
+export { rotateWorkspaceKey, workspaceKeyPreview } from './workspaces/workspace-key'

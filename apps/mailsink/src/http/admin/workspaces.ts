@@ -1,9 +1,16 @@
-import { CreateWorkspaceRequest, ListWorkspacesQuery, WorkspaceRef } from '@mailsink/contracts'
+import {
+  CreateWorkspaceRequest,
+  ListWorkspacesQuery,
+  UpdateWorkspaceRequest,
+  WorkspaceRef,
+} from '@mailsink/contracts'
 import {
   createWorkspace,
   getWorkspaceDetail,
   listWorkspaceViews,
   removeWorkspace,
+  rotateWorkspaceKey,
+  updateWorkspaceSettings,
 } from '@mailsink/core'
 import { z } from 'zod'
 import type { Runtime } from '../../runtime/container'
@@ -39,6 +46,22 @@ export const getWorkspace = defineApi({
   params: RefParams,
   handler: ({ runtime, params }) =>
     getWorkspaceDetail(runtime.db.db, params.id, runtime.config.publicUrl),
+})
+
+/** `PATCH /admin/workspaces/:id`: name, description, retention, rate limit (#106). */
+export const patchWorkspace = defineApi({
+  auth: 'admin',
+  params: RefParams,
+  body: UpdateWorkspaceRequest,
+  handler: ({ runtime, params, body }) =>
+    updateWorkspaceSettings(runtime.db.db, params.id, body, runtime.config.publicUrl),
+})
+
+/** `POST /admin/workspaces/:id/key/rotate`: a new `mskw_` key, the previous one revoked. */
+export const rotateWorkspaceKeyApi = defineApi({
+  auth: 'admin',
+  params: RefParams,
+  handler: ({ runtime, params }) => rotateWorkspaceKey(runtime.db.db, params.id),
 })
 
 /**
