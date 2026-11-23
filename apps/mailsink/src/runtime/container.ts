@@ -53,7 +53,8 @@ export interface CreateRuntimeOptions {
 /**
  * Opens and migrates the database, then starts the SMTP listener, the job worker and the
  * retention scheduler.
- * Called once per process by boot.ts. On failure, whatever was opened is closed again.
+ * Called once per process by boot.ts. On failure, whatever was opened or started (database,
+ * SMTP listener, workers) is closed again.
  */
 export async function createRuntime(
   config: RuntimeConfig,
@@ -68,6 +69,8 @@ export async function createRuntime(
   const db = createDb(config.databaseUrl, {
     onConnectionError: (error) => log.warn(`[mailsink] database connection lost: ${error.message}`),
   })
+  // Services started so far, closed in reverse order if a later step fails.
+  const started: (() => Promise<void>)[] = []
   try {
     await migrate(db, { migrationsFolder: options.migrationsFolder })
     log.info(`[mailsink] database ready (${db.driver}, migrations applied)`)
@@ -97,6 +100,7 @@ export async function createRuntime(
       recordSmtpSession: (record) => logs.recordSmtpSession(record),
       log,
     })
+    started.push(() => smtp.close())
 
     // Job queue (D5): handlers join here (deliver_webhook with #33); kinds without a
     // handler stay in the table untouched.
@@ -120,13 +124,16 @@ export async function createRuntime(
       },
       onError: (error) => log.error('[mailsink] worker tick failed', error),
     })
+    started.push(() => worker.stop())
     const retention = startRetentionScheduler({
       db: db.db,
       intervalMs: config.retentionIntervalMs ?? 60_000,
       failedJobRetentionSeconds: jobs.failedRetentionSeconds,
       log,
     })
+    started.push(() => retention.stop())
     const gc = startEphemeralGc({ db: db.db, bus, activity, log })
+    started.push(() => gc.stop())
     // Closes overrides past their TTL (#22); reads already ignore them. Each pass that
     // closes some publishes override.changed on the workspaces concerned (D96).
     const overrideExpiry = startOverrideExpiryScheduler({
@@ -157,6 +164,7 @@ export async function createRuntime(
     }
     return self
   } catch (error) {
+    for (const close of started.reverse()) await close().catch(() => {})
     await db.close().catch(() => {})
     throw error
   }
