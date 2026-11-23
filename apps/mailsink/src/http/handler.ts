@@ -91,7 +91,11 @@ export function defineApi<
       )
     } catch (error) {
       failure = error
-      response = errorResponse(error, { requestId, format: spec.errorFormat })
+      response = errorResponse(error, {
+        requestId,
+        format: spec.errorFormat,
+        method: request.method,
+      })
     }
     if (runtime)
       await runOnResponse(

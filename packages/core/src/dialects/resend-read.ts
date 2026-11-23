@@ -38,6 +38,15 @@ export function resendTimestamp(date: Date): string {
  * `GET /emails/:id`: a message of the workspace by its Resend id, any source (D121).
  * A malformed id is Resend's `422 invalid_parameter`, an unknown one `404 not_found`.
  */
+/**
+ * `Message-ID` the recipient saw: the one an SMTP client wrote itself (kept in `headers`),
+ * else the one Mailsink composed for an API message.
+ */
+function messageIdOf(message: { id: string; source: string; headers: Record<string, string> }) {
+  const own = message.source === 'smtp' ? message.headers['message-id']?.trim() : undefined
+  return own || messageIdHeader(message.id)
+}
+
 export async function getResendEmail(
   db: Database,
   workspaceId: string,
@@ -60,7 +69,7 @@ export async function getResendEmail(
   return {
     object: 'email',
     id: resendIdOf(message.id),
-    message_id: messageIdHeader(message.id),
+    message_id: messageIdOf(message),
     to: of('to'),
     from: formatAddress(message.from as Address),
     created_at: resendTimestamp(message.createdAt),
