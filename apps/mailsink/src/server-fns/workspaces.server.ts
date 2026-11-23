@@ -5,7 +5,7 @@ import {
   listWorkspaces,
   type Workspace,
 } from '@mailsink/db'
-import { getCookie, setCookie } from '@tanstack/react-start/server'
+import { startServer } from '../http/start-server'
 import type { Runtime } from '../runtime/container'
 import type { WorkspacePage, WorkspaceSummary } from './workspace-types'
 
@@ -81,6 +81,7 @@ export async function openWorkspace(
   const workspace = await findWorkspaceByRef(runtime.db.db, slug)
   if (!workspace || workspace.slug !== slug) return null
   await runtime.activity.touch(workspace.id)
+  const { setCookie } = await startServer()
   setCookie(LAST_WORKSPACE_COOKIE, workspace.slug, {
     path: '/',
     maxAge: 365 * 86_400,
@@ -91,6 +92,7 @@ export async function openWorkspace(
 }
 
 export async function lastWorkspaceHome(runtime: Runtime): Promise<string> {
+  const { getCookie } = await startServer()
   const slug = getCookie(LAST_WORKSPACE_COOKIE)
   const workspace = slug ? await findWorkspaceByRef(runtime.db.db, slug) : undefined
   return workspace && workspace.slug === slug ? `/w/${encodeURIComponent(slug)}` : '/'
