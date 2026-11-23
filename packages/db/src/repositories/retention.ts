@@ -69,7 +69,16 @@ export function purgeExpiredMessages(db: Executor): Promise<number> {
   return purgeRetained(db, 'messages', 'created_at')
 }
 
-/** Keeps the `max_messages` newest messages of each bounded workspace, oldest go first. */
+/**
+ * Keeps the `max_messages` newest messages of each bounded workspace, oldest go first.
+ *
+ * Each bounded workspace is read backward on `messages_ws_created_idx` (index-only) up to
+ * its cap. Measured on Postgres 18 (#77), steady state with nothing to purge: 35 ms for
+ * 200 workspaces capped at 1 000 (301 000 messages), 240 ms for 1 000 such workspaces
+ * (1.1 M messages). A set-based `row_number() over (partition by workspace_id)` delete took
+ * 1.9 s on the latter (it sorts every message of every bounded workspace), so the lateral
+ * form stays.
+ */
 export function enforceMaxMessages(db: Executor): Promise<number> {
   return countDeleted(
     db,
