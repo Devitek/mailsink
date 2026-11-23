@@ -132,6 +132,7 @@ export {
   purgeExpiredMessages,
   purgeFailedJobs,
 } from './repositories/retention'
+export { purgeExpiredWebhookDeliveries } from './repositories/retention-webhooks'
 export {
   addSuppressions,
   deleteSuppressions,

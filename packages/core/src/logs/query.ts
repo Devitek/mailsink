@@ -18,10 +18,13 @@ import { toApiLogDetail, toApiLogSummary, toSmtpSessionDetail, toSmtpSessionSumm
 
 const date = (iso: string | undefined) => (iso ? new Date(iso) : undefined)
 
-/** `GET /capture/logs/api`: one page of the workspace's API calls, with the total. */
+/**
+ * `GET /capture/logs/api`: one page of the workspace's API calls, with the total. With a
+ * `null` workspace, `GET /admin/logs/api`: the calls no workspace owns (D151).
+ */
 export async function listApiLogViews(
   db: Executor,
-  workspaceId: string,
+  workspaceId: string | null,
   query: ListApiLogsQuery,
 ): Promise<ListApiLogsResponse> {
   const { rows, total } = await listApiLogs(db, workspaceId, {
@@ -44,7 +47,7 @@ export async function listApiLogViews(
 /** `GET /capture/logs/api/:id`; another workspace's row is 404 like a missing one. */
 export async function getApiLogView(
   db: Executor,
-  workspaceId: string,
+  workspaceId: string | null,
   id: string,
 ): Promise<ApiLogDetail> {
   const row = await findApiLog(db, workspaceId, id)

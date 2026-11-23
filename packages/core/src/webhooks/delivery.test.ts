@@ -15,6 +15,7 @@ import { createEventBus, type StreamFrame } from '../events/bus'
 import { deliverWebhookHandler } from '../jobs/handlers/deliver-webhook'
 import { simulateDeliveryHandler } from '../jobs/handlers/simulate'
 import { baselinePlanner } from '../simulation/planner'
+import { simulateDelivery } from '../simulation/simulate-delivery'
 import { replayWebhookDelivery } from './deliveries'
 import { createWebhookEndpoint } from './endpoints'
 import { headerRecord, startTestReceiver, type TestReceiver } from './testing/receiver'
@@ -169,6 +170,19 @@ describeDb('webhook fan-out and delivery', (ctx) => {
       signal,
     })
     expect(receiver.received).toHaveLength(before)
+  })
+
+  it('commits the deliveries and their jobs with the simulation run (D152)', async () => {
+    await endpoint({ events: ['email.delivered'] })
+    const msg = await createTestMessage(ctx.db, ws, { connectionId: con })
+    await createTestRecipients(ctx.db, msg, [{ email: 'jane@x.io' }])
+    const result = await simulateDelivery(ctx.db, msg.id, { planner: baselinePlanner })
+    if (result.kind !== 'done') throw new Error('expected a run')
+    expect(result.deliveries.map((d) => d.delivery.dialectEvent)).toEqual(['email.delivered'])
+    const queued = await claimJobs(ctx.db, { kinds: ['deliver_webhook'] })
+    expect(queued.map((j) => (j.payload as { deliveryId: string }).deliveryId)).toEqual(
+      result.deliveries.map((d) => d.delivery.id),
+    )
   })
 
   it('gives up after the last attempt', async () => {
