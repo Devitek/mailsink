@@ -33,10 +33,10 @@ export function WorkspaceSummary({ workspace }: Readonly<{ workspace: WorkspaceS
       className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-ms-border bg-ms-panel px-[22px] py-[19px]"
     >
       <div className="min-w-0 flex-1">
-        <h1 className="flex items-center gap-2.5 text-heading font-semibold">
+        <h2 className="flex items-center gap-2.5 text-heading font-semibold">
           <span className="truncate">{workspace.name}</span>
           {workspace.ephemeral && <EphemeralBadge expiresAt={workspace.expiresAt} withLabel />}
-        </h1>
+        </h2>
         <p className="font-mono text-xs text-ms-text-faint">/w/{slug}</p>
         {workspace.description && (
           <p className="mt-1 text-sm text-ms-text-muted">{workspace.description}</p>

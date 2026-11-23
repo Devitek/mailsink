@@ -135,7 +135,7 @@ test('edits then deletes a workspace, ephemeral included', async ({ page, admin,
   await edit.getByLabel('Name').fill('Renamed workspace')
   await edit.getByRole('radio', { name: '30d' }).click()
   await edit.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByRole('heading', { name: 'Renamed workspace' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Renamed workspace', level: 2 })).toBeVisible()
   await expect(page.getByTestId('workspace-retention')).toHaveText('30d')
 
   await page.getByRole('button', { name: 'Delete', exact: true }).click()
