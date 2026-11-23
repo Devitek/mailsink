@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/Devitek/mailsink/compare/v0.1.0...v0.2.0) (2026-11-23)
+
+
+### Features
+
+* **api:** génère la spécification OpenAPI 3.1 depuis les contrats et la sert sur /openapi.json ([#124](https://github.com/Devitek/mailsink/issues/124)) ([#129](https://github.com/Devitek/mailsink/issues/129)) ([e6606dc](https://github.com/Devitek/mailsink/commit/e6606dc866fee25d59847b22bbc2a4aeb6a4118d))
+
 ## 0.1.0 (2026-11-23)
 
 Première version publique : Mailsink capture les emails transactionnels sans jamais les délivrer, pour les tests E2E et les environnements de staging. Image `ghcr.io/devitek/mailsink` (amd64, arm64), stockage PGlite embarqué ou PostgreSQL.
