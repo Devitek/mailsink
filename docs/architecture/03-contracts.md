@@ -420,26 +420,95 @@ HTTP behaviour of `POST /v1/emails` and `POST /v1/emails/batch`:
 
 ## Resend dialect (`resend.ts`)
 
+Checked on 23/11 against the Resend API reference and the `resend` Node SDK 6.39 (the
+contract tests run that SDK against Mailsink). Schemas, excerpts:
+
 ```ts
+export const ResendAddress = z.string()             // "jane@x.io" | "Jane <jane@x.io>", no objects
+export const ResendAddressList = z.union([ResendAddress, z.array(ResendAddress)]) // -> array
+export const ResendTag = z.object({ name: TAG_PART, value: TAG_PART })  // [A-Za-z0-9_-]{1,256}
+export const ResendAttachment = z.object({
+  content: z.base64().optional(),                   // the SDK sends a Buffer as base64
+  path: z.string().optional(),                      // refused: Mailsink fetches nothing (D123)
+  filename: z.string().optional(), content_type: z.string().optional(),
+  content_id: z.string().optional(),                // inline cid
+})
 export const ResendSendRequest = z.object({
-  from: z.string(), to: z.union([z.string(), z.array(z.string()).max(50)]),
-  subject: z.string(), bcc: StrOrArr.optional(), cc: StrOrArr.optional(),
-  reply_to: StrOrArr.optional(), replyTo: StrOrArr.optional(), // SDK versions differ
+  from: ResendAddress, to: ResendAddressList, subject: z.string(),
+  cc: ResendAddressList.optional(), bcc: ResendAddressList.optional(),
+  reply_to: ResendAddressList.optional(), replyTo: ResendAddressList.optional(), // pre-1.0 SDKs
   html: z.string().optional(), text: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional(),
-  attachments: z.array(z.object({ content: z.string().optional(), path: z.url().optional(),
-    filename: z.string().optional(), content_type: z.string().optional(),
-    content_id: z.string().optional() })).optional(),         // path: stored, not fetched
-  tags: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
-  scheduled_at: z.string().optional(),                         // stored; delays simulation
-})
-export const ResendSendResponse = z.object({ id: z.uuid() })    // 200
-export const ResendBatchResponse = z.object({ data: z.array(z.object({ id: z.uuid() })) })
-export const ResendError = z.object({                           // e.g. 422 validation_error,
-  statusCode: z.number(), name: z.string(), message: z.string() }) // 429 rate_limit_exceeded
+  attachments: z.array(ResendAttachment).optional(),
+  tags: z.array(ResendTag).optional(),
+  scheduled_at: z.string().optional(),              // accepted, not honoured (D123)
+  topic_id: z.string().nullable().optional(),       // accepted, ignored
+  template: z.unknown().optional(),                 // refused: hosted templates (D123)
+}) // + refinements: to 1..50, html or text present
+export const ResendBatchValidation = z.enum(['strict', 'permissive'])  // x-batch-validation
+export const ResendSendResponse = z.object({ id: z.uuid() })            // 200
+export const ResendBatchResponse = z.object({ data: z.array(z.object({ id: z.uuid() })),
+  errors: z.array(z.object({ index: z.number().int(), message: z.string() })).optional() })
+export const ResendEmail = z.object({               // GET /emails/:id
+  object: z.literal('email'), id: z.uuid(), message_id: z.string(),
+  to: z.array(z.string()), from: z.string(), created_at: z.string(), subject: z.string(),
+  html: z.string().nullable(), text: z.string().nullable(),
+  bcc: z.array(z.string()), cc: z.array(z.string()), reply_to: z.array(z.string()),
+  last_event: ResendLastEvent, scheduled_at: z.string().nullable(),
+  tags: z.array(z.object({ name: z.string(), value: z.string() })) })
+export const ResendErrorBody = z.object({           // every error
+  statusCode: z.number().int(), name: ResendErrorName, message: z.string() })
 ```
 
-Resend batch is all-or-nothing (provider parity); the native batch is partial.
+Behaviour (`core/dialects/resend*.ts`, `http/dialects/resend/`):
+
+- Auth: `Authorization: Bearer msk_…` of a `resend` connection only. A key of another
+  connection kind, a workspace key or the Admin key: `403 restricted_api_key`, checked
+  before the rate limit spends a token. An unknown, revoked or missing key:
+  `401 validation_error` `API key is invalid` (Resend also answers `missing_api_key` for an
+  absent header; Mailsink does not tell them apart).
+- Ids (D120): the Resend id of a message is the UUIDv7 of its `msg_` id
+  (`msg_<uuid>`, also stored as `provider_message_id`), so `GET /emails/:id` reads the
+  message by primary key. `message_id` is the composed `Message-ID` (`<msg_…@mailsink>`).
+- `POST /emails`: validated by the dialect (`parseResendEmail`, not by `defineApi`, which
+  only caps and reads the JSON), mapped by `fromResendRequest` to `NormalizedEmail`
+  (`source: 'resend'`, `metadata: null`), then the shared pipeline. `200 { id }`.
+- `POST /emails/batch` (D121): 1 to 100 emails, no `attachments` (Resend: « not supported
+  yet »). Header `x-batch-validation` (the SDK always sends it): `strict` (default) stores
+  everything or nothing and answers the first refused email, its message prefixed with
+  `emails[i]: `; `permissive` stores the valid emails and answers
+  `200 { data, errors: [{ index, message }] }`, `data` holding the stored ones in order.
+  Any other value: `400 validation_error`.
+- `GET /emails/:id`: any message of the workspace (whatever its source or connection).
+  A malformed id: `422 invalid_parameter` `` The `id` must be a valid UUID. ``; unknown:
+  `404 not_found` `Email not found`. `created_at` as Resend (`2026-04-03 22:13:42.674+00`),
+  `last_event` from the latest message event: `accepted` `queued`, `deferred` and
+  `soft_bounce` `delivery_delayed` (D22), `hard_bounce` `bounced`, the others by name.
+  `scheduled_at` is always `null`.
+- `Idempotency-Key` (the SDK option `idempotencyKey`): the native rules (24 h, scoped to the
+  workspace, stored with the messages), scopes `POST /emails` and
+  `POST /emails/batch <mode>`. Over 256 characters: `400 invalid_idempotency_key`; another
+  body: `409 invalid_idempotent_request`; a replay keeps `Idempotent-Replayed: true`.
+- Validation errors are worded as Resend: a missing `from`, `to` or `subject`, or neither
+  `html` nor `text`: `422 missing_required_field` (`` Missing `to` field. ``); an invalid
+  field: `400 validation_error` (`` Invalid `from` field. The email address needs to
+  follow … ``); an attachment without `content`: `422 invalid_attachment`. A message over
+  `MAILSINK_MAX_MESSAGE_BYTES`: `413 validation_error`.
+- Rate limit and chaos (D122): `INGESTION_EXTENSIONS` on the three routes (Resend's limit
+  counts every request), plus `ratelimit-limit`, `ratelimit-remaining`, `ratelimit-reset`
+  copied from the `X-RateLimit-*` headers (`Retry-After` is shared).
+- Error names (`http/dialects/resend/errors.ts`, D122): `details.resend` set by the dialect
+  wins; otherwise `unauthorized` `validation_error`, `forbidden` `restricted_api_key`,
+  `not_found` `not_found`, `idempotency_mismatch` `invalid_idempotent_request`,
+  `rate_limited` `rate_limit_exceeded`, `chaos_injected` by drawn status (`429`
+  `rate_limit_exceeded`, `503` `service_unavailable`, else `application_error`),
+  `internal_error` `application_error` (`An unexpected error occurred.`), the rest
+  `validation_error`. The body never carries `details`.
+- Not emulated (D123): hosted templates (`template`, `400 validation_error`), attachment
+  `path` URLs (`422 invalid_attachment`), the delay of `scheduled_at`, the plain text
+  Resend generates from `html` when `text` is absent, `topic_id`.
+
+Resend batch is all-or-nothing by default (provider parity); the native batch is partial.
 
 ## Brevo dialect (`brevo.ts`)
 
