@@ -202,6 +202,10 @@ export {
   type WebhookDelivery,
 } from './repositories/webhooks-deliveries'
 export {
+  findWebhookDeliveryFacts,
+  type WebhookDeliveryFacts,
+} from './repositories/webhooks-delivery-facts'
+export {
   deleteExpiredWorkspaces,
   touchWorkspaceActivity,
 } from './repositories/workspace-activity'

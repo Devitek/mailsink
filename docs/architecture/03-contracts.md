@@ -856,7 +856,8 @@ Behaviour (#26, propositions D80 to D84):
 - Frames carry no `event:` field (every frame reaches `EventSource.onmessage`); `data:` is
   one `StreamEvent` JSON, told apart by `type`.
 - One `message_events` row gives one frame whose `id:` is the row id, live and on replay:
-  `accepted` -> `message.created` (current summary), any other type -> `message.event`.
+  `accepted` -> `message.created` (current summary), any other type -> `message.event`
+  (with the `messageId` of its message, D205).
   Derived frames have no `id:` and are never replayed: the aggregated `message.status`
   (`recipient: null`) after a simulation run, `messages.purged`, `override.changed`,
   `workspace.deleted`, `log.api`, `log.smtp`, `webhook.delivery`.
@@ -896,7 +897,7 @@ export const StreamEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('message.created'), message: MessageSummary }),
   z.object({ type: z.literal('message.status'), messageId: z.string(),
     status: DeliveryStatus, recipient: z.string().nullable() }),
-  z.object({ type: z.literal('message.event'), event: MessageEventView }),
+  z.object({ type: z.literal('message.event'), messageId: MessageId, event: MessageEventView }),
   z.object({ type: z.literal('webhook.delivery'), delivery: WebhookDeliveryView }),
   z.object({ type: z.literal('log.api'), log: ApiLogSummary }),
   z.object({ type: z.literal('log.smtp'), session: SmtpSessionSummary }),
