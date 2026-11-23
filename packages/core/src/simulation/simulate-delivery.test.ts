@@ -81,6 +81,18 @@ describeDb('simulateDelivery', (ctx) => {
     expect((await state(id)).events).toHaveLength(2)
   })
 
+  it('returns the event rows it wrote, exactly as stored', async () => {
+    const id = await insertQueuedMessage(ctx.db, workspaceId, [
+      { email: 'a@example.com' },
+      { email: 'b@example.com' },
+    ])
+    const result = await simulateDelivery(ctx.db, id)
+    if (result.kind !== 'done') throw new Error('expected a run')
+    expect(result.connectionId).toBeNull()
+    expect(result.events).toEqual((await state(id)).events)
+    expect(result.events.map((e) => e.id)).toEqual(result.transitions.map((t) => t.eventId))
+  })
+
   it('reports a message that no longer exists', async () => {
     expect(await simulateDelivery(ctx.db, 'msg_missing')).toEqual({ kind: 'missing' })
   })

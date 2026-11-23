@@ -63,6 +63,7 @@ export {
   type OverrideExpirySchedulerOptions,
   startOverrideExpiryScheduler,
 } from './overrides/expiry'
+export { overrideChangedFrame, publishExpiredOverrides } from './overrides/publish'
 export { activateOverride, getOverrideState, resetOverride } from './overrides/service'
 export { toOverrideView } from './overrides/views'
 export {
