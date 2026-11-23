@@ -4,7 +4,7 @@ import { AttachmentId, ListMessagesQuery, MessageId, PurgeQuery } from '@mailsin
 import {
   getCapturedMessage,
   listCapturedMessages,
-  purgeCapturedMessages,
+  purgeAndPublish,
   readAttachment,
   readRawMessage,
   waitForMessages,
@@ -34,15 +34,8 @@ export const listMessages = defineApi({
 export const purgeMessages = defineApi({
   auth: 'workspace',
   query: PurgeQuery,
-  handler: async ({ runtime, auth, query }) => {
-    const purged = await purgeCapturedMessages(runtime.db.db, auth.workspace.id, query)
-    runtime.bus.publish(auth.workspace.id, {
-      id: null,
-      connectionId: query.connectionId ?? null,
-      event: { type: 'messages.purged', count: purged.count },
-    })
-    return purged
-  },
+  handler: ({ runtime, auth, query }) =>
+    purgeAndPublish({ db: runtime.db.db, bus: runtime.bus }, auth.workspace.id, query),
 })
 
 /** GET /capture/messages/:id */

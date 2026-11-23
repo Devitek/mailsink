@@ -10,4 +10,6 @@ export interface McpContext {
   db: Database
   bus: EventBus
   workspace: Workspace
+  /** `MAILSINK_PUBLIC_URL` (no trailing slash): base of the URLs tools return (D35). */
+  publicUrl: string
 }

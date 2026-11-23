@@ -1,12 +1,11 @@
 // Override tools (03-contracts, « Settings and override »): set_override_config,
 // reset_override_config and get_override_config (proposition D168). Every change publishes
 // the new state (D96), activations are recorded with origin `mcp`.
-import { type OverrideState, ResetOverrideRequest } from '@mailsink/contracts'
+import { ResetOverrideRequest } from '@mailsink/contracts'
 import {
-  activateOverride,
+  activateAndPublishOverride,
   getOverrideState,
-  overrideChangedFrame,
-  resetOverride,
+  resetAndPublishOverride,
 } from '@mailsink/core'
 import type { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
@@ -15,11 +14,6 @@ import { runTool } from '../result'
 import { SetOverrideInput } from '../schemas'
 
 export function registerOverrideTools(server: McpServer, ctx: McpContext): void {
-  const published = (connectionId: string | undefined, state: OverrideState) => {
-    ctx.bus.publish(ctx.workspace.id, overrideChangedFrame(state, connectionId ?? null))
-    return state
-  }
-
   server.registerTool(
     'set_override_config',
     {
@@ -31,13 +25,7 @@ export function registerOverrideTools(server: McpServer, ctx: McpContext): void 
       inputSchema: SetOverrideInput,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
-    (request) =>
-      runTool(async () =>
-        published(
-          request.connectionId,
-          await activateOverride(ctx.db, ctx.workspace, request, 'mcp'),
-        ),
-      ),
+    (request) => runTool(() => activateAndPublishOverride(ctx, ctx.workspace, request, 'mcp')),
   )
 
   server.registerTool(
@@ -50,10 +38,7 @@ export function registerOverrideTools(server: McpServer, ctx: McpContext): void 
       inputSchema: ResetOverrideRequest,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
-    ({ connectionId }) =>
-      runTool(async () =>
-        published(connectionId, await resetOverride(ctx.db, ctx.workspace, connectionId)),
-      ),
+    ({ connectionId }) => runTool(() => resetAndPublishOverride(ctx, ctx.workspace, connectionId)),
   )
 
   server.registerTool(
