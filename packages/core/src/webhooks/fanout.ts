@@ -22,6 +22,7 @@ import { deliverWebhookJob } from './jobs'
 export interface FannedOut {
   delivery: WebhookDelivery
   connectionId: string | null
+  endpointUrl: string
 }
 
 export type FanOutEvent = Pick<
@@ -52,6 +53,7 @@ export async function fanOutEvents(
   const scopes = new Map<string, Awaited<ReturnType<typeof listEndpointsInScope>>>()
   const rows: NewWebhookDelivery[] = []
   const scopeOf = new Map<string, string | null>()
+  const urlOf = new Map<string, string>()
   for (const { row, canonical } of emitted) {
     if (!messages.has(row.messageId)) {
       messages.set(row.messageId, await findWebhookMessage(db, workspaceId, row.messageId))
@@ -69,6 +71,7 @@ export async function fanOutEvents(
       if (!dialectEvent) continue
       const id = newId('whd')
       scopeOf.set(id, endpoint.connectionId)
+      urlOf.set(id, endpoint.url)
       const ctx = buildContext(id, endpoint, workspace, message, {
         canonical,
         occurredAt: row.occurredAt,
@@ -97,6 +100,7 @@ export async function fanOutEvents(
   return deliveries.map((delivery) => ({
     delivery,
     connectionId: scopeOf.get(delivery.id) ?? null,
+    endpointUrl: urlOf.get(delivery.id) ?? '',
   }))
 }
 

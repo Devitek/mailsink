@@ -1,6 +1,5 @@
 import { Trans } from '@lingui/react/macro'
-import { useLoaderData } from '@tanstack/react-router'
-import { workspacePagePaths } from './workspace-pages'
+import { Link, useLoaderData } from '@tanstack/react-router'
 
 // Empty inbox of the prototype: what to send to see a message appear here in real time.
 // The « Load demo messages » button lands with its endpoint (#62).
@@ -30,12 +29,13 @@ export function EmptyInbox({ slug }: Readonly<{ slug: string }>) {
         <pre className="m-0 rounded-md border border-ms-border bg-ms-panel px-[22px] py-[19px] font-mono text-xs leading-[1.65] break-all whitespace-pre-wrap text-ms-text-muted">
           {snippet}
         </pre>
-        <a
-          href={workspacePagePaths.connections(slug)}
+        <Link
+          to="/w/$workspaceSlug/connections"
+          params={{ workspaceSlug: slug }}
           className="text-sm text-ms-accent-text underline-offset-4 hover:underline"
         >
           <Trans>Manage connections →</Trans>
-        </a>
+        </Link>
       </div>
     </div>
   )

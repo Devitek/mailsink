@@ -81,9 +81,9 @@ describe('stream frames in the query cache', () => {
       ['logs', 'qa', 'api', 'list'],
       ['logs', 'qa', 'sources'],
     ])
-    expect(event({ type: 'message.event', event: {} } as StreamEvent).invalidate).toEqual([
-      ['inbox', 'qa', 'message'],
-    ])
+    expect(
+      event({ type: 'message.event', messageId: 'msg_2', event: {} } as StreamEvent).invalidate,
+    ).toEqual([['inbox', 'qa', 'message', 'msg_2']])
     expect(
       event({ type: 'webhook.delivery', delivery: { messageId: 'msg_1' } } as StreamEvent)
         .invalidate,

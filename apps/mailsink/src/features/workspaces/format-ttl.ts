@@ -22,3 +22,23 @@ export function formatTimeLeft(
     .format(value)
     .replace(/\s/g, '')
 }
+
+const pad = (n: number) => String(n).padStart(2, '0')
+
+/** Live countdown of the ephemeral banner (« 47m 12s », « 2h 01m 01s »), never negative. */
+export function formatCountdown(expiresAt: string, now: number = Date.now()): string {
+  const total = Math.max(0, Math.floor((Date.parse(expiresAt) - now) / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  return h > 0 ? `${h}h ${pad(m)}m ${pad(s)}s` : `${m}m ${pad(s)}s`
+}
+
+/** An idle TTL in seconds, in the largest unit dividing it (« 1h », « 90m », « 2j »). */
+export function formatTtl(seconds: number, locale: string): string {
+  const ms = seconds * 1000
+  const [unit, size] = UNITS.find(([, s]) => ms >= s && ms % s === 0) ?? ['minute', 60_000]
+  return new Intl.NumberFormat(locale, { style: 'unit', unit, unitDisplay: 'narrow' })
+    .format(Math.round(ms / size))
+    .replace(/\s/g, '')
+}

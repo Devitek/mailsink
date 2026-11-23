@@ -1,4 +1,4 @@
-import { Trans, useLingui } from '@lingui/react/macro'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { buttonVariants, cn } from '@mailsink/ui'
 import { Link } from '@tanstack/react-router'
 import type { ConnectionRow } from '../../server-fns/connections-types'
@@ -54,6 +54,8 @@ export function ConnectionList({ slug, connections, selected }: ConnectionListPr
                 <div className="truncate font-mono text-sm font-medium">{c.name}</div>
                 <div className="text-[11.5px] text-ms-text-faint">
                   {KIND_LABELS[c.kind]}
+                  {' · '}
+                  <Plural value={c.messageCount} one="# message" other="# messages" />
                   {c.disabledAt && (
                     <>
                       {' · '}

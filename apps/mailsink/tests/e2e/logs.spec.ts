@@ -175,7 +175,7 @@ test('webhook deliveries: signature, masked Authorization, optimistic replay', a
     .click()
   await expect(sheet.getByText('Signature valid with the secret whsec_')).toBeVisible()
   await expect(sheet.getByText('X-Mailsink-Signature')).toBeVisible()
-  await sheet.getByRole('button', { name: 'resign' }).click()
+  await sheet.getByRole('radio', { name: 'resign' }).click()
   await sheet.getByRole('button', { name: 'Replay the webhook' }).click()
   await expect(sheet.getByRole('status')).toContainText(/Replay queued as\s*whd_/)
   // The sheet is modal: the table behind it is hidden from the accessibility tree.

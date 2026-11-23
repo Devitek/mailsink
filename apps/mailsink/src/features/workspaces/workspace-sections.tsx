@@ -1,13 +1,12 @@
 import { Plural, Trans, useLingui } from '@lingui/react/macro'
-import { cn, Switch } from '@mailsink/ui'
-import { Link } from '@tanstack/react-router'
-import { useId } from 'react'
-import type { WorkspaceList, WorkspaceSummary } from '../../server-fns/workspace-types'
-import { EphemeralBadge } from './ephemeral-badge'
+import { Input, Switch } from '@mailsink/ui'
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
+import { useDeferredValue, useId, useState } from 'react'
 import { NewWorkspaceDialog } from './new-workspace-dialog'
+import { workspacesQuery } from './queries'
+import { WorkspaceSectionList } from './workspace-section-list'
 
 type SectionsProps = {
-  list: WorkspaceList
   /** Slug of the open workspace: checked in the list. */
   current?: string
   showEphemeral: boolean
@@ -15,49 +14,11 @@ type SectionsProps = {
   onPick?: () => void
 }
 
-function Row({
-  workspace,
-  current,
-  onPick,
-}: Readonly<{ workspace: WorkspaceSummary; current?: string; onPick?: () => void }>) {
-  const active = workspace.slug === current
-  return (
-    <Link
-      to="/w/$workspaceSlug"
-      params={{ workspaceSlug: workspace.slug }}
-      onClick={onPick}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'flex items-center gap-3 rounded-sm px-2.5 py-2 text-ms-text outline-none hover:bg-ms-hover focus-visible:bg-ms-hover focus-visible:focus-ring',
-        active && 'bg-ms-hover',
-      )}
-    >
-      <span aria-hidden className="w-3.5 text-center text-xs text-ms-accent-text">
-        {active ? '✓' : ''}
-      </span>
-      <span
-        className={cn(
-          'min-w-0 flex-1 truncate font-mono text-sm',
-          workspace.ephemeral && 'text-ms-text-muted',
-        )}
-      >
-        {workspace.slug}
-      </span>
-      {workspace.messageCount !== undefined && (
-        <span className="shrink-0 text-xs text-ms-text-faint">
-          <Trans>{workspace.messageCount} msg</Trans>
-        </span>
-      )}
-      {workspace.ephemeral && <EphemeralBadge expiresAt={workspace.expiresAt} />}
-    </Link>
-  )
-}
-
-// Content of the workspace picker (prototype header popover, and the `/` page): persistent
-// workspaces, then the switch revealing the ephemeral ones, hidden by default, and the
-// « + New workspace » action (#38).
+// Content of the workspace picker (prototype header popover, and the `/` page): a search
+// box, the persistent workspaces, then the switch revealing the ephemeral ones, hidden by
+// default, and the « + New workspace » action (#38). Each section is read and paged on its
+// own, so CI leftovers never hide a persistent workspace (#104).
 export function WorkspaceSections({
-  list,
   current,
   showEphemeral,
   onShowEphemeralChange,
@@ -65,22 +26,45 @@ export function WorkspaceSections({
 }: SectionsProps) {
   const { t } = useLingui()
   const labelId = useId()
-  const count = list.ephemeralCount
+  const [text, setText] = useState('')
+  const q = useDeferredValue(text.trim())
+  const persistent = useInfiniteQuery({
+    ...workspacesQuery(false, q),
+    placeholderData: keepPreviousData,
+  })
+  const ephemeral = useInfiniteQuery({
+    ...workspacesQuery(true, q),
+    enabled: showEphemeral,
+    placeholderData: keepPreviousData,
+  })
+  const count = persistent.data?.pages[0]?.ephemeralCount ?? 0
   return (
     <div className="flex flex-col">
+      <div className="px-3 pt-3">
+        <Input
+          type="search"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          aria-label={t`Search workspaces`}
+          placeholder={t`Search by slug or name…`}
+          inputSize="sm"
+        />
+      </div>
       <h2 className="px-4 pt-3.5 pb-2 text-label font-medium tracking-[0.06em] text-ms-text-faint uppercase">
         <Trans>Persistent workspaces</Trans>
       </h2>
-      <nav aria-label={t`Persistent workspaces`} className="flex flex-col gap-px px-2 pb-2">
-        {list.persistent.map((w) => (
-          <Row key={w.id} workspace={w} current={current} onPick={onPick} />
-        ))}
-        {list.persistent.length === 0 && (
-          <p className="px-2.5 py-2 text-body text-ms-text-muted">
-            <Trans>No persistent workspace yet.</Trans>
-          </p>
-        )}
-      </nav>
+      <WorkspaceSectionList
+        label={t`Persistent workspaces`}
+        data={persistent.data}
+        current={current}
+        onPick={onPick}
+        empty={
+          q ? <Trans>No workspace matches.</Trans> : <Trans>No persistent workspace yet.</Trans>
+        }
+        hasNextPage={persistent.hasNextPage}
+        isFetchingNextPage={persistent.isFetchingNextPage}
+        fetchNextPage={persistent.fetchNextPage}
+      />
       <div className="flex items-center gap-3 border-t border-ms-border px-4 py-3.5">
         <Switch
           checked={showEphemeral}
@@ -100,12 +84,17 @@ export function WorkspaceSections({
           </div>
         </div>
       </div>
-      {showEphemeral && list.ephemeral.length > 0 && (
-        <nav aria-label={t`Ephemeral workspaces`} className="flex flex-col gap-px px-2 pb-2">
-          {list.ephemeral.map((w) => (
-            <Row key={w.id} workspace={w} current={current} onPick={onPick} />
-          ))}
-        </nav>
+      {showEphemeral && (
+        <WorkspaceSectionList
+          label={t`Ephemeral workspaces`}
+          data={ephemeral.data}
+          current={current}
+          onPick={onPick}
+          empty={q ? <Trans>No workspace matches.</Trans> : <Trans>No ephemeral workspace.</Trans>}
+          hasNextPage={ephemeral.hasNextPage}
+          isFetchingNextPage={ephemeral.isFetchingNextPage}
+          fetchNextPage={ephemeral.fetchNextPage}
+        />
       )}
       <div className="border-t border-ms-border p-2">
         <NewWorkspaceDialog onDone={onPick} />

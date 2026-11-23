@@ -65,8 +65,7 @@ export function applyStreamEvent(qc: QueryClient, slug: string, event: StreamEve
       effects.invalidate.push(facetsKey(slug), [...messagesKey(slug), event.messageId])
       break
     case 'message.event':
-      // The view carries no message id: every open viewer checks its message.
-      effects.invalidate.push(messagesKey(slug))
+      effects.invalidate.push([...messagesKey(slug), event.messageId])
       break
     case 'webhook.delivery':
       if (event.delivery.messageId) {

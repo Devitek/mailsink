@@ -1,3 +1,4 @@
+import { msg } from '@lingui/core/macro'
 import { InboxSearch } from '@mailsink/contracts'
 import { createFileRoute } from '@tanstack/react-router'
 import { useCallback } from 'react'
@@ -5,6 +6,7 @@ import type { SetSearch } from '../features/inbox/filter-bar'
 import { InboxPage } from '../features/inbox/inbox-page'
 import { facetsQuery, inboxListQuery, messageQuery } from '../features/inbox/queries'
 import { inboxFilters } from '../features/inbox/search-query'
+import { pageTitle } from '../seo/page-title'
 
 // The inbox of a workspace (#39) with its message viewer (#40). Filters, the open message
 // and its tab are search params (InboxSearch); the loader prefetches the first page, the
@@ -21,6 +23,10 @@ export const Route = createFileRoute('/w/$workspaceSlug/')({
     const open = deps.m ?? list.pages[0]?.data[0]?.id
     // A message purged meanwhile is not an error of the page: the viewer says so.
     if (open) await queryClient.ensureQueryData(messageQuery(slug, open)).catch(() => undefined)
+  },
+  head: ({ matches, params }) => {
+    const slug = params.workspaceSlug
+    return { meta: [pageTitle(matches, msg`Inbox · ${slug}`)] }
   },
   component: InboxRoute,
 })

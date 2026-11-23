@@ -17,6 +17,8 @@ const source: WebhookDeliveryView = {
   lastStatusCode: 500,
   replayOf: 'whd_1',
   replayMode: 'exact',
+  endpointUrl: 'https://hooks.example.test/mailsink',
+  durationMs: 42,
   createdAt: '2026-11-22T10:00:00.000Z',
 }
 
