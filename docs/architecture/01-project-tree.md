@@ -409,9 +409,12 @@ mailsink/
 │   ├── guides/mcp.md                      # MCP clients (Claude Code, Claude Desktop, Cursor), tools
 │   └── contributing/translations.md       # how to add or fix a locale (D17)
 ├── .github/ workflows/ci.yml             # lint, typecheck, test (PGlite + Postgres), build, e2e
-│            workflows/docker.yml         # image build + docker/smoke-test.sh
+│            workflows/docker.yml         # image build + docker/smoke-test.sh (never pushes)
+│            workflows/release-please.yml # release PR, tag, GitHub release (D220)
+│            workflows/release-image.yml  # GHCR multi-arch publication of a tag (D222)
 │            pull_request_template.md  dependabot.yml  ISSUE_TEMPLATE/translation.yml
-├── AGENTS.md  README.md  CONTRIBUTING.md  LICENSE
+├── release-please-config.json  .release-please-manifest.json   # D220, D221
+├── AGENTS.md  README.md  CONTRIBUTING.md  LICENSE  CHANGELOG.md (release-please)
 ├── lingui.config.ts                       # locales [en, fr], sourceLocale en, catalogs path
 ├── biome.json  pnpm-workspace.yaml  tsconfig.base.json
 ├── tsconfig.json                          # typechecks root files (lingui.config.ts, vitest.config.ts)

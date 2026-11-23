@@ -7,6 +7,7 @@
 <p align="center">Every email caught. None delivered. The sandbox for your transactional email.</p>
 
 <p align="center">
+  <a href="https://github.com/Devitek/mailsink/releases/latest"><img src="https://img.shields.io/github/v/release/Devitek/mailsink?style=flat-square&label=release&labelColor=141517&color=F0703A" alt="release"></a>
   <a href="https://github.com/Devitek/mailsink/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Devitek/mailsink/ci.yml?branch=main&style=flat-square&label=ci&labelColor=141517" alt="ci"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Devitek/mailsink?style=flat-square&labelColor=141517&color=F6F5F2" alt="license"></a>
 </p>
@@ -15,6 +16,7 @@
   <a href="#installation">Installation</a> ·
   <a href="#usage">Usage</a> ·
   <a href="#documentation">Documentation</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
@@ -26,52 +28,61 @@ latency or rate limits, and assert on what was sent through an HTTP API or MCP. 
 teams get persistent workspaces and a web UI to inspect rendered emails, SMTP sessions,
 API calls and signed webhooks.
 
-> [!IMPORTANT]
-> Mailsink is in its design phase: nothing is runnable yet. The architecture and roadmap
-> are in [docs/architecture](docs/architecture/README.md).
-
 ## Installation
 
-Mailsink ships as a single Docker image: HTTP on port 3000 (web UI, provider APIs,
-Capture API, `/healthz`) and SMTP on port 1025. Storage is embedded PGlite by default,
-PostgreSQL as an option. No published image yet: build it from a clone.
+Mailsink ships as one Docker image, `ghcr.io/devitek/mailsink` (`linux/amd64` and
+`linux/arm64`): HTTP on port 3000 (web UI, provider APIs, Capture API, MCP, `/healthz`)
+and SMTP on port 1025. Storage is embedded PGlite by default, PostgreSQL as an option.
+Docker with Compose v2 is the only requirement.
 
 ```sh
-git clone https://github.com/Devitek/mailsink.git && cd mailsink
-export MAILSINK_ADMIN_KEY=change-me   # unset, the Admin API refuses every call
+curl -fsSLO \
+  https://raw.githubusercontent.com/Devitek/mailsink/main/docker/docker-compose.yml
+export MAILSINK_ADMIN_KEY=change-me   # unset, the Admin API and the web UI refuse access
 
 # Embedded PGlite, data in the `pglite-data` volume
-docker compose -f docker/docker-compose.yml --profile pglite up -d --build
+docker compose --profile pglite up -d
 
 # Or PostgreSQL 18, data in the `postgres-data` volume
-docker compose -f docker/docker-compose.yml --profile postgres up -d --build
+docker compose --profile postgres up -d
 
 curl http://localhost:3000/healthz   # {"status":"ok",...} once the container is healthy
 ```
 
-Host ports are set with `MAILSINK_HTTP_PORT` and `MAILSINK_SMTP_HOST_PORT`, the Postgres
-password with `POSTGRES_PASSWORD`. Migrations run at every boot; the first boot on an empty
-PGlite volume takes about 10 seconds. The `mailsink` CLI is available in the image, for
-example `docker compose -f docker/docker-compose.yml --profile postgres exec
-mailsink-postgres mailsink migrate`.
+The Compose file runs `ghcr.io/devitek/mailsink:latest`; set `MAILSINK_IMAGE` to pin a
+release (`ghcr.io/devitek/mailsink:0.1` or `:0.1.0`). Host ports are set with
+`MAILSINK_HTTP_PORT` and `MAILSINK_SMTP_HOST_PORT`, the Postgres password with
+`POSTGRES_PASSWORD`. Migrations run at every boot; the first boot on an empty PGlite volume
+takes about 10 seconds. The `mailsink` CLI is in the image, for example
+`docker compose --profile postgres exec mailsink-postgres mailsink migrate`.
 
 STARTTLS on SMTP is optional: put the PEM certificate and key in a host directory readable
 by uid 1001, then set `MAILSINK_SMTP_TLS_DIR` (mounted read-only on `/app/tls`, relative
-paths start from `docker/`), `MAILSINK_SMTP_TLS_CERT=/app/tls/cert.pem` and
+to the Compose file), `MAILSINK_SMTP_TLS_CERT=/app/tls/cert.pem` and
 `MAILSINK_SMTP_TLS_KEY=/app/tls/key.pem`.
 
-Without Compose:
+**Without Compose**
 
 ```sh
-docker build -f docker/Dockerfile -t mailsink:local .
 docker run -d -p 3000:3000 -p 1025:1025 -v mailsink-data:/app/data \
-  -e MAILSINK_ADMIN_KEY=change-me mailsink:local
+  -e MAILSINK_ADMIN_KEY=change-me ghcr.io/devitek/mailsink:latest
 ```
 
 The container runs as an unprivileged user (uid 1001): a bind mount used as `/app/data`
 must be writable by that uid.
 
+**From a clone**, to run your own build:
+
+```sh
+git clone https://github.com/Devitek/mailsink.git && cd mailsink
+MAILSINK_IMAGE=mailsink:local docker compose -f docker/docker-compose.yml \
+  --profile pglite up -d --build
+```
+
 ## Usage
+
+Open http://localhost:3000 and sign in with the admin key to browse workspaces, rendered
+emails and logs. Tests and CI drive the same data over HTTP.
 
 **Provision an ephemeral workspace for a CI run**
 
@@ -79,25 +90,49 @@ must be writable by that uid.
 curl -X POST http://localhost:3000/admin/workspaces \
   -H "Authorization: Bearer $MAILSINK_ADMIN_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name":"ci-run-42","ephemeral":true,"connections":[{"kind":"resend","name":"app"}]}'
+  -d '{"name":"ci-42","ephemeral":true,"connections":[{"kind":"resend","name":"app"}]}'
 ```
+
+The response holds the secrets once: `workspaceKey` (`mskw_…`, for the Capture API) and,
+per connection, its credentials and an `.env` snippet.
 
 **Send with the Resend SDK, unchanged**
 
-```ts
-const resend = new Resend(process.env.RESEND_API_KEY) // msk_… from the response above
-// RESEND_BASE_URL=http://localhost:3000
+```sh
+RESEND_API_KEY=msk_…                    # connections[0].credentials.apiKey
+RESEND_BASE_URL=http://localhost:3000   # read by the SDK
 ```
+
+```ts
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
+await resend.emails.send({
+  from: 'Acme <hello@app.test>',
+  to: 'jane@example.com',
+  subject: 'Welcome',
+  html: '<p>Hi</p>',
+})
+```
+
+Brevo connections work the same way with the Brevo SDK, `smtp` connections with any SMTP
+client such as Nodemailer on port 1025.
 
 **Wait for the email in a test**
 
 ```sh
-curl "http://localhost:3000/capture/messages?to=jane@example.com&wait=true&timeout=5000" \
-  -H "Authorization: Bearer $MAILSINK_KEY"
+since=$(date -u +%Y-%m-%dT%H:%M:%SZ)   # taken before the app sends
+# ...the app sends the email
+curl -G http://localhost:3000/capture/messages \
+  -H "Authorization: Bearer $MAILSINK_WORKSPACE_KEY" \
+  -d to=jane@example.com -d since="$since" -d wait=true -d timeout=10000
 ```
 
-The [E2E testing guide](docs/guides/e2e.md) gives the full recipe: one ephemeral workspace
-per test worker, reset between tests, forced bounces through overrides.
+The call answers as soon as a message matches, or `408` after the timeout. The
+[E2E testing guide](docs/guides/e2e.md) gives the full recipe: one ephemeral workspace per
+test worker, reset between tests, forced bounces through overrides. The
+[MCP guide](docs/guides/mcp.md) connects Claude Code, Claude Desktop or Cursor to a
+workspace.
 
 ## Features
 

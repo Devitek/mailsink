@@ -8,6 +8,9 @@ Thanks for helping. This guide covers code contributions and translations.
   French, but English issues and comments are welcome.
 - **Never push to `main`.** Fork, branch, open a pull request.
 - **Conventional Commits** with the issue number: `fix(smtp): handle AUTH LOGIN (#42)`.
+- **Pull requests are squash merged**: the PR title becomes the commit on `main`, so it
+  must be a Conventional Commit too (`type(scope): description (#N)`, no space before the
+  colon). It is what lands in the changelog.
 - **Green CI**: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm i18n:check`.
 - Fill in the pull request template (summary, checks, follow-ups, linked issues).
 
@@ -97,6 +100,25 @@ docker/smoke-test.sh pglite postgres
 
 It publishes host ports 3000 and 1025 unless `MAILSINK_HTTP_PORT` and
 `MAILSINK_SMTP_HOST_PORT` say otherwise.
+
+## Releasing
+
+Releases are cut by [release-please](https://github.com/googleapis/release-please) from
+the Conventional Commits on `main` (French descriptions are fine, the types stay English).
+
+1. Every push to `main` opens or updates the release PR `chore(main): release X.Y.Z`. It
+   bumps `version` in the root `package.json` (the only version, read by the app and the
+   MCP server) and `.release-please-manifest.json`, and prepends the release notes to
+   `CHANGELOG.md`. `feat` bumps the minor version and `fix` the patch while the version
+   is below 1.0.0; a breaking change (`!` or `BREAKING CHANGE:`) also bumps the minor.
+2. Merging the release PR tags `vX.Y.Z`, creates the GitHub release and publishes
+   `ghcr.io/devitek/mailsink` for `linux/amd64` and `linux/arm64`, tagged `X.Y.Z`, `X.Y`
+   and `latest` (`release-image` workflow, with provenance and SBOM attestations).
+3. Nothing is published before that merge. To publish an existing tag again, run the
+   `release-image` workflow by hand with the tag (`v0.1.0`).
+
+Configuration: `release-please-config.json` and `.release-please-manifest.json`. Never
+edit the version, the manifest or `CHANGELOG.md` by hand outside the release PR.
 
 ## Translations
 
