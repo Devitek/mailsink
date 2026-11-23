@@ -1,18 +1,25 @@
 import { expect, test } from '@playwright/test'
 
+// Baseline of the sign-in screen, the first page a signed-out visitor sees (brief 2 copy).
 const TAGLINE = {
-  en: 'Catch every email your app sends, without delivering a single one.',
-  fr: 'Interceptez chaque e-mail envoyé par votre application, sans en délivrer un seul.',
+  en: 'Every email caught. None delivered.',
+  fr: 'Tout arrive. Rien ne part.',
 }
 
 // Accept-Language comes from the browser locale.
 test.use({ locale: 'fr-FR' })
 
 test('Accept-Language fr renders the page in French', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/login')
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
   await expect(page.getByText(TAGLINE.fr)).toBeVisible()
-  await expect(page.getByLabel('Langue')).toHaveValue('fr')
+  await expect(page.getByRole('heading', { name: "Connexion à l'instance" })).toBeVisible()
+  const languages = page.getByRole('group', { name: 'Langue' })
+  await expect(languages.getByRole('button', { name: 'Français' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(languages.getByRole('button', { name: 'English' })).toHaveAttribute('lang', 'en')
   await expect(page.getByRole('button', { name: 'Basculer clair / sombre' })).toBeVisible()
 })
 
@@ -20,18 +27,23 @@ test('switching to English updates the page in place and is remembered', async (
   page,
   context,
 }) => {
-  await page.goto('/')
+  await page.goto('/login')
   await expect(page.getByText(TAGLINE.fr)).toBeVisible()
+  // Typed text survives the switch: no reload, the form keeps its state.
+  await page.getByLabel("Clé d'administration").fill('msk_admin_typed')
 
   // A full reload would drop this marker.
   await page.evaluate(() => {
     ;(window as Window & { e2eMarker?: boolean }).e2eMarker = true
   })
-  await page.getByLabel('Langue').selectOption('en')
+  await page.getByRole('group', { name: 'Langue' }).getByRole('button', { name: 'English' }).click()
 
   await expect(page.getByText(TAGLINE.en)).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-  await expect(page.getByLabel('Language')).toHaveValue('en')
+  await expect(
+    page.getByRole('group', { name: 'Language' }).getByRole('button', { name: 'English' }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByLabel('Admin key')).toHaveValue('msk_admin_typed')
   expect(await page.evaluate(() => (window as Window & { e2eMarker?: boolean }).e2eMarker)).toBe(
     true,
   )
