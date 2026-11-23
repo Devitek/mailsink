@@ -94,7 +94,11 @@ export async function openWorkspace(
     sameSite: 'lax',
     httpOnly: true,
   })
-  return { ...summary({ ...workspace, expiresAt }), idleTtlSeconds: ttl }
+  return {
+    ...summary({ ...workspace, expiresAt }),
+    idleTtlSeconds: ttl,
+    createdBy: workspace.metadata?.createdBy?.trim() || null,
+  }
 }
 
 export async function lastWorkspaceHome(runtime: Runtime): Promise<string> {

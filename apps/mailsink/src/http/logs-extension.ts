@@ -67,7 +67,7 @@ async function buildEntry(
   ctx: ResponseCtx,
   dialect: ApiDialect,
   bodies: { request: Promise<string | null>; response: Promise<string | null> },
-  status: number,
+  response: Response,
   error: unknown,
   durationMs: number,
 ): Promise<ApiLogEntry> {
@@ -82,9 +82,10 @@ async function buildEntry(
     dialect,
     method: request.method,
     path: `${url.pathname}${url.search}`,
-    statusCode: status,
+    statusCode: response.status,
     durationMs,
     requestHeaders: redactHeaders(request.headers),
+    responseHeaders: redactHeaders(response.headers),
     requestBody: logBody(requestBody),
     responseBody: logBody(responseText),
     messageIds: INGESTION.has(dialect) ? messageIdsOf(parseJson(responseText)) : [],
@@ -123,8 +124,6 @@ export const requestLogExtension: ApiExtension = {
       request: requestText(ctx.request, ctx.runtime.config.maxMessageBytes),
       response: text,
     }
-    ctx.runtime.logs.writeApiLog(
-      buildEntry(ctx, dialect, bodies, response.status, error, durationMs),
-    )
+    ctx.runtime.logs.writeApiLog(buildEntry(ctx, dialect, bodies, response, error, durationMs))
   },
 }

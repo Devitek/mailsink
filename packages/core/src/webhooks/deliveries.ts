@@ -6,6 +6,7 @@ import type {
   WebhookDeliveryView,
 } from '@mailsink/contracts'
 import {
+  countWebhookDeliveries,
   type Database,
   type Executor,
   enqueueJobs,
@@ -35,25 +36,34 @@ export async function toDeliveryViews(
   return rows.map((row) => toDeliveryView(row, facts.get(row.id)))
 }
 
-/** `GET /capture/webhooks/deliveries`: newest first, keyset cursor (the last id). */
+/**
+ * `GET /capture/webhooks/deliveries`: newest first, keyset cursor (the last id), or page
+ * numbers when `page` is given (the cursor is then ignored); the total of the filters with
+ * every page.
+ */
 export async function listWebhookDeliveryViews(
   db: Executor,
   workspaceId: string,
   query: ListWebhookDeliveriesQuery,
 ): Promise<ListWebhookDeliveriesResponse> {
-  const rows = await listWebhookDeliveries(db, workspaceId, {
+  const filters = {
     endpointId: query.endpointId,
     payloadFormat: query.payloadFormat,
     messageId: query.messageId,
     status: query.status,
-    after: query.cursor,
-    limit: query.limit + 1,
-  })
+  }
+  const paging =
+    query.page === undefined ? { after: query.cursor } : { offset: (query.page - 1) * query.limit }
+  const [rows, total] = await Promise.all([
+    listWebhookDeliveries(db, workspaceId, { ...filters, ...paging, limit: query.limit + 1 }),
+    countWebhookDeliveries(db, workspaceId, filters),
+  ])
   const page = rows.slice(0, query.limit)
   const last = page.at(-1)
   return {
     data: await toDeliveryViews(db, page),
     nextCursor: rows.length > query.limit && last ? last.id : null,
+    total,
   }
 }
 
