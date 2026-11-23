@@ -56,6 +56,25 @@ export {
   retryJob,
 } from './repositories/jobs'
 export {
+  type ApiLog,
+  type ApiLogDialect,
+  type ApiLogFilters,
+  findApiLog,
+  insertApiLog,
+  listApiLogs,
+  type NewApiLog,
+} from './repositories/logs-api'
+export type { LogPage, LogTimeRange } from './repositories/logs-query'
+export {
+  findSmtpSession,
+  insertSmtpSession,
+  listSmtpSessions,
+  type NewSmtpSession,
+  type SmtpSession,
+  type SmtpSessionFilters,
+  type SmtpSessionOutcome,
+} from './repositories/logs-smtp'
+export {
   type MessagePurge,
   purgeMessages,
 } from './repositories/messages-purge'

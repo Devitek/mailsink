@@ -3,10 +3,12 @@ import {
   createActivityTracker,
   createEventBus,
   createJobRunner,
+  createLogWriter,
   createRateLimiter,
   DEFAULT_JOB_SETTINGS,
   deliverWebhookHandler,
   type EventBus,
+  type LogWriter,
   publishExpiredOverrides,
   type Random,
   type RateLimiter,
@@ -37,6 +39,8 @@ export type Runtime = {
   rateLimiter: RateLimiter
   /** Source of the request-level chaos draws (#25), injectable in tests. */
   chaosRandom: Random
+  /** Asynchronous writer of api_logs and smtp_sessions (#35), flushed by stop(). */
+  logs: LogWriter
   smtpPort: number
   stop: () => Promise<void>
 }
@@ -72,10 +76,13 @@ export async function createRuntime(
     // HTTP surfaces touch it through the defineApi activity extension; the SMTP server
     // touches it once AUTH resolves the connection, then on every transaction.
     const activity = createActivityTracker({ db: db.db, log })
+    // api_logs through the defineApi request log extension; smtp_sessions through the
+    // SMTP server's recordSmtpSession hook (logs.recordSmtpSession).
+    const logs = createLogWriter({ db: db.db, bus, log })
     const rateLimiter = createRateLimiter()
     // SMTP ingestion (#31): AUTH against smtp connections, the shared rate limiter and the
     // chaos source of the runtime (read at each draw, so tests can swap it), the ingestion
-    // pipeline. recordSmtpSession is a no-op until the smtp_sessions writer (#35).
+    // pipeline, and the session journal (#35).
     let self: Runtime | undefined
     const smtp = await startSmtpServer({
       host: config.smtpHost,
@@ -87,6 +94,7 @@ export async function createRuntime(
       random: () => (self?.chaosRandom ?? Math.random)(),
       maxMessageBytes: config.maxMessageBytes,
       ...(config.smtpTls ? { tls: await readTlsFiles(config.smtpTls) } : {}),
+      recordSmtpSession: (record) => logs.recordSmtpSession(record),
       log,
     })
 
@@ -134,6 +142,7 @@ export async function createRuntime(
       activity,
       rateLimiter,
       chaosRandom: Math.random,
+      logs,
       smtpPort: smtp.port,
       async stop() {
         // Stop accepting mail, drain the worker that would process it and the retention
@@ -142,6 +151,7 @@ export async function createRuntime(
         await Promise.all([worker.stop(), retention.stop(), gc.stop()])
         await overrideExpiry.stop()
         await activity.stop()
+        await logs.flush()
         await db.close()
       },
     }

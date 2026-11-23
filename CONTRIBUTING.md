@@ -112,7 +112,9 @@ reporting on this repository.
 ## End-to-end tests
 
 Browser scenarios live in `apps/mailsink/tests/e2e` ([Playwright](https://playwright.dev),
-Chromium only). They run against the production build, never `vite dev`:
+Chromium only); `tests/e2e/recipe` follows the user recipe of
+[docs/guides/e2e.md](docs/guides/e2e.md). They run against the production build, never
+`vite dev`:
 
 ```sh
 pnpm build
