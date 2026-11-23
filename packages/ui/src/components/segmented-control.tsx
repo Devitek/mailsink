@@ -6,7 +6,7 @@ import { cn } from '../lib/cn'
 // Segmented control of the prototype (retention 1h / 24h / 7d / 30d, connection kind,
 // inbox filters, preview width): a radio group drawn as a 2 px inset track on the page
 // background; the checked segment takes the hover surface and an inset strong border.
-// Labels come translated from the app. The only segmented control of the UI (#106).
+// Labels come translated from the app. The only segmented control of the UI.
 
 export type SegmentedOption<T extends string> = {
   value: T
