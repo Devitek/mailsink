@@ -16,5 +16,8 @@
     "@mailsink/db": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "nodemailer": "^10.6.1"
+  },
+  "devDependencies": {
+    "svix": "^2.11.0"
   }
 }
