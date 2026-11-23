@@ -7,6 +7,10 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
 
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid ".env snippet (secret masked: shown only at creation or rotation)"
+msgstr ".env snippet (secret masked: shown only at creation or rotation)"
+
 #. placeholder {0}: workspace.messageCount
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "{0} msg"
@@ -15,6 +19,14 @@ msgstr "{0} msg"
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
 msgstr "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "{kind} · created {created}"
+msgstr "{kind} · created {created}"
+
+#: apps/mailsink/src/features/connections/connection-list.tsx
+msgid "+ New connection"
+msgstr "+ New connection"
 
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "<0>Key rejected.</0> Check that it matches <1>MAILSINK_ADMIN_KEY</1> on the server."
@@ -28,22 +40,205 @@ msgstr "<0>Too many attempts.</0> To protect this instance, sign-in is paused fo
 msgid "<0>Where do I find the key?</0> It is set at deployment in the <1>MAILSINK_ADMIN_KEY</1> variable. Ask the instance operator: there are no accounts and no password reset."
 msgstr "<0>Where do I find the key?</0> It is set at deployment in the <1>MAILSINK_ADMIN_KEY</1> variable. Ask the instance operator: there are no accounts and no password reset."
 
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "2 to 63 lower-case letters, digits or dashes, starting with a letter or digit."
+msgstr "2 to 63 lower-case letters, digits or dashes, starting with a letter or digit."
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "3 to 64 letters, digits, dots, dashes or underscores."
+msgstr "3 to 64 letters, digits, dots, dashes or underscores."
+
+#: apps/mailsink/src/features/connections/connection-name.tsx
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "80 characters at most."
+msgstr "80 characters at most."
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "A new secret is generated and shown once. The current one stops working at once: update every client using it."
+msgstr "A new secret is generated and shown once. The current one stops working at once: update every client using it."
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "A whole number of requests per second, or empty."
+msgstr "A whole number of requests per second, or empty."
+
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Add a first connection"
+msgstr "Add a first connection"
+
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Admin key"
 msgstr "Admin key"
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "An msk_… key is generated on creation. Point the provider SDK at the Mailsink base URL: no application code change."
+msgstr "An msk_… key is generated on creation. Point the provider SDK at the Mailsink base URL: no application code change."
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "API key"
+msgstr "API key"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "Base URL"
+msgstr "Base URL"
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+#: apps/mailsink/src/features/workspaces/confirm-dialog.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Cancel"
+msgstr "Cancel"
 
 #: apps/mailsink/src/features/login/login-form.tsx
 msgid "Checking…"
 msgstr "Checking…"
 
 #: apps/mailsink/src/routes/index.tsx
+#: apps/mailsink/src/routes/w.$workspaceSlug_.connections.tsx
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "Choose a workspace"
 msgstr "Choose a workspace"
 
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "Choose the provider to emulate"
+msgstr "Choose the provider to emulate"
+
+#: apps/mailsink/src/features/workspaces/workspace-created.tsx
+msgid "Connection {kind}"
+msgstr "Connection {kind}"
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Connection kind"
+msgstr "Connection kind"
+
+#: apps/mailsink/src/features/connections/connection-list.tsx
+msgid "Connections"
+msgstr "Connections"
+
+#: apps/mailsink/src/features/connections/copy-button.tsx
+msgid "Copied"
+msgstr "Copied"
+
+#: apps/mailsink/src/features/connections/copy-button.tsx
+msgid "Copy"
+msgstr "Copy"
+
+#: apps/mailsink/src/features/connections/copy-button.tsx
+msgid "Copy failed"
+msgstr "Copy failed"
+
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "Copy SMTP_PASS"
+msgstr "Copy SMTP_PASS"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "Copy SMTP_USER"
+msgstr "Copy SMTP_USER"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "Copy the .env snippet"
+msgstr "Copy the .env snippet"
+
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "Copy the API key"
+msgstr "Copy the API key"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "Copy the base URL"
+msgstr "Copy the base URL"
+
+#: apps/mailsink/src/features/workspaces/workspace-created.tsx
+msgid "Copy the secrets below now: they are shown only once."
+msgstr "Copy the secrets below now: they are shown only once."
+
+#: apps/mailsink/src/features/workspaces/workspace-created.tsx
+msgid "Copy the workspace key"
+msgstr "Copy the workspace key"
+
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "Copy these credentials now: they are shown only once. Mailsink keeps a hash, not the secret; rotate to get a new one."
+msgstr "Copy these credentials now: they are shown only once. Mailsink keeps a hash, not the secret; rotate to get a new one."
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "Create the connection"
+msgstr "Create the connection"
+
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Create the workspace"
+msgstr "Create the workspace"
+
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Default rate limit"
+msgstr "Default rate limit"
+
+#: apps/mailsink/src/features/workspaces/retention-field.tsx
+msgid "Default retention"
+msgstr "Default retention"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
+msgid "Delete"
+msgstr "Delete"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Delete the connection"
+msgstr "Delete the connection"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Delete the connection {name}?"
+msgstr "Delete the connection {name}?"
+
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
+msgid "Delete the workspace"
+msgstr "Delete the workspace"
+
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
+msgid "Delete the workspace {slug}?"
+msgstr "Delete the workspace {slug}?"
+
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+msgid "Description"
+msgstr "Description"
+
+#: apps/mailsink/src/features/connections/connection-list.tsx
+msgid "disabled"
+msgstr "disabled"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Disabled"
+msgstr "Disabled"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Disabled: its credentials are refused (HTTP 403, SMTP 535) until enabled."
+msgstr "Disabled: its credentials are refused (HTTP 403, SMTP 535) until enabled."
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "e.g. resend-transactional"
+msgstr "e.g. resend-transactional"
+
 #: apps/mailsink/src/routes/index.tsx
 msgid "Each workspace keeps its own messages, connections and webhooks."
 msgstr "Each workspace keeps its own messages, connections and webhooks."
+
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+msgid "Edit"
+msgstr "Edit"
+
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+msgid "Edit the workspace"
+msgstr "Edit the workspace"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Enabled"
+msgstr "Enabled"
 
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "Enter the admin key the operator of this instance gave you."
@@ -57,6 +252,10 @@ msgstr "Ephemeral"
 msgid "Ephemeral · {left}"
 msgstr "Ephemeral · {left}"
 
+#: apps/mailsink/src/features/workspaces/ephemeral-hint.tsx
+msgid "Ephemeral equivalent (CI / E2E), hidden by default, deleted after one idle hour:"
+msgstr "Ephemeral equivalent (CI / E2E), hidden by default, deleted after one idle hour:"
+
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Ephemeral workspaces"
 msgstr "Ephemeral workspaces"
@@ -65,6 +264,20 @@ msgstr "Ephemeral workspaces"
 msgid "Every email caught. None delivered."
 msgstr "Every email caught. None delivered."
 
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "For staging / QA. Ephemeral workspaces are created through the Admin API."
+msgstr "For staging / QA. Ephemeral workspaces are created through the Admin API."
+
+#: apps/mailsink/src/features/connections/connection-name.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Give it a name."
+msgstr "Give it a name."
+
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Billing Service - Staging"
+msgstr "Billing Service - Staging"
+
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Hide"
 msgstr "Hide"
@@ -72,6 +285,14 @@ msgstr "Hide"
 #: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Instance"
 msgstr "Instance"
+
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
+msgid "Its connections, keys, messages, logs and webhooks are deleted at once. This cannot be undone."
+msgstr "Its connections, keys, messages, logs and webhooks are deleted at once. This cannot be undone."
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Its credentials stop working and its webhook endpoints are deleted. Captured messages stay in the workspace."
+msgstr "Its credentials stop working and its webhook endpoints are deleted. Captured messages stay in the workspace."
 
 #: apps/mailsink/src/features/shell/session-menu.tsx
 #: apps/mailsink/src/i18n/locale-segmented.tsx
@@ -94,10 +315,34 @@ msgstr "Logs"
 msgid "Messages"
 msgstr "Messages"
 
+#: apps/mailsink/src/features/connections/connection-name.tsx
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Name"
+msgstr "Name"
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "New connection"
+msgstr "New connection"
+
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "New persistent workspace"
+msgstr "New persistent workspace"
+
+#: apps/mailsink/src/features/workspaces/new-workspace-dialog.tsx
+msgid "New workspace"
+msgstr "New workspace"
+
+#: apps/mailsink/src/features/connections/connection-list.tsx
+msgid "No connection yet: create one to receive mail from Resend, Brevo or SMTP clients."
+msgstr "No connection yet: create one to receive mail from Resend, Brevo or SMTP clients."
+
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "No persistent workspace yet."
 msgstr "No persistent workspace yet."
 
+#: apps/mailsink/src/routes/w.$workspaceSlug_.connections.tsx
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 msgstr "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
@@ -105,6 +350,22 @@ msgstr "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Not available yet"
 msgstr "Not available yet"
+
+#: apps/mailsink/src/features/workspaces/workspace-created.tsx
+msgid "Open its connections"
+msgstr "Open its connections"
+
+#: apps/mailsink/src/features/workspaces/workspace-created.tsx
+msgid "Open the workspace"
+msgstr "Open the workspace"
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "Optional, else the workspace value."
+msgstr "Optional, else the workspace value."
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "Optional: generated from the workspace slug."
+msgstr "Optional: generated from the workspace slug."
 
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Paste"
@@ -117,6 +378,47 @@ msgstr "Persistent workspaces"
 #: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Protection disabled <0>MAILSINK_UI_AUTH=none</0>: no sign-in and no sign-out."
 msgstr "Protection disabled <0>MAILSINK_UI_AUTH=none</0>: no sign-in and no sign-out."
+
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
+msgid "Rate limit"
+msgstr "Rate limit"
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "Rate limit override"
+msgstr "Rate limit override"
+
+#: apps/mailsink/src/features/connections/credentials-reveal.tsx
+msgid "Ready-to-copy .env snippet"
+msgstr "Ready-to-copy .env snippet"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Regenerate"
+msgstr "Regenerate"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Regenerate SMTP_PASS?"
+msgstr "Regenerate SMTP_PASS?"
+
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
+msgid "Retention"
+msgstr "Retention"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Rotate"
+msgstr "Rotate"
+
+#: apps/mailsink/src/features/connections/connection-panel.tsx
+msgid "Rotate the API key?"
+msgstr "Rotate the API key?"
+
+#: apps/mailsink/src/features/connections/connection-name.tsx
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+msgid "Save"
+msgstr "Save"
+
+#: apps/mailsink/src/features/connections/connections-screen.tsx
+msgid "Select a connection."
+msgstr "Select a connection."
 
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Settings"
@@ -147,6 +449,26 @@ msgstr "Sign out"
 msgid "Sign-in failed. Check your connection and try again."
 msgstr "Sign-in failed. Check your connection and try again."
 
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Slug"
+msgstr "Slug"
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "SMTP username"
+msgstr "SMTP username"
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS are generated on creation. Works with Nodemailer, Symfony Mailer, Django…"
+msgstr "SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS are generated on creation. Works with Nodemailer, Symfony Mailer, Django…"
+
+#: apps/mailsink/src/features/workspaces/confirm-dialog.tsx
+msgid "That did not work. Try again."
+msgstr "That did not work. Try again."
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "The connection could not be created. Try again."
+msgstr "The connection could not be created. Try again."
+
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "The key is never stored in your browser: it is exchanged for a session cookie."
 msgstr "The key is never stored in your browser: it is exchanged for a session cookie."
@@ -154,6 +476,30 @@ msgstr "The key is never stored in your browser: it is exchanged for a session c
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "The message list of this workspace is not available yet."
 msgstr "The message list of this workspace is not available yet."
+
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+msgid "The slug /w/{slug} does not change."
+msgstr "The slug /w/{slug} does not change."
+
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "The workspace could not be created. Try again."
+msgstr "The workspace could not be created. Try again."
+
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+msgid "The workspace could not be saved. Try again."
+msgstr "The workspace could not be saved. Try again."
+
+#: apps/mailsink/src/features/workspaces/workspace-created.tsx
+msgid "The workspace key reads this workspace through the Capture API and MCP. Mailsink keeps a hash, not the key."
+msgstr "The workspace key reads this workspace through the Capture API and MCP. Mailsink keeps a hash, not the key."
+
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "This slug is already taken."
+msgstr "This slug is already taken."
+
+#: apps/mailsink/src/features/connections/new-connection-form.tsx
+msgid "This SMTP username is already taken."
+msgstr "This SMTP username is already taken."
 
 #: apps/mailsink/src/theme/theme-toggle.tsx
 msgid "Toggle light / dark"
@@ -163,10 +509,30 @@ msgstr "Toggle light / dark"
 msgid "Try again in {countdown}"
 msgstr "Try again in {countdown}"
 
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
+msgid "Type the slug to confirm"
+msgstr "Type the slug to confirm"
+
+#: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
+msgid "unlimited"
+msgstr "unlimited"
+
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
+#: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Workspace"
 msgstr "Workspace"
 
+#: apps/mailsink/src/features/workspaces/workspace-created.tsx
+msgid "Workspace {slug} created"
+msgstr "Workspace {slug} created"
+
+#: apps/mailsink/src/features/workspaces/workspace-created.tsx
+msgid "Workspace key"
+msgstr "Workspace key"
+
+#: apps/mailsink/src/routes/w.$workspaceSlug_.connections.tsx
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "Workspace not found"
 msgstr "Workspace not found"

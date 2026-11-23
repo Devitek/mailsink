@@ -4,23 +4,16 @@ import {
   insertApiKeys,
   insertConnections,
   insertWorkspace,
-  type NewApiKey,
-  type NewConnection,
   newId,
 } from '@mailsink/db'
+import { generateKey } from '../connections/credentials'
 import {
-  generateKey,
-  generateSmtpPassword,
-  generateSmtpUsername,
-  hashSmtpPassword,
-} from '../connections/credentials'
-import {
-  buildCredentials,
-  type CredentialSecrets,
-  envSnippet,
-  type PublicEndpoints,
-} from '../connections/snippets'
-import { DomainError } from '../errors'
+  type PlannedConnection,
+  planConnection,
+  rethrowConflict,
+  smtpUsernameTaken,
+} from '../connections/plan'
+import { buildCredentials, envSnippet, type PublicEndpoints } from '../connections/snippets'
 import { insertTemplateInputs } from '../templates/service'
 import { generateSlug } from './slug'
 import { toConnectionView, toWorkspaceView } from './views'
@@ -32,8 +25,6 @@ export interface ProvisionOptions {
   createdVia?: 'ui' | 'admin_api'
   now?: Date
 }
-
-type Planned = { row: NewConnection; secrets: CredentialSecrets; key?: NewApiKey }
 
 /**
  * Creates a workspace, its connections and their credentials in one transaction (#13).
@@ -97,7 +88,7 @@ export async function createWorkspace(
     workspace: toWorkspaceView(created.workspace, options.endpoints.publicUrl),
     workspaceKey: workspaceKey.key,
     connections: created.connections.map((row, i) => {
-      const plan = planned[i] as Planned
+      const plan = planned[i] as PlannedConnection
       const credentials = buildCredentials(plan.secrets, options.endpoints)
       return {
         ...toConnectionView(row, plan.key?.displayPrefix),
@@ -112,67 +103,17 @@ async function planConnections(
   input: CreateWorkspaceRequest,
   workspaceId: string,
   slug: string,
-): Promise<Planned[]> {
+): Promise<PlannedConnection[]> {
   const usernames = new Set<string>()
-  const planned: Planned[] = []
+  const planned: PlannedConnection[] = []
   for (const connection of input.connections) {
-    const id = newId('con')
-    const row: NewConnection = {
-      id,
-      workspaceId,
-      name: connection.name,
-      kind: connection.kind,
-      retentionSeconds: connection.retention ?? null,
-      rateLimit: connection.rateLimit ?? null,
-      simulation: connection.simulation ?? null,
-    }
-    if (connection.kind === 'smtp') {
-      const smtpUser = connection.smtpUsername ?? generateSmtpUsername(slug)
+    const plan = await planConnection(connection, workspaceId, slug)
+    const smtpUser = plan.row.smtpUsername
+    if (smtpUser) {
       if (usernames.has(smtpUser)) throw smtpUsernameTaken()
       usernames.add(smtpUser)
-      const smtpPass = generateSmtpPassword()
-      row.smtpUsername = smtpUser
-      row.smtpPasswordHash = await hashSmtpPassword(smtpPass)
-      planned.push({ row, secrets: { kind: 'smtp', smtpUser, smtpPass } })
-      continue
     }
-    const key = generateKey('connection')
-    planned.push({
-      row,
-      secrets: { kind: connection.kind, apiKey: key.key },
-      key: {
-        id: newId('key'),
-        workspaceId,
-        connectionId: id,
-        scope: 'connection',
-        displayPrefix: key.displayPrefix,
-        hash: key.hash,
-      },
-    })
+    planned.push(plan)
   }
   return planned
-}
-
-const smtpUsernameTaken = () => new DomainError('conflict', 'This SMTP username is already taken')
-
-/** Maps the unique violations a caller can cause (slug, SMTP username) to 409 `conflict`. */
-function rethrowConflict(error: unknown): never {
-  const constraint = uniqueViolation(error)
-  if (constraint === 'workspaces_slug_unique') {
-    throw new DomainError('conflict', 'This workspace slug is already taken')
-  }
-  if (constraint === 'connections_smtp_username_unique') throw smtpUsernameTaken()
-  throw error
-}
-
-/** Constraint name of a Postgres unique violation (23505); drivers nest it in `cause`. */
-function uniqueViolation(error: unknown): string | undefined {
-  let current: unknown = error
-  while (current && typeof current === 'object') {
-    if ('code' in current && current.code === '23505') {
-      return 'constraint' in current ? String(current.constraint) : undefined
-    }
-    current = 'cause' in current ? current.cause : undefined
-  }
-  return undefined
 }

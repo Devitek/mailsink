@@ -4,6 +4,20 @@
 export { Mark, markStrokeWidth, Wordmark } from './components/brand'
 export { Button, type ButtonProps, buttonVariants } from './components/button'
 export { Card } from './components/card'
+export {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  type DialogContentProps,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from './components/dialog'
 export { Field, FieldControl, FieldDescription, FieldError, FieldLabel } from './components/field'
 export { Input, type InputProps, inputVariants } from './components/input'
 export {
@@ -26,6 +40,11 @@ export {
   PopoverTitle,
   PopoverTrigger,
 } from './components/popover'
+export {
+  SegmentedControl,
+  type SegmentedControlProps,
+  type SegmentedOption,
+} from './components/segmented-control'
 export {
   Sheet,
   SheetBody,
