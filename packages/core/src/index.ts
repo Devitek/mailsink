@@ -24,6 +24,21 @@ export {
 } from './connections/snippets'
 export { hashApiKey, secretsEqual } from './crypto'
 export { fromNativeRequest } from './dialects/native'
+export {
+  fromResendRequest,
+  parseResendEmail,
+  type ResendIssue,
+  type ResendParse,
+  resendError,
+} from './dialects/resend'
+export {
+  messageIdOfResend,
+  readResendIdempotencyKey,
+  resendIdOf,
+  sendResendBatch,
+  sendResendEmail,
+} from './dialects/resend-ingest'
+export { getResendEmail, resendTimestamp } from './dialects/resend-read'
 export { fromSmtpMessage, type SmtpEnvelope } from './dialects/smtp'
 export { DomainError, type DomainErrorOptions, ERROR_STATUS, isDomainError } from './errors'
 export * from './events'
