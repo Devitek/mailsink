@@ -204,10 +204,66 @@ sequenceDiagram
 
 - `message.event` frames carry the `messageId` of their event (D205): only the viewer of
   that message refetches, other open viewers stay as they are.
-- After a reconnection gap, derived frames (statuses, purges, deliveries) are not replayed,
-  so every inbox query is refetched once (`onResync`).
+- After a reconnection gap, derived frames (statuses, purges, deliveries, logs, override
+  changes) are not replayed, so the inbox, logs, override and suppression queries are
+  refetched once (`onResync`, D212).
+- The same frames keep the other pages live (D194, D212): `log.*` and `webhook.delivery`
+  the logs explorer; `override.changed` the header pill (its query is also loaded by the
+  layout loader, so the pill renders with the page); a `message.status` frame of
+  `hard_bounce` or `complained` refetches the suppression list; `message.created` and
+  `log.api` (an ingestion or API call touched the workspace) restart the idle TTL shown by
+  the ephemeral banner (`expiresAt = max(expiresAt, now + idleTtlSeconds)`).
 - `workspace.deleted` ends the stream: the layout shows « This workspace was deleted »
   with a way back to the picker.
+
+## Settings and workspace defaults (#43, #112, D200, D201, D217)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Br as Browser (settings page)
+  participant F as Server functions (signedIn)
+  participant A as Admin API (PATCH /admin/workspaces/:id)
+  participant S as core: updateWorkspaceSettings
+  participant D as Database
+
+  Br->>F: SSR loader: settings page (workspace, connections, counts) + the open section's
+  Note over Br,F: data (endpoints, first template page, first suppression page)
+  Br->>F: save a section (retention + quota, simulation + rate limit)
+  F->>S: UpdateWorkspaceRequest (workspace by slug, activity touched)
+  A->>S: same request with the Admin key (CI, scripts)
+  S->>D: update workspaces (simulation replaced whole)
+  S-->>Br: WorkspaceView, the settings query refetched
+```
+
+- One place edits the defaults (D217): the settings page (retention & suppression,
+  simulation & rate limit); the « Edit » dialog of the connections page keeps the name and
+  description and links to it.
+- The « Retention & suppression » section shows the suppression list count and links to
+  `/w/$workspaceSlug/suppressions`; the connection panel lists the endpoints scoped to the
+  connection and links to the webhooks section.
+
+## Demo messages (#62, D210 to D212)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Br as Browser (empty inbox) or Capture client
+  participant F as loadDemoMessagesFn (session) | POST /capture/demo (workspace key)
+  participant P as core: seedDemoMessages -> persistEmails
+  participant D as Database
+  participant B as Event bus
+  participant Q as Job worker
+
+  Br->>F: « Load demo messages » (UI locale en | fr)
+  F->>P: workspace, locale
+  P->>P: prepareEmail x 8 (raw EML, links), created 52..3 min ago,<br/>messages.simulation = { rules } (planned outcomes)
+  P->>D: TX: persistEmails per message, connections in turn
+  P->>B: after commit: message.created x 8 (and webhook deliveries)
+  B-->>Br: rows appear through the stream
+  Q->>D: simulate_delivery: message rules first, then the stored layers (D211)
+  Q->>B: statuses (delivered, hard_bounce, complained, soft_bounce, failed)
+```
 
 ## Credential rotation (#38, #106, D172, D207)
 
