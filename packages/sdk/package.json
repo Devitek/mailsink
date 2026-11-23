@@ -1,0 +1,60 @@
+{
+  "name": "@devitek/mailsink",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Mailsink, the email sink for staging and CI: admin, capture, overrides, webhooks, logs and the live stream",
+  "keywords": [
+    "mailsink",
+    "email",
+    "testing",
+    "e2e",
+    "sdk",
+    "resend",
+    "brevo",
+    "smtp"
+  ],
+  "license": "MIT",
+  "author": "Devitek",
+  "homepage": "https://github.com/Devitek/mailsink/tree/main/packages/sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Devitek/mailsink.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": "https://github.com/Devitek/mailsink/issues",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./package.json": "./package.json"
+    },
+    "types": "./dist/index.d.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@mailsink/contracts": "workspace:*",
+    "@mailsink/core": "workspace:*",
+    "@mailsink/db": "workspace:*",
+    "tsdown": "^0.23.7"
+  }
+}

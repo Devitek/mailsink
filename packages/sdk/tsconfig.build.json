@@ -1,0 +1,6 @@
+{
+  // Declarations of the published package: the SDK and the contracts it bundles.
+  "extends": "./tsconfig.json",
+  "include": ["src", "../contracts/src"],
+  "exclude": ["../contracts/src/**/*.test.ts"]
+}
