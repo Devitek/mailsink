@@ -101,7 +101,8 @@ per test worker, reset between tests, forced bounces through overrides.
 - Simulation: status rates, deterministic per-recipient rules, latency, chaos errors,
   rate limits, temporary overrides with reset, automatic suppression list.
 - Webhooks signed with HMAC-SHA256 and Svix-compatible headers, retries and replay.
-- Capture API, SSE stream and an MCP server for AI agents.
+- Capture API, SSE stream and an MCP server for AI agents (HTTP and stdio, see the
+  [MCP guide](docs/guides/mcp.md)).
 - Web UI in English and French.
 
 ## Documentation
@@ -114,6 +115,7 @@ per test worker, reset between tests, forced bounces through overrides.
   [Roadmap](docs/architecture/05-roadmap.md)
 - [Design deliveries and brand](docs/design/README.md)
 - [Testing your app with Mailsink (E2E guide)](docs/guides/e2e.md)
+- [Driving Mailsink from an AI agent (MCP guide)](docs/guides/mcp.md)
 - [Translating the web UI](docs/contributing/translations.md)
 
 ## Contributing

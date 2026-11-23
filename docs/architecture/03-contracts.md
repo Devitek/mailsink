@@ -869,6 +869,61 @@ export const StreamQuery = z.object({ connectionId: ConnectionId.optional(),
     z.array(StreamEventType)).optional() })
 ```
 
+## MCP (`POST /mcp`, `mailsink mcp`, #44, propositions D165 to D169)
+
+`packages/mcp` holds the server factory and the tools (transport-agnostic, one server bound
+to one authenticated workspace) and `handleMcpRequest(request, { db, bus, workspace })`, the
+stateless Streamable HTTP handler. The app route wraps it in `defineApi({ auth: 'workspace'
+})`. Tool input schemas are built from the contracts below (`packages/mcp/src/schemas.ts`):
+
+```ts
+const { wait, timeout, ...messageFilters } = ListMessagesQuery.shape
+export const ListEmailsInput = z.object(messageFilters)          // list_emails
+export const WaitForEmailInput = z.object({ ...messageFilters,   // wait_for_email
+  timeout: z.number().int().min(0).max(WAIT_TIMEOUT_MAX_MS).default(WAIT_TIMEOUT_MAX_MS) })
+export const GetEmailInput = z.object({ id: MessageId })          // get_email
+export const TriggerEmailEventInput = z.object({ id: MessageId,   // trigger_email_event
+  event: TriggerEventRequest })
+export const SetOverrideInput = ActivateOverrideRequest           // set_override_config
+// reset_override_config: ResetOverrideRequest · get_override_config: {}
+// purge_emails: PurgeQuery · list_suppressions: ListSuppressionsQuery
+export const GetDeliveryLogsInput = z.object({                    // get_delivery_logs
+  source: z.enum(['api', 'smtp']).default('api'), id: z.string().optional(),
+  apiFilters: ListApiLogsQuery.optional(), smtpFilters: ListSmtpSessionsQuery.optional() })
+export const GetWebhookDeliveriesInput = ListWebhookDeliveriesQuery.extend({
+  id: WebhookDeliveryId.optional() })                             // get_webhook_deliveries
+```
+
+| Tool | Service (same as) | Annotations |
+| --- | --- | --- |
+| `list_emails` | `listCapturedMessages` (`GET /capture/messages`) | read only |
+| `get_email` | `getCapturedMessage` (`GET /capture/messages/:id`) | read only |
+| `wait_for_email` | `waitForMessages` (`wait=true`), aborted with the call | read only |
+| `trigger_email_event` | `triggerMessageEvent`, origin `mcp`, frames published | open world (webhooks) |
+| `set_override_config` | `activateOverride`, via `mcp`, `override.changed` published | |
+| `reset_override_config` | `resetOverride`, `override.changed` published | idempotent |
+| `get_override_config` | `getOverrideState` | read only |
+| `purge_emails` | `purgeCapturedMessages`, `messages.purged` published | destructive |
+| `get_delivery_logs` | `listApiLogViews` / `getApiLogView`, `listSmtpSessionViews` / `getSmtpSessionView` | read only |
+| `get_webhook_deliveries` | `listWebhookDeliveryViews` / `getWebhookDeliveryDetail` | read only |
+| `list_suppressions` | `listSuppressionViews` | read only |
+
+Behaviour:
+- **Transport** (D165): `POST /mcp` only, stateless (no `Mcp-Session-Id`); `GET` and `DELETE`
+  answer 405 `Allow: POST`. The SDK answers JSON-RPC over an SSE response (keep-alive
+  comments during a long `wait_for_email`); the request log keeps the request body and no
+  response body for SSE (D146). Auth, activity and the log row are those of every
+  `defineApi()` route (dialect `mcp`).
+- **Answers** (D166): the HTTP JSON as text and as `structuredContent`. Failures are
+  `isError` results whose text is the HTTP error body (`not_found`, `wait_timeout`,
+  `validation_error` with `details.in = 'arguments'`…). English only (D19).
+- **Workspace deletion** (D169): `workspace.deleted` ends a pending `wait_for_email` with
+  `not_found`; whatever still runs 1 s later is cut and the response stream closed.
+- **stdio** (D14, D169): `mailsink mcp [--url] [--key] [--workspace]` (env `MAILSINK_URL`,
+  `MAILSINK_KEY`, `MAILSINK_WORKSPACE`) forwards newline-delimited JSON-RPC from stdin to
+  `<url>/mcp` and writes the answers on stdout; a refused or unreachable request gets a
+  JSON-RPC error `-32000`. Client configuration: `docs/guides/mcp.md`.
+
 ## Logs (`logs.ts`, #35, propositions D145 to D147)
 
 ```ts
