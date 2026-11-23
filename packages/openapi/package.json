@@ -1,0 +1,23 @@
+{
+  "name": "@mailsink/openapi",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OpenAPI 3.1 document of every HTTP surface, generated from the Zod contracts",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "generate": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@mailsink/contracts": "workspace:*",
+    "zod": "^4.6.7",
+    "zod-openapi": "^6.0.2"
+  },
+  "devDependencies": {
+    "@readme/openapi-parser": "^11.0.0",
+    "tsx": "^4.23.15"
+  }
+}

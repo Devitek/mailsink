@@ -14,6 +14,7 @@ import { Route as EmailsRouteImport } from './routes/emails'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as OpenapiDotjsonRouteImport } from './routes/openapi[.]json'
 import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as CaptureDemoRouteImport } from './routes/capture.demo'
 import { Route as CaptureMessagesRouteImport } from './routes/capture.messages'
@@ -84,6 +85,11 @@ const LoginRoute = LoginRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OpenapiDotjsonRoute = OpenapiDotjsonRouteImport.update({
+  id: '/openapi.json',
+  path: '/openapi.json',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminWorkspacesRoute = AdminWorkspacesRouteImport.update({
@@ -339,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/healthz': typeof HealthzRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/openapi.json': typeof OpenapiDotjsonRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/demo': typeof CaptureDemoRoute
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/healthz': typeof HealthzRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/openapi.json': typeof OpenapiDotjsonRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/demo': typeof CaptureDemoRoute
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
@@ -445,6 +453,7 @@ export interface FileRoutesById {
   '/healthz': typeof HealthzRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/openapi.json': typeof OpenapiDotjsonRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/demo': typeof CaptureDemoRoute
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
@@ -500,6 +509,7 @@ export interface FileRouteTypes {
     | '/healthz'
     | '/login'
     | '/mcp'
+    | '/openapi.json'
     | '/admin/workspaces'
     | '/capture/demo'
     | '/capture/messages'
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/healthz'
     | '/login'
     | '/mcp'
+    | '/openapi.json'
     | '/admin/workspaces'
     | '/capture/demo'
     | '/capture/messages'
@@ -605,6 +616,7 @@ export interface FileRouteTypes {
     | '/healthz'
     | '/login'
     | '/mcp'
+    | '/openapi.json'
     | '/admin/workspaces'
     | '/capture/demo'
     | '/capture/messages'
@@ -659,6 +671,7 @@ export interface RootRouteChildren {
   HealthzRoute: typeof HealthzRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
+  OpenapiDotjsonRoute: typeof OpenapiDotjsonRoute
   AdminWorkspacesRoute: typeof AdminWorkspacesRouteWithChildren
   CaptureDemoRoute: typeof CaptureDemoRoute
   CaptureMessagesRoute: typeof CaptureMessagesRouteWithChildren
@@ -709,6 +722,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/openapi.json': {
+      id: '/openapi.json'
+      path: '/openapi.json'
+      fullPath: '/openapi.json'
+      preLoaderRoute: typeof OpenapiDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/workspaces': {
@@ -1303,6 +1323,7 @@ const rootRouteChildren: RootRouteChildren = {
   HealthzRoute: HealthzRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
+  OpenapiDotjsonRoute: OpenapiDotjsonRoute,
   AdminWorkspacesRoute: AdminWorkspacesRouteWithChildren,
   CaptureDemoRoute: CaptureDemoRoute,
   CaptureMessagesRoute: CaptureMessagesRouteWithChildren,

@@ -19,6 +19,7 @@
     "test:e2e": "pnpm --filter @mailsink/app test:e2e",
     "i18n:extract": "lingui extract --clean",
     "i18n:compile": "lingui compile --strict",
+    "openapi": "pnpm --filter @mailsink/openapi generate",
     "i18n:check": "lingui check sync --clean && lingui check missing --mode catalog --locale en,fr"
   },
   "devDependencies": {
