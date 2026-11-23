@@ -21,6 +21,7 @@ import {
   type PublicEndpoints,
 } from '../connections/snippets'
 import { DomainError } from '../errors'
+import { insertTemplateInputs } from '../templates/service'
 import { generateSlug } from './slug'
 import { toConnectionView, toWorkspaceView } from './views'
 
@@ -87,6 +88,7 @@ export async function createWorkspace(
           hash: workspaceKey.hash,
         },
       ])
+      await insertTemplateInputs(tx, workspaceId, input.templates ?? [], now) // #30
       return { workspace, connections }
     })
     .catch(rethrowConflict)
