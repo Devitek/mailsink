@@ -1348,3 +1348,47 @@ export const LogsSearch = z.object({ tab: z.enum(['api', 'smtp', 'webhooks']).de
   pageSize: z.number().int().min(10).max(200).default(50), inspect: z.string().optional() })
 export const PickerSearch = z.object({ ephemeral: z.boolean().default(false) })
 ```
+
+## Web UI auth (#37, propositions D160 to D164)
+
+Sign-in of the web UI by admin key (D13), screens L1a to L1e of brief 2 (B2-1 to B2-3).
+Code: `apps/mailsink/src/auth/`.
+
+| Route | Purpose |
+|---|---|
+| `GET /login?redirect=` | Sign-in screen. `redirect` is kept only when it is a path of the app (not `//host`, a scheme or `/login` itself). Already signed in, or `MAILSINK_UI_AUTH=none`: redirects to `redirect`, else to the last opened workspace, else `/` |
+| `POST /login` | Exchanges the admin key for the session cookie |
+| `/`, `/w/$workspaceSlug` | Signed-in pages: without a valid session, redirect to `/login?redirect=<href>` |
+
+`POST /login` (route server handler, not `defineApi()`, D162):
+
+```ts
+// request: application/json, 4 KiB at most
+{ key: string }                       // 1 to 1024 characters
+// 204: Set-Cookie: mailsink_session=v1.<expires>.<nonce>.<sig>; Path=/; Max-Age=…; HttpOnly; SameSite=Lax[; Secure]
+// 401: { error: { code: 'unauthorized', message: 'Invalid admin key' } }
+// 429: { error: { code: 'rate_limited', message } } + Retry-After: <seconds>
+// 422: { error: { code: 'validation_error', message } }   // body is not { key: string }
+// 404: { error: { code: 'not_found', message } }           // MAILSINK_UI_AUTH=none
+```
+
+- The answer never reveals how many attempts remain (B2-2). The refused key that reaches
+  the threshold already answers `429`; during the pause every call answers `429` with the
+  seconds left, the right key included, and the pause is not extended (D161).
+- Limiter key: the socket address (`X-Forwarded-For` is not trusted). Threshold and pause:
+  `MAILSINK_UI_LOGIN_MAX_ATTEMPTS` (5) failures within `MAILSINK_UI_LOGIN_LOCK_SECONDS` (60),
+  then a pause of `MAILSINK_UI_LOGIN_LOCK_SECONDS`.
+- Session (D160): signed with `MAILSINK_SESSION_SECRET`, else a secret derived from the admin
+  key; valid `MAILSINK_SESSION_TTL` (7 days); a cookie that no longer verifies (expired,
+  secret rotated) sends to `/login` with the L1d banner, no cookie at all with none.
+- Sign-out: server function `signOut` deletes the cookie of this browser.
+- UI server functions (`server-fns/`, D163) answer only with a valid session; opening a
+  workspace touches its activity and sets `mailsink_last_workspace` (its slug).
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MAILSINK_UI_AUTH` | `admin-key` | `none`: no sign-in at all (local runs, CI) |
+| `MAILSINK_SESSION_SECRET` | derived from `MAILSINK_ADMIN_KEY` | Cookie signing, 32 characters at least |
+| `MAILSINK_SESSION_TTL` | `604800` (7 days) | Session lifetime: seconds or a duration (`12h`), 60 s to 1 year |
+| `MAILSINK_UI_LOGIN_MAX_ATTEMPTS` | `5` | Refused keys before a pause (1 to 1000) |
+| `MAILSINK_UI_LOGIN_LOCK_SECONDS` | `60` | Counting window and pause, sent as `Retry-After` (1 to 86400) |
