@@ -61,7 +61,12 @@ describeDb('mailsink mcp proxy', (db) => {
   let instance: FakeInstance
   let messageId: string
   beforeAll(async () => {
-    ctx = { db: db.db, bus: createEventBus(), workspace: await createTestWorkspace(db.db) }
+    ctx = {
+      db: db.db,
+      bus: createEventBus(),
+      workspace: await createTestWorkspace(db.db),
+      publicUrl: 'http://mailsink.test',
+    }
     messageId = (await insertCapturedMessage(db.db, ctx.workspace.id, { subject: 'Via stdio' })).id
     instance = await startFakeInstance(ctx, KEY)
   })
