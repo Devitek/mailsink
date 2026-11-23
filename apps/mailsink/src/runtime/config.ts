@@ -83,6 +83,18 @@ const Env = z
       .default(DEFAULT_MAX_MESSAGE_BYTES),
     MAILSINK_PUBLIC_URL: PublicUrl.default('http://localhost:3000'),
     MAILSINK_DEFAULT_IDLE_TTL: IdleTtl.default(3600),
+    MAILSINK_UI_AUTH: z
+      .enum(['admin-key', 'none'], { error: 'must be admin-key or none' })
+      .default('admin-key'),
+    MAILSINK_SESSION_SECRET: z.string().min(32, 'must be at least 32 characters').optional(),
+    MAILSINK_SESSION_TTL: z
+      .string()
+      .transform((v) => (/^\d+$/.test(v) ? Number(v) : v))
+      .pipe(Duration)
+      .pipe(z.number().min(60).max(31_536_000))
+      .default(604_800),
+    MAILSINK_UI_LOGIN_MAX_ATTEMPTS: Int(1, 1000, 'a number of attempts').default(5),
+    MAILSINK_UI_LOGIN_LOCK_SECONDS: Int(1, 86_400, 'a number of seconds').default(60),
     MAILSINK_WEBHOOK_BLOCK_PRIVATE: z.stringbool({ error: 'must be true or false' }).default(false),
   })
   .refine(
@@ -132,6 +144,31 @@ export type RuntimeConfig = {
    * loopback or link-local addresses, at creation and at send time. Off when unset.
    */
   webhookBlockPrivate?: boolean
+  /**
+   * Web UI sign-in (#37, D13). Always set by readRuntimeConfig; optional so hand-built test
+   * configs need not list it (UI_AUTH_DEFAULTS applies).
+   */
+  ui?: UiAuthConfig
+}
+
+export type UiAuthConfig = {
+  /** `none` (`MAILSINK_UI_AUTH=none`): no sign-in at all, for local runs and CI. */
+  auth: 'admin-key' | 'none'
+  /** `MAILSINK_SESSION_SECRET`; unset = derived from the admin key. */
+  sessionSecret?: string
+  /** Lifetime of a session cookie (`MAILSINK_SESSION_TTL`, 7 days by default). */
+  sessionTtlSeconds: number
+  /** Failed sign-ins within `loginLockSeconds` before a pause (proposition D161). */
+  loginMaxAttempts: number
+  /** Window and pause of the sign-in limiter, answered as `Retry-After`. */
+  loginLockSeconds: number
+}
+
+export const UI_AUTH_DEFAULTS: UiAuthConfig = {
+  auth: 'admin-key',
+  sessionTtlSeconds: 604_800,
+  loginMaxAttempts: 5,
+  loginLockSeconds: 60,
 }
 
 type EnvSource = Record<string, string | undefined>
@@ -161,6 +198,13 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     maxMessageBytes: e.MAILSINK_MAX_MESSAGE_BYTES,
     publicUrl: e.MAILSINK_PUBLIC_URL,
     defaultIdleTtlSeconds: e.MAILSINK_DEFAULT_IDLE_TTL,
+    ui: {
+      auth: e.MAILSINK_UI_AUTH,
+      ...(e.MAILSINK_SESSION_SECRET ? { sessionSecret: e.MAILSINK_SESSION_SECRET } : {}),
+      sessionTtlSeconds: e.MAILSINK_SESSION_TTL,
+      loginMaxAttempts: e.MAILSINK_UI_LOGIN_MAX_ATTEMPTS,
+      loginLockSeconds: e.MAILSINK_UI_LOGIN_LOCK_SECONDS,
+    },
     webhookBlockPrivate: e.MAILSINK_WEBHOOK_BLOCK_PRIVATE,
     jobs: {
       batchSize: e.MAILSINK_JOBS_BATCH_SIZE,

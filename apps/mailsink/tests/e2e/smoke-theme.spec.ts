@@ -27,7 +27,9 @@ test('the toggle switches the theme in place and the server renders the choice',
     .toBe('dark')
 
   // The server HTML already carries the theme: nothing to repaint after hydration.
-  const html = await (await request.get('/', { headers: { cookie: 'mailsink_theme=dark' } })).text()
+  const html = await (
+    await request.get('/login', { headers: { cookie: 'mailsink_theme=dark' } })
+  ).text()
   expect(html).toMatch(/<html[^>]*data-theme="dark"/)
 
   await page.reload()
