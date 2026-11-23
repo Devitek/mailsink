@@ -76,7 +76,7 @@ describe('stream frames in the query cache', () => {
       ['inbox', 'qa'],
       ['logs', 'qa'],
     ])
-    expect(event({ type: 'log.api' } as StreamEvent).invalidate).toEqual([
+    expect(event({ type: 'log.api', log: { createdAt: '' } } as StreamEvent).invalidate).toEqual([
       ['inbox', 'qa', 'facets'],
       ['logs', 'qa', 'api', 'list'],
       ['logs', 'qa', 'sources'],
@@ -114,9 +114,12 @@ describe('stream frames in the query cache', () => {
     const base = { id: 'ws_1', slug: 'qa', name: 'QA', ephemeral: true, idleTtlSeconds: 600 }
     const later = new Date(Date.now() + 3_600_000).toISOString()
     qc.setQueryData(['workspace', 'qa'], { ...base, expiresAt: '2026-01-01T00:00:00.000Z' })
-    applyStreamEvent(qc, 'qa', { type: 'log.api' } as StreamEvent)
+    // The server time of the call, not the browser clock: the banner shows the expiry the
+    // server stores once its activity throttle window closes (D16, D85).
+    const at = '2026-06-01T12:00:00.000Z'
+    applyStreamEvent(qc, 'qa', { type: 'log.api', log: { createdAt: at } } as StreamEvent)
     const expiry = () => qc.getQueryData<{ expiresAt: string }>(['workspace', 'qa'])?.expiresAt
-    expect(Date.parse(expiry() ?? '')).toBeGreaterThan(Date.now() + 590_000)
+    expect(expiry()).toBe('2026-06-01T12:10:00.000Z')
     qc.setQueryData(['workspace', 'qa'], { ...base, expiresAt: later })
     applyStreamEvent(qc, 'qa', { type: 'message.created', message: summary('msg_3') })
     expect(expiry()).toBe(later)

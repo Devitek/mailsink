@@ -6,7 +6,8 @@ import { formatCountdown, formatTtl } from './format-ttl'
 // Ephemeral banner of the prototype, under the header of an ephemeral workspace: what it
 // is and who created it (`metadata.createdBy`, when the Admin API caller gave one), then
 // the live countdown to the GC purge and how much of its idle TTL is left. Stream frames
-// of ingestion and API calls push the expiry back (realtime/apply-stream-event.ts). The
+// of ingestion and API calls push the expiry back to the server time of the call plus the
+// idle TTL, which is the purge time (realtime/apply-stream-event.ts, #118). The
 // countdown depends on the clock, so server and browser differ by a second at hydration.
 export function EphemeralBanner({ workspace }: Readonly<{ workspace: WorkspaceSummary }>) {
   const { t, i18n } = useLingui()
