@@ -2,7 +2,7 @@ import { getCapturedMessage, isDomainError, readAttachment, readRawMessage } fro
 import { binaryResponse, contentDisposition, safeContentType } from '../../http/capture/download'
 import { notFound, sessionWorkspace } from '../inbox/session-workspace.server'
 import type { PreviewScheme } from '../inbox/ui-paths'
-import { dataUrl, INLINE_IMAGES_MAX_BYTES, PREVIEW_CSP, previewDocument } from './preview-document'
+import { dataUrl, INLINE_IMAGES_MAX_BYTES, previewCsp, previewDocument } from './preview-document'
 
 // Session routes of the message viewer (#40): the Capture downloads (raw EML, attachments)
 // and the HTML preview, with the headers of the Capture downloads (captured content is
@@ -44,8 +44,16 @@ export const attachmentForSession = (slug: string, messageId: string, attachment
     })
   })
 
-/** `GET /w/$workspaceSlug/m/$messageId/html?scheme=`: the document of the preview iframe. */
-export const htmlForSession = (slug: string, messageId: string, scheme: PreviewScheme) =>
+/**
+ * `GET /w/$workspaceSlug/m/$messageId/html?scheme=&remote=blocked`: the document of the
+ * preview iframe; `remote=blocked` forbids remote resources in its CSP.
+ */
+export const htmlForSession = (
+  slug: string,
+  messageId: string,
+  scheme: PreviewScheme,
+  options: { blockRemote?: boolean } = {},
+) =>
   guarded(slug, async ({ db, workspaceId }) => {
     const message = await getCapturedMessage(db, workspaceId, messageId)
     if (message.html === null) return notFound('This message has no HTML body')
@@ -65,7 +73,7 @@ export const htmlForSession = (slug: string, messageId: string, scheme: PreviewS
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'X-Content-Type-Options': 'nosniff',
-        'Content-Security-Policy': PREVIEW_CSP,
+        'Content-Security-Policy': previewCsp({ blockRemote: options.blockRemote === true }),
         'Cache-Control': 'private, no-store',
         'Referrer-Policy': 'no-referrer',
       },

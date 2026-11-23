@@ -79,7 +79,7 @@ test('the viewer simulates events and shows every part of the message', async ({
   const preview = page.frameLocator('iframe[title="Email preview"]')
   await expect(preview.getByRole('heading', { name: 'See you tonight' })).toBeVisible()
   await expect(preview.locator('body')).not.toContainText('script ran')
-  await page.getByRole('button', { name: 'Mobile' }).click()
+  await page.getByRole('radio', { name: 'Mobile' }).click()
   await expect(page.getByText('iframe sandbox · scripts blocked · 375 px')).toBeVisible()
 
   await page.getByRole('tab', { name: 'Text' }).click()

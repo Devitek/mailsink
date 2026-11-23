@@ -74,6 +74,14 @@ describeDb('inbox session routes', (ctx) => {
     expect(body).toContain(`src="data:image/png;base64,${Buffer.from('PNG').toString('base64')}"`)
   })
 
+  it('forbids remote resources when remote images are blocked', async () => {
+    const res = await htmlForSession(slug, message.id, 'light', { blockRemote: true })
+    const csp = res.headers.get('content-security-policy') ?? ''
+    expect(csp).toContain('img-src data:')
+    expect(csp).not.toMatch(/https?:/)
+    expect(await res.text()).toContain('data:image/png;base64,')
+  })
+
   it('downloads the raw EML and attachments with the Capture download headers', async () => {
     const raw = await rawForSession(slug, message.id)
     expect(raw.headers.get('content-type')).toBe('message/rfc822')

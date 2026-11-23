@@ -62,4 +62,5 @@ export {
 export { StatusBadge, type StatusBadgeProps, statusColorVar } from './components/status-badge'
 export { Switch } from './components/switch'
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs'
+export { ToastProvider, useToast } from './components/toast'
 export { cn } from './lib/cn'
