@@ -16,8 +16,9 @@ function parsePayload(payload: unknown): SimulateDeliveryPayload {
 
 /**
  * `simulate_delivery` job: runs the simulation of the message. A message deleted in the
- * meantime (retention, workspace GC) completes the job without effect. `options.planner`
- * is where #21 plugs the settings resolver.
+ * meantime (retention, workspace GC) completes the job without effect. The planner
+ * defaults to the settings planner (#21); a run with decisions still pending (latency,
+ * deferred retry) enqueues its own follow-up job.
  */
 export function simulateDeliveryHandler(options: SimulateDeliveryOptions = {}): JobHandler {
   return async (job, { db }) => {

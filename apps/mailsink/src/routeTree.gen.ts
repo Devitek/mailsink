@@ -13,9 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as AdminWorkspacesRouteImport } from './routes/admin.workspaces'
 import { Route as CaptureMessagesRouteImport } from './routes/capture.messages'
+import { Route as CaptureOverrideRouteImport } from './routes/capture.override'
+import { Route as CaptureSuppressionsRouteImport } from './routes/capture.suppressions'
 import { Route as V1EmailsRouteImport } from './routes/v1.emails'
 import { Route as AdminWorkspacesIdRouteImport } from './routes/admin.workspaces.$id'
 import { Route as CaptureMessagesIdRouteImport } from './routes/capture.messages.$id'
+import { Route as CaptureOverrideResetRouteImport } from './routes/capture.override.reset'
 import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
 import { Route as CaptureMessagesIdRawRouteImport } from './routes/capture.messages.$id.raw'
 import { Route as CaptureMessagesIdAttachmentsAttIdRouteImport } from './routes/capture.messages.$id.attachments.$attId'
@@ -40,6 +43,16 @@ const CaptureMessagesRoute = CaptureMessagesRouteImport.update({
   path: '/capture/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaptureOverrideRoute = CaptureOverrideRouteImport.update({
+  id: '/capture/override',
+  path: '/capture/override',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureSuppressionsRoute = CaptureSuppressionsRouteImport.update({
+  id: '/capture/suppressions',
+  path: '/capture/suppressions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V1EmailsRoute = V1EmailsRouteImport.update({
   id: '/v1/emails',
   path: '/v1/emails',
@@ -54,6 +67,11 @@ const CaptureMessagesIdRoute = CaptureMessagesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => CaptureMessagesRoute,
+} as any)
+const CaptureOverrideResetRoute = CaptureOverrideResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
+  getParentRoute: () => CaptureOverrideRoute,
 } as any)
 const V1EmailsBatchRoute = V1EmailsBatchRouteImport.update({
   id: '/batch',
@@ -77,9 +95,12 @@ export interface FileRoutesByFullPath {
   '/healthz': typeof HealthzRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/capture/override': typeof CaptureOverrideRouteWithChildren
+  '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
@@ -89,9 +110,12 @@ export interface FileRoutesByTo {
   '/healthz': typeof HealthzRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/capture/override': typeof CaptureOverrideRouteWithChildren
+  '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
@@ -102,9 +126,12 @@ export interface FileRoutesById {
   '/healthz': typeof HealthzRoute
   '/admin/workspaces': typeof AdminWorkspacesRouteWithChildren
   '/capture/messages': typeof CaptureMessagesRouteWithChildren
+  '/capture/override': typeof CaptureOverrideRouteWithChildren
+  '/capture/suppressions': typeof CaptureSuppressionsRoute
   '/v1/emails': typeof V1EmailsRouteWithChildren
   '/admin/workspaces/$id': typeof AdminWorkspacesIdRoute
   '/capture/messages/$id': typeof CaptureMessagesIdRouteWithChildren
+  '/capture/override/reset': typeof CaptureOverrideResetRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/messages/$id/attachments/$attId': typeof CaptureMessagesIdAttachmentsAttIdRoute
@@ -116,9 +143,12 @@ export interface FileRouteTypes {
     | '/healthz'
     | '/admin/workspaces'
     | '/capture/messages'
+    | '/capture/override'
+    | '/capture/suppressions'
     | '/v1/emails'
     | '/admin/workspaces/$id'
     | '/capture/messages/$id'
+    | '/capture/override/reset'
     | '/v1/emails/batch'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
@@ -128,9 +158,12 @@ export interface FileRouteTypes {
     | '/healthz'
     | '/admin/workspaces'
     | '/capture/messages'
+    | '/capture/override'
+    | '/capture/suppressions'
     | '/v1/emails'
     | '/admin/workspaces/$id'
     | '/capture/messages/$id'
+    | '/capture/override/reset'
     | '/v1/emails/batch'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
@@ -140,9 +173,12 @@ export interface FileRouteTypes {
     | '/healthz'
     | '/admin/workspaces'
     | '/capture/messages'
+    | '/capture/override'
+    | '/capture/suppressions'
     | '/v1/emails'
     | '/admin/workspaces/$id'
     | '/capture/messages/$id'
+    | '/capture/override/reset'
     | '/v1/emails/batch'
     | '/capture/messages/$id/raw'
     | '/capture/messages/$id/attachments/$attId'
@@ -153,6 +189,8 @@ export interface RootRouteChildren {
   HealthzRoute: typeof HealthzRoute
   AdminWorkspacesRoute: typeof AdminWorkspacesRouteWithChildren
   CaptureMessagesRoute: typeof CaptureMessagesRouteWithChildren
+  CaptureOverrideRoute: typeof CaptureOverrideRouteWithChildren
+  CaptureSuppressionsRoute: typeof CaptureSuppressionsRoute
   V1EmailsRoute: typeof V1EmailsRouteWithChildren
 }
 
@@ -186,6 +224,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CaptureMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/capture/override': {
+      id: '/capture/override'
+      path: '/capture/override'
+      fullPath: '/capture/override'
+      preLoaderRoute: typeof CaptureOverrideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture/suppressions': {
+      id: '/capture/suppressions'
+      path: '/capture/suppressions'
+      fullPath: '/capture/suppressions'
+      preLoaderRoute: typeof CaptureSuppressionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v1/emails': {
       id: '/v1/emails'
       path: '/v1/emails'
@@ -206,6 +258,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/capture/messages/$id'
       preLoaderRoute: typeof CaptureMessagesIdRouteImport
       parentRoute: typeof CaptureMessagesRoute
+    }
+    '/capture/override/reset': {
+      id: '/capture/override/reset'
+      path: '/reset'
+      fullPath: '/capture/override/reset'
+      preLoaderRoute: typeof CaptureOverrideResetRouteImport
+      parentRoute: typeof CaptureOverrideRoute
     }
     '/v1/emails/batch': {
       id: '/v1/emails/batch'
@@ -269,6 +328,18 @@ const CaptureMessagesRouteWithChildren = CaptureMessagesRoute._addFileChildren(
   CaptureMessagesRouteChildren,
 )
 
+interface CaptureOverrideRouteChildren {
+  CaptureOverrideResetRoute: typeof CaptureOverrideResetRoute
+}
+
+const CaptureOverrideRouteChildren: CaptureOverrideRouteChildren = {
+  CaptureOverrideResetRoute: CaptureOverrideResetRoute,
+}
+
+const CaptureOverrideRouteWithChildren = CaptureOverrideRoute._addFileChildren(
+  CaptureOverrideRouteChildren,
+)
+
 interface V1EmailsRouteChildren {
   V1EmailsBatchRoute: typeof V1EmailsBatchRoute
 }
@@ -286,6 +357,8 @@ const rootRouteChildren: RootRouteChildren = {
   HealthzRoute: HealthzRoute,
   AdminWorkspacesRoute: AdminWorkspacesRouteWithChildren,
   CaptureMessagesRoute: CaptureMessagesRouteWithChildren,
+  CaptureOverrideRoute: CaptureOverrideRouteWithChildren,
+  CaptureSuppressionsRoute: CaptureSuppressionsRoute,
   V1EmailsRoute: V1EmailsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

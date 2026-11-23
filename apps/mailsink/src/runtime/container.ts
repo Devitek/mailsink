@@ -2,6 +2,7 @@ import {
   createJobRunner,
   DEFAULT_JOB_SETTINGS,
   simulateDeliveryHandler,
+  startOverrideExpiryScheduler,
   startRetentionScheduler,
   startWorker,
 } from '@mailsink/core'
@@ -84,6 +85,8 @@ export async function createRuntime(
       failedJobRetentionSeconds: jobs.failedRetentionSeconds,
       log,
     })
+    // Closes overrides past their TTL (#22); reads already ignore them.
+    const overrideExpiry = startOverrideExpiryScheduler({ db: db.db, log })
 
     return {
       config,
@@ -94,6 +97,7 @@ export async function createRuntime(
         // pass in flight, then close the db.
         await smtp.close()
         await Promise.all([worker.stop(), retention.stop()])
+        await overrideExpiry.stop()
         await db.close()
       },
     }
