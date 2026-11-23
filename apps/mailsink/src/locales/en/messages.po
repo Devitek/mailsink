@@ -30,9 +30,21 @@ msgstr "{0} msg"
 msgid "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
 msgstr "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
 
+#: apps/mailsink/src/features/override/override-pill.tsx
+msgid "{count} scopes"
+msgstr "{count} scopes"
+
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 msgid "{kind} · created {created}"
 msgstr "{kind} · created {created}"
+
+#: apps/mailsink/src/features/override/rates-section.tsx
+msgid "{status} rate"
+msgstr "{status} rate"
+
+#: apps/mailsink/src/features/override/rates-section.tsx
+msgid "{status} rate (slider)"
+msgstr "{status} rate (slider)"
 
 #: apps/mailsink/src/features/inbox/inbox-page.tsx
 msgid "← Inbox"
@@ -46,6 +58,10 @@ msgstr "→ updates the status and delivers the subscribed webhooks"
 msgid "+ New connection"
 msgstr "+ New connection"
 
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "+ Rule"
+msgstr "+ Rule"
+
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "<0>Key rejected.</0> Check that it matches <1>MAILSINK_ADMIN_KEY</1> on the server."
 msgstr "<0>Key rejected.</0> Check that it matches <1>MAILSINK_ADMIN_KEY</1> on the server."
@@ -57,6 +73,14 @@ msgstr "<0>Too many attempts.</0> To protect this instance, sign-in is paused fo
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "<0>Where do I find the key?</0> It is set at deployment in the <1>MAILSINK_ADMIN_KEY</1> variable. Ask the instance operator: there are no accounts and no password reset."
 msgstr "<0>Where do I find the key?</0> It is set at deployment in the <1>MAILSINK_ADMIN_KEY</1> variable. Ask the instance operator: there are no accounts and no password reset."
+
+#: apps/mailsink/src/features/override/target-section.tsx
+msgid "1 h"
+msgstr "1 h"
+
+#: apps/mailsink/src/features/override/target-section.tsx
+msgid "15 min"
+msgstr "15 min"
 
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "2 to 63 lower-case letters, digits or dashes, starting with a letter or digit."
@@ -75,15 +99,39 @@ msgstr "80 characters at most."
 msgid "A new secret is generated and shown once. The current one stops working at once: update every client using it."
 msgstr "A new secret is generated and shown once. The current one stops working at once: update every client using it."
 
+#: apps/mailsink/src/features/override/use-override-form.ts
+msgid "A pattern is required."
+msgstr "A pattern is required."
+
+#: apps/mailsink/src/features/override/use-override-form.ts
+msgid "A whole number above 0."
+msgstr "A whole number above 0."
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "A whole number of requests per second, or empty."
 msgstr "A whole number of requests per second, or empty."
 
+#: apps/mailsink/src/features/override/use-override-form.ts
+msgid "A whole percentage from 0 to 100."
+msgstr "A whole percentage from 0 to 100."
+
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "Actions"
+msgstr "Actions"
+
+#: apps/mailsink/src/features/override/override-sheet.tsx
+msgid "active"
+msgstr "active"
+
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Add a first connection"
 msgstr "Add a first connection"
+
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "Address"
+msgstr "Address"
 
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Admin key"
@@ -102,6 +150,10 @@ msgstr "An msk_… key is generated on creation. Point the provider SDK at the M
 msgid "API key"
 msgstr "API key"
 
+#: apps/mailsink/src/features/override/panel-footer.tsx
+msgid "Apply the override"
+msgstr "Apply the override"
+
 #. placeholder {0}: files.length
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "Attachments · {0}"
@@ -112,13 +164,22 @@ msgstr "Attachments · {0}"
 msgid "Base URL"
 msgstr "Base URL"
 
+#: apps/mailsink/src/features/override/rate-limit-section.tsx
+msgid "beyond: <0>429</0> / <1>421</1>"
+msgstr "beyond: <0>429</0> / <1>421</1>"
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 #: apps/mailsink/src/features/message-viewer/purge-button.tsx
+#: apps/mailsink/src/features/override/panel-footer.tsx
 #: apps/mailsink/src/features/workspaces/confirm-dialog.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Cancel"
 msgstr "Cancel"
+
+#: apps/mailsink/src/features/override/chaos-latency-sections.tsx
+msgid "Chaos"
+msgstr "Chaos"
 
 #: apps/mailsink/src/features/login/login-form.tsx
 msgid "Checking…"
@@ -137,9 +198,17 @@ msgstr "Choose the provider to emulate"
 msgid "Clicked: choose a link"
 msgstr "Clicked: choose a link"
 
+#: apps/mailsink/src/features/override/override-sheet.tsx
+msgid "Close"
+msgstr "Close"
+
 #: apps/mailsink/src/features/message-viewer/purge-button.tsx
 msgid "Confirm the purge ({count})"
 msgstr "Confirm the purge ({count})"
+
+#: apps/mailsink/src/features/override/panel-footer.tsx
+msgid "Confirm the reset"
+msgstr "Confirm the reset"
 
 #: apps/mailsink/src/features/realtime/live-indicator.tsx
 msgid "Connecting…"
@@ -236,6 +305,19 @@ msgstr "Default rate limit"
 msgid "Default retention"
 msgstr "Default retention"
 
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "delay +ms"
+msgstr "delay +ms"
+
+#: apps/mailsink/src/features/override/chaos-latency-sections.tsx
+msgid "Delay between queued and the final status, drawn in this range."
+msgstr "Delay between queued and the final status, drawn in this range."
+
+#. placeholder {0}: i + 1
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "Delay of rule {0}"
+msgstr "Delay of rule {0}"
+
 #: apps/mailsink/src/features/connections/connection-panel.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Delete"
@@ -264,6 +346,10 @@ msgstr "Description"
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Desktop"
 msgstr "Desktop"
+
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "Deterministic rules per recipient"
+msgstr "Deterministic rules per recipient"
 
 #: apps/mailsink/src/features/connections/connection-list.tsx
 msgid "disabled"
@@ -301,6 +387,11 @@ msgstr "Edit"
 msgid "Edit the workspace"
 msgstr "Edit the workspace"
 
+#. placeholder {0}: i + 1
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "Effect of rule {0}"
+msgstr "Effect of rule {0}"
+
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Email preview"
 msgstr "Email preview"
@@ -337,13 +428,37 @@ msgstr "Ephemeral equivalent (CI / E2E), hidden by default, deleted after one id
 msgid "Ephemeral workspaces"
 msgstr "Ephemeral workspaces"
 
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "Evaluated in order, before the random draw. <0>*</0> wildcards allowed. No rule: the inherited rules are switched off."
+msgstr "Evaluated in order, before the random draw. <0>*</0> wildcards allowed. No rule: the inherited rules are switched off."
+
 #: apps/mailsink/src/features/message-viewer/use-simulate.ts
 msgid "Events recorded: {events}. Webhook deliveries queued: {deliveries}."
 msgstr "Events recorded: {events}. Webhook deliveries queued: {deliveries}."
 
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+msgid "Every address is removed: the next sends to them draw a status again. The filter does not apply, the whole list is emptied."
+msgstr "Every address is removed: the next sends to them draw a status again. The filter does not apply, the whole list is emptied."
+
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "Every email caught. None delivered."
 msgstr "Every email caught. None delivered."
+
+#: apps/mailsink/src/features/override/target-section.tsx
+msgid "Expires"
+msgstr "Expires"
+
+#: apps/mailsink/src/features/override/target-section.tsx
+msgid "Expiry"
+msgstr "Expiry"
+
+#: apps/mailsink/src/features/override/chaos-latency-sections.tsx
+msgid "Fails this share of requests before ingestion, with one of the chosen codes."
+msgstr "Fails this share of requests before ingestion, with one of the chosen codes."
+
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+msgid "Filter by address"
+msgstr "Filter by address"
 
 #. placeholder {0}: formatBytes(raw.sizeBytes, i18n.locale)
 #: apps/mailsink/src/features/message-viewer/headers-tab.tsx
@@ -368,6 +483,10 @@ msgstr "Give it a name."
 msgid "Billing Service - Staging"
 msgstr "Billing Service - Staging"
 
+#: apps/mailsink/src/features/override/override-panel.tsx
+msgid "Hard bounces and complaints add the address to the <0>suppression list</0>."
+msgstr "Hard bounces and complaints add the address to the <0>suppression list</0>."
+
 #. placeholder {0}: headers.length
 #: apps/mailsink/src/features/message-viewer/headers-tab.tsx
 msgid "Headers · {0}"
@@ -384,6 +503,10 @@ msgstr "Hide"
 #: apps/mailsink/src/features/message-viewer/message-viewer.tsx
 msgid "History"
 msgstr "History"
+
+#: apps/mailsink/src/features/override/chaos-latency-sections.tsx
+msgid "HTTP codes answered"
+msgstr "HTTP codes answered"
 
 #: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
 msgid "https://… custom URL"
@@ -422,6 +545,10 @@ msgstr "Language"
 msgid "Language and session"
 msgstr "Language and session"
 
+#: apps/mailsink/src/features/override/chaos-latency-sections.tsx
+msgid "Latency"
+msgstr "Latency"
+
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Light background"
 msgstr "Light background"
@@ -443,6 +570,10 @@ msgstr "Links found in the message ({0})"
 #: apps/mailsink/src/features/realtime/live-indicator.tsx
 msgid "Live"
 msgstr "Live"
+
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+msgid "Load more"
+msgstr "Load more"
 
 #: apps/mailsink/src/features/message-viewer/message-viewer.tsx
 msgid "Loading message…"
@@ -468,7 +599,12 @@ msgstr "Logs"
 msgid "Manage connections →"
 msgstr "Manage connections →"
 
+#: apps/mailsink/src/features/override/use-override-form.ts
+msgid "maxMs must be greater than or equal to minMs."
+msgstr "maxMs must be greater than or equal to minMs."
+
 #: apps/mailsink/src/features/inbox/inbox-page.tsx
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
 msgid "Message"
 msgstr "Message"
 
@@ -532,6 +668,10 @@ msgstr "No MIME source was kept for this message."
 msgid "No persistent workspace yet."
 msgstr "No persistent workspace yet."
 
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "No suppressed address matches this filter."
+msgstr "No suppressed address matches this filter."
+
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "No webhook delivery for this message."
 msgstr "No webhook delivery for this message."
@@ -540,6 +680,10 @@ msgstr "No webhook delivery for this message."
 msgid "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 msgstr "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "none"
+msgstr "none"
+
 #: apps/mailsink/src/features/inbox/relative-time.tsx
 msgid "now"
 msgstr "now"
@@ -547,6 +691,10 @@ msgstr "now"
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "Open its connections"
 msgstr "Open its connections"
+
+#: apps/mailsink/src/features/override/override-pill.tsx
+msgid "Open the override panel"
+msgstr "Open the override panel"
 
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "Open the workspace"
@@ -560,13 +708,58 @@ msgstr "Optional, else the workspace value."
 msgid "Optional: generated from the workspace slug."
 msgstr "Optional: generated from the workspace slug."
 
+#: apps/mailsink/src/features/override/override-pill.tsx
+msgid "Override active"
+msgstr "Override active"
+
+#: apps/mailsink/src/features/override/override-sheet.tsx
+msgid "Override settings"
+msgstr "Override settings"
+
+#: apps/mailsink/src/features/override/target-section.tsx
+msgid "Override target"
+msgstr "Override target"
+
+#: apps/mailsink/src/features/override/chaos-latency-sections.tsx
+msgid "Override the chaos"
+msgstr "Override the chaos"
+
+#: apps/mailsink/src/features/override/chaos-latency-sections.tsx
+msgid "Override the latency"
+msgstr "Override the latency"
+
+#: apps/mailsink/src/features/override/rate-limit-section.tsx
+msgid "Override the rate limit"
+msgstr "Override the rate limit"
+
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "Override the recipient rules"
+msgstr "Override the recipient rules"
+
+#: apps/mailsink/src/features/override/rates-section.tsx
+msgid "Override the status rates"
+msgstr "Override the status rates"
+
+#: apps/mailsink/src/features/override/override-pill.tsx
+msgid "Override…"
+msgstr "Override…"
+
 #: apps/mailsink/src/features/login/key-field.tsx
 msgid "Paste"
 msgstr "Paste"
 
+#. placeholder {0}: i + 1
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "Pattern of rule {0}"
+msgstr "Pattern of rule {0}"
+
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Persistent workspaces"
 msgstr "Persistent workspaces"
+
+#: apps/mailsink/src/features/override/use-override-form.ts
+msgid "Pick at least one code."
+msgstr "Pick at least one code."
 
 #: apps/mailsink/src/features/message-viewer/message-viewer.tsx
 msgid "Preview"
@@ -588,6 +781,7 @@ msgstr "Protection disabled <0>MAILSINK_UI_AUTH=none</0>: no sign-in and no sign
 msgid "Purge the inbox"
 msgstr "Purge the inbox"
 
+#: apps/mailsink/src/features/override/rate-limit-section.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Rate limit"
 msgstr "Rate limit"
@@ -596,6 +790,10 @@ msgstr "Rate limit"
 msgid "Rate limit override"
 msgstr "Rate limit override"
 
+#: apps/mailsink/src/features/override/rate-limit-section.tsx
+msgid "Rate limit window"
+msgstr "Rate limit window"
+
 #: apps/mailsink/src/features/connections/credentials-reveal.tsx
 msgid "Ready-to-copy .env snippet"
 msgstr "Ready-to-copy .env snippet"
@@ -603,6 +801,10 @@ msgstr "Ready-to-copy .env snippet"
 #: apps/mailsink/src/features/realtime/live-indicator.tsx
 msgid "Real-time stream (Server-Sent Events) connected"
 msgstr "Real-time stream (Server-Sent Events) connected"
+
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "Reason"
+msgstr "Reason"
 
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "Received"
@@ -620,10 +822,64 @@ msgstr "Regenerate"
 msgid "Regenerate SMTP_PASS?"
 msgstr "Regenerate SMTP_PASS?"
 
+#: apps/mailsink/src/features/override/rates-section.tsx
+msgid "Remainder"
+msgstr "Remainder"
+
+#. placeholder {0}: row.email
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "Remove {0} from the suppression list"
+msgstr "Remove {0} from the suppression list"
+
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "Remove from the list"
+msgstr "Remove from the list"
+
+#. placeholder {0}: i + 1
+#: apps/mailsink/src/features/override/rules-section.tsx
+msgid "Remove rule {0}"
+msgstr "Remove rule {0}"
+
 #. placeholder {0}: search.tag
 #: apps/mailsink/src/features/inbox/filter-bar.tsx
 msgid "Remove the tag filter {0}"
 msgstr "Remove the tag filter {0}"
+
+#: apps/mailsink/src/features/override/rate-limit-section.tsx
+msgid "req/min"
+msgstr "req/min"
+
+#: apps/mailsink/src/features/override/rate-limit-section.tsx
+msgid "req/s"
+msgstr "req/s"
+
+#: apps/mailsink/src/features/override/rate-limit-section.tsx
+msgid "Requests allowed per window"
+msgstr "Requests allowed per window"
+
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+msgid "Reset"
+msgstr "Reset"
+
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+msgid "Reset the list"
+msgstr "Reset the list"
+
+#: apps/mailsink/src/features/override/override-pill.tsx
+msgid "Reset the override"
+msgstr "Reset the override"
+
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+msgid "Reset the suppression list?"
+msgstr "Reset the suppression list?"
+
+#: apps/mailsink/src/features/override/panel-footer.tsx
+msgid "Reset to defaults"
+msgstr "Reset to defaults"
+
+#: apps/mailsink/src/features/override/panel-footer.tsx
+msgid "Restore the settings of this target?"
+msgstr "Restore the settings of this target?"
 
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Retention"
@@ -657,6 +913,10 @@ msgstr "See in the logs explorer →"
 #: apps/mailsink/src/features/connections/connections-screen.tsx
 msgid "Select a connection."
 msgstr "Select a connection."
+
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+msgid "Sends to these addresses are stored <0>suppressed</0> without drawing a status."
+msgstr "Sends to these addresses are stored <0>suppressed</0> without drawing a status."
 
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Settings"
@@ -713,9 +973,17 @@ msgstr "Simulate click"
 msgid "Simulation refused: {0}"
 msgstr "Simulation refused: {0}"
 
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "Since"
+msgstr "Since"
+
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Slug"
 msgstr "Slug"
+
+#: apps/mailsink/src/features/override/chaos-latency-sections.tsx
+msgid "SMTP codes answered"
+msgstr "SMTP codes answered"
 
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "SMTP username"
@@ -733,18 +1001,37 @@ msgstr "Source"
 msgid "Status"
 msgstr "Status"
 
+#: apps/mailsink/src/features/override/rates-section.tsx
+msgid "Status rates"
+msgstr "Status rates"
+
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "Status timeline"
 msgstr "Status timeline"
+
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
+#: apps/mailsink/src/routes/w.$workspaceSlug.suppressions.tsx
+msgid "Suppression list"
+msgstr "Suppression list"
 
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "Tags"
 msgstr "Tags"
 
+#: apps/mailsink/src/features/override/target-section.tsx
+msgid "Target and duration"
+msgstr "Target and duration"
+
+#: apps/mailsink/src/features/override/override-sheet.tsx
+msgid "Temporary override of <0>{slug}</0>: restored on reset or expiry."
+msgstr "Temporary override of <0>{slug}</0>: restored on reset or expiry."
+
 #: apps/mailsink/src/features/message-viewer/message-viewer.tsx
 msgid "Text"
 msgstr "Text"
 
+#: apps/mailsink/src/features/override/panel-footer.tsx
+#: apps/mailsink/src/features/suppressions/suppressions-screen.tsx
 #: apps/mailsink/src/features/workspaces/confirm-dialog.tsx
 msgid "That did not work. Try again."
 msgstr "That did not work. Try again."
@@ -757,9 +1044,21 @@ msgstr "The connection could not be created. Try again."
 msgid "The key is never stored in your browser: it is exchanged for a session cookie."
 msgstr "The key is never stored in your browser: it is exchanged for a session cookie."
 
+#: apps/mailsink/src/features/override/use-override-form.ts
+msgid "The rates add up to more than 100 %."
+msgstr "The rates add up to more than 100 %."
+
+#: apps/mailsink/src/features/override/rates-section.tsx
+msgid "The remaining {delivered} % are delivered. Each send draws its status from these rates."
+msgstr "The remaining {delivered} % are delivered. Each send draws its status from these rates."
+
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 msgid "The slug /w/{slug} does not change."
 msgstr "The slug /w/{slug} does not change."
+
+#: apps/mailsink/src/features/suppressions/suppression-table.tsx
+msgid "The suppression list is empty."
+msgstr "The suppression list is empty."
 
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "The workspace could not be created. Try again."
@@ -785,6 +1084,14 @@ msgstr "This message has no text body."
 msgid "This message no longer exists. It may have been purged."
 msgstr "This message no longer exists. It may have been purged."
 
+#: apps/mailsink/src/features/override/override-sheet.tsx
+msgid "This one expires at {expires}."
+msgstr "This one expires at {expires}."
+
+#: apps/mailsink/src/features/override/override-sheet.tsx
+msgid "This one lasts until reset."
+msgstr "This one lasts until reset."
+
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "This slug is already taken."
 msgstr "This slug is already taken."
@@ -805,9 +1112,19 @@ msgstr "To"
 msgid "Toggle light / dark"
 msgstr "Toggle light / dark"
 
+#. placeholder {0}: -delivered
+#: apps/mailsink/src/features/override/rates-section.tsx
+msgid "Total above 100 % (+{0} %): lower one or more rates."
+msgstr "Total above 100 % (+{0} %): lower one or more rates."
+
 #: apps/mailsink/src/features/login/login-form.tsx
 msgid "Try again in {countdown}"
 msgstr "Try again in {countdown}"
+
+#: apps/mailsink/src/features/override/panel-footer.tsx
+#: apps/mailsink/src/features/override/use-override-form.ts
+msgid "Turn on at least one setting to override."
+msgstr "Turn on at least one setting to override."
 
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Type the slug to confirm"
@@ -819,10 +1136,26 @@ msgstr "Type the slug to confirm"
 msgid "unlimited"
 msgstr "unlimited"
 
+#: apps/mailsink/src/features/override/target-section.tsx
+msgid "Until reset"
+msgstr "Until reset"
+
 #. placeholder {0}: deliveries.length
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "Webhook deliveries · {0}"
 msgstr "Webhook deliveries · {0}"
+
+#: apps/mailsink/src/features/override/use-override-form.ts
+msgid "Whole milliseconds, from 0 to 600000."
+msgstr "Whole milliseconds, from 0 to 600000."
+
+#: apps/mailsink/src/features/override/target-section.tsx
+msgid "Whole workspace"
+msgstr "Whole workspace"
+
+#: apps/mailsink/src/features/override/override-pill.tsx
+msgid "workspace"
+msgstr "workspace"
 
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
