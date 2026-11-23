@@ -50,8 +50,9 @@ RUN pnpm install --offline --frozen-lockfile && pnpm build
 # deploy it with its production dependencies installed next to dist/. Not --offline: pnpm
 # checks the deploy lockfile against its supply-chain policies, which needs registry
 # metadata (publish dates) that `pnpm fetch` does not cache; the packages themselves come
-# from the store filled by `pnpm fetch` (#114).
-RUN pnpm --filter @mailsink/cli deploy --prod /deploy/cli
+# from the store filled by `pnpm fetch` (#114). Selected by folder, not by name: the CLI is
+# published to npm as `@devitek/mailsink-cli` (#128).
+RUN pnpm --filter ./packages/cli deploy --prod /deploy/cli
 # Guard of the build platform stages: no native addon may reach the runtime from here.
 RUN if find apps/mailsink/.output /deploy/cli -name '*.node' | grep .; then \
       echo 'native addon in the build output: install it in the runtime stage' >&2; exit 1; fi

@@ -11,7 +11,10 @@
       "bump-patch-for-minor-pre-major": false,
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        { "type": "json", "path": "packages/sdk/package.json", "jsonpath": "$.version" }
+        { "type": "json", "path": "packages/sdk/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "packages/playwright/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "packages/vitest/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "packages/cli/package.json", "jsonpath": "$.version" }
       ],
       "changelog-sections": [
         { "type": "feat", "section": "Features" },
