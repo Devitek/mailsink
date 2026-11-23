@@ -82,6 +82,7 @@ export {
   type NewMessageEventRow,
   type SimulatedMessage,
   type SimulatedRecipient,
+  setMessageSimulation,
   setMessageStatus,
   setRecipientsStatus,
 } from './repositories/messages-status'
@@ -95,6 +96,16 @@ export {
   type NewMessageRecipient,
 } from './repositories/messages-write'
 export {
+  closeExpiredOverrides,
+  closeOverride,
+  findActiveOverrides,
+  findSettingsLayers,
+  insertOverride,
+  type NewOverride,
+  type Override,
+  type StoredSettingsLayers,
+} from './repositories/overrides'
+export {
   deleteExpiredIdempotencyKeys,
   deleteOrphanBlobs,
   enforceMaxMessages,
@@ -102,6 +113,14 @@ export {
   purgeExpiredMessages,
   purgeFailedJobs,
 } from './repositories/retention'
+export {
+  addSuppressions,
+  deleteSuppressions,
+  type ListSuppressionsOptions,
+  listSuppressions,
+  type NewSuppression,
+  type Suppression,
+} from './repositories/suppressions'
 export {
   deleteExpiredWorkspaces,
   touchWorkspaceActivity,
