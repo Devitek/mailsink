@@ -27,10 +27,12 @@ mailsink/
 │       │   │   │                         # withRuntime() and whenRequestsDrained() (D148)
 │       │   │   ├── config.ts             # env validated by Zod at boot (D29, « Configuration »)
 │       │   │   ├── container.ts          # opens + migrates the db, builds the event bus and the
-│       │   │   │                         # activity tracker, starts SMTP, the job worker, the
-│       │   │   │                         # retention scheduler, the ephemeral GC, the override
-│       │   │   │                         # expiry (publishes override.changed, D96) and the log
-│       │   │   │                         # writer (api_logs, smtp_sessions, #35) once
+│       │   │   │                         # activity tracker, starts SMTP (smtp_sessions through
+│       │   │   │                         # logs.recordSmtpSession), the job worker (simulate,
+│       │   │   │                         # deliver_webhook), the retention scheduler, the
+│       │   │   │                         # ephemeral GC, the override expiry (override.changed,
+│       │   │   │                         # D96) and the log writer (#35) once; closes what it
+│       │   │   │                         # started if a later step fails
 │       │   │   ├── migrations.ts         # migrations folder of the build (D42)
 │       │   │   └── shutdown.ts           # SIGTERM/SIGINT: wait for the srvx HTTP drain and the
 │       │   │                             # close hook (SMTP, workers, db), exit 0 (D3)
@@ -42,20 +44,32 @@ mailsink/
 │       │   │   ├── ingestion-guard.ts    # INGESTION_EXTENSIONS: rate limit and chaos, X-RateLimit-*
 │       │   │   │                         # headers (#24, #25, D90 to D94)
 │       │   │   ├── logs-extension.ts     # request log: one api_logs row per call (D145 to D147)
-│       │   │   ├── logs-body.ts          # capped body reads of the request log
+│       │   │   ├── logs-body.ts          # capped body reads of the request log (D157)
 │       │   │   ├── auth.ts               # admin key, msk_/mskw_ keys, Brevo api-key header (D41)
-│       │   │   ├── errors.ts             # DomainError -> error body (ErrorFormatter per dialect)
+│       │   │   ├── errors.ts             # DomainError -> error body (ErrorFormatter per dialect,
+│       │   │   │                         # optional dialect status, D158)
 │       │   │   ├── validation.ts         # Zod issues -> validation_error details, query, JSON body
-│       │   │   ├── body-limit.ts         # request body cap (MAILSINK_MAX_MESSAGE_BYTES)
+│       │   │   ├── body-limit.ts         # request body cap (MAILSINK_MAX_MESSAGE_BYTES), buffered
+│       │   │   │                         # bytes kept for the request log (D157)
 │       │   │   ├── health.ts             # GET /healthz: liveness + database readiness (D42)
 │       │   │   ├── test-fixtures.ts      # test-only: runtime in the slot (event bus, activity
 │       │   │   │                         # tracker and log writer included), seeded keys (rows from
 │       │   │   │                         # @mailsink/db/testing)
 │       │   │   ├── admin/                # workspaces.ts (Admin API; DELETE publishes
 │       │   │   │                         # workspace.deleted, D97), public-endpoints.ts (URLs
-│       │   │   │                         # and SMTP host/port written in credentials)
+│       │   │   │                         # and SMTP host/port written in credentials),
+│       │   │   │                         # templates.ts (Brevo templates, #30), logs.ts
+│       │   │   │                         # (GET /admin/logs/api[/:id], rows without
+│       │   │   │                         # workspace, D151)
 │       │   │   ├── native/               # emails.ts: POST /v1/emails, /v1/emails/batch (passes
 │       │   │   │                         # the event bus to ingestion, #26)
+│       │   │   ├── dialects/
+│       │   │   │   ├── resend/           # emails.ts (POST /emails, /emails/batch, GET
+│       │   │   │   │                     # /emails/:id), errors.ts (Resend error body, D122,
+│       │   │   │   │                     # D158), extensions.ts (rate limit headers),
+│       │   │   │   │                     # test-server.ts and test-seed.ts (SDK contract tests)
+│       │   │   │   └── brevo/            # send.ts (POST /v3/smtp/email), errors.ts (D127),
+│       │   │   │                         # testing.ts (SDK contract tests)
 │       │   │   ├── activity.ts           # afterAuth extension: workspace activity touch (#20)
 │       │   │   └── capture/              # api.ts (list, wait=true, detail, purge publishing
 │       │   │                             # messages.purged), download.ts (raw EML, attachments,
@@ -64,7 +78,11 @@ mailsink/
 │       │   │                             # stream.ts (GET /capture/stream), stream-sse.ts
 │       │   │                             # (ReadableStream SSE: heartbeat, Last-Event-ID
 │       │   │                             # replay, filters), logs.ts (GET /capture/logs/api,
-│       │   │                             # /capture/logs/smtp and their :id, #35)
+│       │   │                             # /capture/logs/smtp and their :id, #35), events.ts
+│       │   │                             # (POST /capture/messages/:id/events, #34),
+│       │   │                             # webhooks.ts (endpoints, preview, test send, #32,
+│       │   │                             # 422 private_webhook_url, D150), webhooks-deliveries.ts
+│       │   │                             # (delivery log, detail, replay, #33)
 │       │   ├── routes/
 │       │   │   ├── __root.tsx
 │       │   │   ├── index.tsx                         # workspace picker
@@ -79,6 +97,10 @@ mailsink/
 │       │   │   ├── w.$workspaceSlug.settings.tsx     # defaults, retention, rate limit
 │       │   │   ├── admin.workspaces.ts               # POST, GET
 │       │   │   ├── admin.workspaces.$id.ts           # GET, DELETE
+│       │   │   ├── admin.workspaces.$id.templates.ts # Brevo templates: GET, POST (#30)
+│       │   │   ├── admin.workspaces.$id.templates.$templateId.ts # GET, PATCH, DELETE
+│       │   │   ├── admin.logs.api.ts                 # GET API logs without workspace (D151)
+│       │   │   ├── admin.logs.api.$id.ts             # GET one of them
 │       │   │   ├── v1.emails.ts                      # native single send
 │       │   │   ├── v1.emails.batch.ts
 │       │   │   ├── emails.ts                         # Resend dialect
@@ -100,7 +122,9 @@ mailsink/
 │       │   │   ├── capture.webhooks.ts                   # GET, POST endpoints
 │       │   │   ├── capture.webhooks.$id.ts               # GET, PATCH, DELETE
 │       │   │   ├── capture.webhooks.preview.ts           # sample body + headers
+│       │   │   ├── capture.webhooks.$id.[test].ts        # POST /capture/webhooks/:id/test
 │       │   │   ├── capture.webhooks.deliveries.ts        # delivery log
+│       │   │   ├── capture.webhooks.deliveries.$id.ts    # one delivery and its attempts
 │       │   │   ├── capture.webhooks.deliveries.$id.replay.ts
 │       │   │   ├── capture.stream.ts                 # SSE
 │       │   │   ├── mcp.ts                            # Streamable HTTP (stateless)
@@ -145,7 +169,9 @@ mailsink/
 │           ├── recipe/                    # docs/guides/e2e.md: fixtures.ts (ephemeral workspace
 │           │                              # per worker, reset, cleanup), recipe.spec.ts (send,
 │           │                              # wait=true, bounce override), realtime.spec.ts (SSE
-│           │                              # stream, wait=true on the built server)
+│           │                              # stream, wait=true on the built server),
+│           │                              # brevo.spec.ts (official SDK, template),
+│           │                              # webhooks.spec.ts (local receiver, test send)
 │           └── fallback/                  # own build with a test-only `de` locale (D64):
 │                                          # playwright.config.ts, vite.config.ts,
 │                                          # lingui.config.ts, de.po, fallback.spec.ts,
@@ -157,7 +183,10 @@ mailsink/
 │   │       ├── admin.ts    native.ts    resend.ts   brevo.ts
 │   │       ├── capture.ts  override.ts  stream.ts (SSE events, D80)  suppression.ts
 │   │       ├── logs.ts                  # API logs and SMTP sessions: queries, views (#35)
-│   │       ├── webhook.ts  events.ts      # later (#33)
+│   │       ├── templates.ts             # Brevo templates (#30)
+│   │       ├── webhook.ts               # endpoints, canonical events, preview, test (#32)
+│   │       ├── webhook-delivery.ts      # deliveries, attempts, replay (#33)
+│   │       ├── webhook-payloads.ts      # unified, Resend and Brevo payload shapes (D21)
 │   │       ├── settings.ts              # retention, rate limit, simulation defaults
 │   │       └── search-params.ts         # UI search params (filters, tabs)
 │   ├── db/                                # Drizzle (doc 02)
@@ -185,8 +214,10 @@ mailsink/
 │   │                                        # logs-query (shared filters, sort, offset),
 │   │                                        # messages-read, messages-write,
 │   │                                        # messages-status, messages-purge, overrides,
-│   │                                        # retention, suppressions, workspace-activity
-│   │                                        # (throttled touch), workspaces
+│   │                                        # retention, retention-webhooks (D154),
+│   │                                        # suppressions, templates, webhooks,
+│   │                                        # webhooks-context, webhooks-deliveries,
+│   │                                        # workspace-activity (throttled touch), workspaces
 │   ├── core/                              # domain services, no HTTP, no React; depends on
 │   │   │                                  # @mailsink/contracts, @mailsink/db, drizzle-orm (query
 │   │   │                                  # builders in services) and nodemailer (EML composer)
@@ -194,11 +225,15 @@ mailsink/
 │   │       ├── clock.ts  errors.ts (DomainError, status per code, D40)
 │   │       ├── crypto.ts (key hash, constant-time compare; scrypt, hmac later)  # ids: db (D27)
 │   │       ├── workspaces/   provision.ts queries.ts views.ts slug.ts activity.ts expiry.ts
-│   │       ├── connections/  credentials.ts snippets.ts resolve.ts
-│   │       ├── ingestion/    pipeline.ts prepare.ts normalize.ts native.ts compose-eml.ts
-│   │       │                 links.ts idempotency.ts stream-frames.ts testing/fixtures.ts
-│   │       ├── dialects/     resend.ts brevo.ts native.ts smtp.ts  # to/from NormalizedEmail
-│   │       ├── templates/    render.ts                             # Brevo {{ params.x }}
+│   │       ├── connections/  credentials.ts snippets.ts
+│   │       ├── ingestion/    pipeline.ts (fans out `suppressed`, D153) prepare.ts normalize.ts
+│   │       │                 native.ts compose-eml.ts links.ts idempotency.ts
+│   │       │                 stream-frames.ts testing/fixtures.ts
+│   │       ├── dialects/     native.ts smtp.ts resend.ts (to NormalizedEmail)
+│   │       │                 resend-ingest.ts resend-read.ts (POST /emails, GET /emails/:id)
+│   │       │                 brevo/{normalize,send}.ts
+│   │       ├── templates/    render.ts service.ts views.ts         # Brevo {{ params.x }}, #30
+│   │       ├── events-api/   manual.ts (POST …/events, #34) engagement.ts (opened / clicked)
 │   │       ├── rate-limit/   token-bucket.ts request-guard.ts (guardRequest, smtpGuardReply)
 │   │       │                 smtp-reply.ts                         # D90 to D92
 │   │       ├── chaos/        draw.ts smtp-reply.ts                 # D93, D94
@@ -207,21 +242,29 @@ mailsink/
 │   │       ├── suppression/  service.ts
 │   │       ├── overrides/    service.ts views.ts expiry.ts publish.ts (override.changed, D96)
 │   │       ├── events/       bus.ts frames.ts filter.ts replay.ts  # D6, D80 to D84
-│   │       ├── webhooks/     endpoints.ts fanout.ts dispatcher.ts backoff.ts replay.ts
+│   │       ├── webhooks/     endpoints.ts endpoint-input.ts url-guard.ts (D150, D155)
+│   │       │                 fanout.ts context.ts jobs.ts attempt.ts send.ts retry.ts
+│   │       │                 deliveries.ts (log, replay) sample.ts sample-send.ts secret.ts
+│   │       │                 publish.ts (webhook.delivery frames) views.ts
 │   │       │   └── formatters/            # Strategy, one per payloadFormat (D20, D21)
-│   │       │       types.ts events-map.ts unified.ts resend.ts brevo.ts index.ts
+│   │       │       types.ts events-map.ts shared.ts unified.ts resend.ts brevo.ts index.ts
 │   │       ├── capture/      service.ts query.ts cursor.ts views.ts wait.ts
 │   │       │                 testing/fixtures.ts (@mailsink/core/capture-testing)
 │   │       ├── blobs/        store.ts db-store.ts
 │   │       ├── simulation/   simulate-delivery.ts (one run, D70) planner.ts settings-planner.ts
 │   │       │                 load-settings.ts settings-resolver.ts decide.ts rules.ts draw.ts
 │   │       │                 rng.ts recorder.ts aggregate.ts snapshot.ts testing/fixtures.ts
+│   │       │                 fan-out-run.ts (engagement + webhooks in the run, D152)
 │   │       │                 (doc 04, « Simulation files »)
-│   │       ├── retention/    run.ts scheduler.ts (also purges and reports failed jobs, D65)
+│   │       ├── retention/    run.ts scheduler.ts (also purges and reports failed jobs, D65,
+│   │       │                 and finished webhook deliveries, D154)
 │   │       └── jobs/         queue.ts worker.ts backoff.ts settings.ts (DEFAULT_JOB_SETTINGS)
-│   │                         handlers/{simulate,simulate-publish}.ts (webhook later, #33)
+│   │                         handlers/{simulate,simulate-publish,simulate-webhooks,
+│   │                         deliver-webhook}.ts
 │   ├── smtp/                              # smtp-server + mailparser adapter
-│   │   └── src/ server.ts auth.ts transcript.ts on-data.ts
+│   │   └── src/ server.ts auth.ts credential-cache.ts guard.ts (MAIL FROM, D132)
+│   │            on-data.ts sessions.ts session-record.ts transcript.ts tls.ts (D134)
+│   │            testing.ts (contract test harness, raw SMTP dialogue)
 │   ├── mcp/                               # McpServer factory + tools, transport-agnostic
 │   │   └── src/ server.ts tools/{list,get,wait,trigger,override,purge,logs}.ts
 │   ├── ui/                                # shadcn/ui on Base UI + design tokens
@@ -235,7 +278,8 @@ mailsink/
 │   │                                      # package.json) -> base -> deps -> build ->
 │   │                                      # node:24-slim runtime
 │   ├── docker-compose.yml                 # mailsink + postgres (PGlite profile without pg,
-│   │                                      # named volume pglite-data)
+│   │                                      # named volume pglite-data); STARTTLS PEM files
+│   │                                      # mounted from MAILSINK_SMTP_TLS_DIR (D159)
 │   └── smoke-test.sh                      # built image: healthy, /healthz 200, SMTP 220, CLI
 ├── .dockerignore
 ├── docs/
@@ -294,11 +338,12 @@ code 1 (D28) and the error names the variable, never its value. Empty values cou
 | `MAILSINK_JOBS_MAX_ATTEMPTS` | `5` | Attempts before a job is given up on (1 to 100, D47) |
 | `MAILSINK_JOBS_BACKOFF_BASE_SECONDS` / `_MAX_SECONDS` | `5` / `900` | Retry delay, doubled per attempt and capped (D47); the cap may not be below the base |
 | `MAILSINK_JOBS_FAILED_RETENTION_SECONDS` | `604800` (7 days) | How long a failed job stays for diagnosis before the retention pass purges it (60 to 31536000, D65) |
+| `MAILSINK_SMTP_TLS_CERT` / `_KEY` | unset | STARTTLS PEM file paths, both or neither, read at boot (D134); in docker-compose, files of `MAILSINK_SMTP_TLS_DIR` under `/app/tls` (D159) |
+| `MAILSINK_WEBHOOK_BLOCK_PRIVATE` | `false` | `true` refuses webhook URLs resolving to private, loopback or link-local addresses, at creation and at send time (D150, D155) |
 
 Planned, not read yet:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `MAILSINK_SMTP_TLS_CERT` / `_KEY` | unset | Optional STARTTLS |
 | `MAILSINK_UI_AUTH` | `admin-key` | `none` for local/CI |
 | `MAILSINK_SESSION_SECRET` | derived from admin key | Cookie signing |
