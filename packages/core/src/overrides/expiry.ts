@@ -16,8 +16,11 @@ export interface OverrideExpirySchedulerOptions {
   db: Database
   intervalMs?: number
   log?: Pick<Console, 'info' | 'error'>
-  /** Called with the overrides closed by a pass (the event bus publishes `override.changed`, #26). */
-  onExpired?: (closed: Override[]) => void
+  /**
+   * Called with the overrides closed by a pass, awaited (the runtime publishes
+   * `override.changed`, D96); a failure is logged like a failed pass.
+   */
+  onExpired?: (closed: Override[]) => void | Promise<void>
 }
 
 export function startOverrideExpiryScheduler(options: OverrideExpirySchedulerOptions): Worker {
@@ -28,7 +31,7 @@ export function startOverrideExpiryScheduler(options: OverrideExpirySchedulerOpt
       const closed = await expireOverrides(options.db)
       if (closed.length === 0) return
       log.info(`[mailsink] overrides: ${closed.length} expired override(s) reset`)
-      options.onExpired?.(closed)
+      await options.onExpired?.(closed)
     },
     onError: (error) => log.error('[mailsink] override expiry pass failed', error),
   })

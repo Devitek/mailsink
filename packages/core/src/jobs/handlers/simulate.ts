@@ -1,10 +1,6 @@
 import { type SimulateDeliveryOptions, simulateDelivery } from '../../simulation/simulate-delivery'
 import { type JobHandler, PermanentJobError } from '../queue'
-import {
-  type PublishSimulationOptions,
-  publishSimulation,
-  snapshotEventIds,
-} from './simulate-publish'
+import { type PublishSimulationOptions, publishSimulation } from './simulate-publish'
 
 /** Payload enqueued by ingestion, in the same transaction as the message. */
 export interface SimulateDeliveryPayload {
@@ -31,8 +27,7 @@ export function simulateDeliveryHandler(
 ): JobHandler {
   return async (job, { db }) => {
     const { messageId } = parsePayload(job.payload)
-    const before = await snapshotEventIds(db, job.workspaceId, messageId, options)
     const result = await simulateDelivery(db, messageId, options)
-    await publishSimulation(db, job.workspaceId, messageId, result, before, options)
+    publishSimulation(job.workspaceId, messageId, result, options)
   }
 }

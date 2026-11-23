@@ -3,14 +3,16 @@ import { describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { stopRuntime } from '../../runtime/boot'
+import type { Runtime } from '../../runtime/container'
 import { installTestRuntime, request, seedWorkspace } from '../test-fixtures'
 import { getOverride, postOverride, postOverrideReset } from './override'
 
 describeDb('Override API over HTTP', (ctx) => {
   let a: Awaited<ReturnType<typeof seedWorkspace>>
   let b: Awaited<ReturnType<typeof seedWorkspace>>
+  let runtime: Runtime
   beforeAll(async () => {
-    await installTestRuntime(ctx.handle)
+    runtime = await installTestRuntime(ctx.handle)
     a = await seedWorkspace(ctx.db)
     b = await seedWorkspace(ctx.db)
   })
@@ -73,6 +75,34 @@ describeDb('Override API over HTTP', (ctx) => {
     expect(rows).toHaveLength(2)
     // Another workspace sees none of it.
     expect((await (await read(b.workspaceKey)).json()).connections).toEqual([])
+  })
+
+  it('publishes override.changed with the new state on activation and reset', async () => {
+    const seen: unknown[] = []
+    const off = runtime.bus.subscribe(a.workspace.id, (frame) => seen.push(frame))
+    const activated = await (
+      await post(postOverride, '/capture/override', {
+        connectionId: a.connection.id,
+        config: { rates: { failed: 100 } },
+      })
+    ).json()
+    const reset = await (
+      await post(postOverrideReset, '/capture/override/reset', { connectionId: a.connection.id })
+    ).json()
+    await post(postOverride, '/capture/override', { config: {} }) // 422: nothing published
+    off()
+    expect(seen).toEqual([
+      {
+        id: null,
+        connectionId: a.connection.id,
+        event: { type: 'override.changed', state: activated },
+      },
+      {
+        id: null,
+        connectionId: a.connection.id,
+        event: { type: 'override.changed', state: reset },
+      },
+    ])
   })
 
   it('validates the config and the connection scope', async () => {

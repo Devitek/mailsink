@@ -118,6 +118,10 @@ describeDb('event publication: ingestion, simulation and replay', (ctx) => {
     const replayed = await replayFrames(ctx.db, target.workspaceId, first)
     expect(replayed.map((f) => f.id)).toEqual(live.slice(1).map((f) => f.id))
     expect(replayed.map((f) => f.event.type)).toEqual(live.slice(1).map((f) => f.event.type))
+    // Simulation frames are built from the rows the run returns (D95): same as stored.
+    const events = (frames: StreamFrame[]) =>
+      frames.filter((f) => f.event.type === 'message.event').map((f) => [f.event, f.connectionId])
+    expect(events(replayed)).toEqual(events(live.slice(1)))
     expect(await replayFrames(ctx.db, target.workspaceId, first, 2)).toHaveLength(2)
   })
 
