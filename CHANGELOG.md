@@ -1,0 +1,27 @@
+# Changelog
+
+## 0.1.0 (2026-11-23)
+
+Première version publique : Mailsink capture les emails transactionnels sans jamais les délivrer, pour les tests E2E et les environnements de staging. Image `ghcr.io/devitek/mailsink` (amd64, arm64), stockage PGlite embarqué ou PostgreSQL.
+
+### Features
+
+* **workspaces :** workspaces persistants (staging) et éphémères avec TTL d'inactivité et nettoyage automatique, API Admin complète (création avec connexions en une requête, liste, édition, suppression, rotation des clés `msk_` et `mskw_`, templates Brevo, journaux sans workspace) ([#13](https://github.com/Devitek/mailsink/issues/13), [#19](https://github.com/Devitek/mailsink/issues/19), [#20](https://github.com/Devitek/mailsink/issues/20), [#30](https://github.com/Devitek/mailsink/issues/30), [#106](https://github.com/Devitek/mailsink/issues/106))
+* **ingestion :** API native `POST /v1/emails` et batch (EML brut, pièces jointes, liens, idempotence) ([#14](https://github.com/Devitek/mailsink/issues/14))
+* **ingestion :** dialecte Resend compatible avec le SDK officiel (`/emails`, batch, lecture) ([#28](https://github.com/Devitek/mailsink/issues/28))
+* **ingestion :** dialecte Brevo compatible avec le SDK officiel (`/v3/smtp/email`, `messageVersions`, templates et `{{ params.x }}`) ([#29](https://github.com/Devitek/mailsink/issues/29))
+* **smtp :** serveur SMTP avec AUTH PLAIN/LOGIN, STARTTLS optionnel et parsing MIME, compatible Nodemailer ([#31](https://github.com/Devitek/mailsink/issues/31))
+* **simulation :** statuts tirés selon des taux, règles déterministes par destinataire, latence, reports `deferred`, ouvertures et clics automatiques ([#16](https://github.com/Devitek/mailsink/issues/16), [#21](https://github.com/Devitek/mailsink/issues/21), [#34](https://github.com/Devitek/mailsink/issues/34))
+* **simulation :** overrides temporaires (taux, règles, latence, chaos HTTP et SMTP, rate limit) avec reset, liste de suppression automatique, rate limiting par connexion ([#22](https://github.com/Devitek/mailsink/issues/22), [#23](https://github.com/Devitek/mailsink/issues/23), [#24](https://github.com/Devitek/mailsink/issues/24), [#25](https://github.com/Devitek/mailsink/issues/25))
+* **webhooks :** endpoints par workspace ou connexion, formats unified, Resend (signature Svix) et Brevo indépendants du canal d'ingestion, retries, rejeu `exact` ou `resign`, test d'envoi, blocage optionnel des adresses privées ([#32](https://github.com/Devitek/mailsink/issues/32), [#33](https://github.com/Devitek/mailsink/issues/33), [#47](https://github.com/Devitek/mailsink/issues/47), [#94](https://github.com/Devitek/mailsink/issues/94))
+* **capture :** API de capture (recherche, détail, EML brut, pièces jointes, purge), flux SSE temps réel, attente `wait=true`, événements forcés (ouverture, clic, statut), messages de démo ([#15](https://github.com/Devitek/mailsink/issues/15), [#26](https://github.com/Devitek/mailsink/issues/26), [#34](https://github.com/Devitek/mailsink/issues/34), [#62](https://github.com/Devitek/mailsink/issues/62))
+* **capture :** journaux des requêtes API et des sessions SMTP, avec API de lecture ([#35](https://github.com/Devitek/mailsink/issues/35))
+* **mcp :** serveur MCP en Streamable HTTP et en stdio (`mailsink mcp`), 13 outils pour lire, attendre, simuler et purger ([#44](https://github.com/Devitek/mailsink/issues/44), [#99](https://github.com/Devitek/mailsink/issues/99))
+* **interface :** connexion par clé admin, sélecteur de workspace, gestion des workspaces et connexions, boîte de réception temps réel, visionneuse (aperçu isolé, texte, liens, source MIME, historique), explorateur de logs, panneau d'override, liste de suppression, réglages et webhooks ([#37](https://github.com/Devitek/mailsink/issues/37) à [#43](https://github.com/Devitek/mailsink/issues/43), [#104](https://github.com/Devitek/mailsink/issues/104), [#106](https://github.com/Devitek/mailsink/issues/106), [#112](https://github.com/Devitek/mailsink/issues/112))
+* **interface :** charte « Jaune Poste », thèmes clair et sombre, interface en anglais et en français ([#10](https://github.com/Devitek/mailsink/issues/10), [#36](https://github.com/Devitek/mailsink/issues/36))
+* **infra :** image Docker multi-arch, `docker-compose.yml` (PGlite ou PostgreSQL), commande `mailsink migrate`, option `MAILSINK_TRUST_PROXY` ([#11](https://github.com/Devitek/mailsink/issues/11), [#18](https://github.com/Devitek/mailsink/issues/18), [#45](https://github.com/Devitek/mailsink/issues/45), [#99](https://github.com/Devitek/mailsink/issues/99))
+* **docs :** guides de la recette E2E (Playwright, un workspace par worker) et de configuration MCP ([#27](https://github.com/Devitek/mailsink/issues/27), [#44](https://github.com/Devitek/mailsink/issues/44))
+
+### Performance
+
+* **db :** index de recherche plein texte et de pagination, rétention en parcours d'index, polices réduites aux sous-ensembles latins ([#71](https://github.com/Devitek/mailsink/issues/71), [#77](https://github.com/Devitek/mailsink/issues/77))
