@@ -926,8 +926,41 @@ type ValidationDetails = {
 ```
 
 Every ingestion response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
-`X-RateLimit-Reset` (seconds), plus `Retry-After` on `429`. The Resend dialect also emits
+`X-RateLimit-Reset` (seconds), plus `Retry-After` on `429`, whenever a rate limit applies
+(no headers while the effective `rateLimit` is `null`, D91). The Resend dialect also emits
 `ratelimit-limit`/`ratelimit-remaining`/`ratelimit-reset` as Resend does.
+
+### Rate limit and chaos (#24, #25, propositions D90 to D94)
+
+Both run in the `ingestion-guard` extension (`http/ingestion-guard.ts`,
+`INGESTION_EXTENSIONS`), on ingestion routes only (native `/v1` now, Resend and Brevo
+with #28 and #29), never on Admin nor Capture. Order (04-sequence): authentication, then
+the effective settings of the connection (resolver above: connection override > workspace
+override > connection > workspace), then the rate limit, then the chaos draw, then body
+parsing and ingestion. A refused call reads no body and stores nothing.
+
+- **Token bucket** (`core/rate-limit/token-bucket.ts`, D7): one in-memory bucket per
+  connection. Capacity `burst ?? limit`, refilled continuously at `limit / windowSeconds`
+  tokens per second. A bucket whose effective settings change (override activated or
+  reset) starts over full. Every call that passes authentication spends a token, a call
+  later refused by validation or chaos included. Idle full buckets are dropped above
+  10 000 buckets.
+- **Headers**: `X-RateLimit-Limit` = `limit`, `X-RateLimit-Remaining` = whole tokens left,
+  `X-RateLimit-Reset` = seconds until the bucket is full again, `Retry-After` (on `429`) =
+  seconds until one token is back (at least 1). Error: `429 rate_limited`,
+  `Rate limit exceeded, retry in Ns`.
+- **Chaos**: with probability `chaos.errorRate` percent (active override only), the call
+  fails with one of `chaos.httpCodes` drawn uniformly (`429`, `500`, `502`, `503`), body
+  code `chaos_injected` whatever the status, message `Simulated failure (chaos N)`. The
+  server log line carries `errorCode=chaos_injected` (the `api_logs` row comes with #35).
+- **SMTP** (#31 reuses `guardRequest({ surface: 'smtp' })` and `smtpGuardReply`): rate
+  limit `451 4.7.1 Rate limit exceeded, retry in Ns`; chaos `421 4.3.2 Service not
+  available`, `451 4.3.0 Local error in processing`, `452 4.3.1 Insufficient system
+  storage`, `550 5.7.1 Message rejected`, each suffixed ` (chaos injected)`.
+- **Determinism**: the limiter clock (`createRateLimiter({ now })`) and the chaos source
+  (`runtime.chaosRandom`) are injectable.
+- `rate_limit` columns (workspaces, connections) and `overrides.config.rateLimit` are only
+  written from the parsed contract output, so `windowSeconds` is always present.
 
 ## UI search params (`search-params.ts`)
 
