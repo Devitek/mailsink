@@ -24,6 +24,10 @@ export const WebhookDeliveryView = z.object({
   lastStatusCode: z.number().int().nullable(),
   replayOf: WebhookDeliveryId.nullable(),
   replayMode: ReplayMode.nullable(),
+  /** Current URL of the endpoint; null when the endpoint is unknown to the producer. */
+  endpointUrl: z.string().nullable(),
+  /** Duration of the last attempt; null before the first attempt. */
+  durationMs: z.number().int().nullable(),
   createdAt: IsoDateTime,
 })
 

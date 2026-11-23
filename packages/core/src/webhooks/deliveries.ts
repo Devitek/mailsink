@@ -10,6 +10,7 @@ import {
   type Executor,
   enqueueJobs,
   findWebhookDelivery,
+  findWebhookDeliveryFacts,
   findWebhookEndpoint,
   insertWebhookDeliveries,
   listWebhookAttempts,
@@ -24,6 +25,15 @@ import { publishDeliveries } from './publish'
 import { toDeliveryDetail, toDeliveryView } from './views'
 
 const deliveryNotFound = () => new DomainError('not_found', 'Webhook delivery not found')
+
+/** Views of delivery rows with their endpoint URL and last attempt duration. */
+export async function toDeliveryViews(
+  db: Executor,
+  rows: readonly WebhookDelivery[],
+): Promise<WebhookDeliveryView[]> {
+  const facts = await findWebhookDeliveryFacts(db, rows)
+  return rows.map((row) => toDeliveryView(row, facts.get(row.id)))
+}
 
 /** `GET /capture/webhooks/deliveries`: newest first, keyset cursor (the last id). */
 export async function listWebhookDeliveryViews(
@@ -42,7 +52,7 @@ export async function listWebhookDeliveryViews(
   const page = rows.slice(0, query.limit)
   const last = page.at(-1)
   return {
-    data: page.map(toDeliveryView),
+    data: await toDeliveryViews(db, page),
     nextCursor: rows.length > query.limit && last ? last.id : null,
   }
 }
@@ -54,7 +64,7 @@ export async function listMessageWebhookDeliveries(
   messageId: string,
 ): Promise<WebhookDeliveryView[]> {
   const rows = await listWebhookDeliveries(db, workspaceId, { messageId, limit: 200 })
-  return rows.map(toDeliveryView)
+  return toDeliveryViews(db, rows)
 }
 
 export async function getWebhookDeliveryDetail(
@@ -64,7 +74,11 @@ export async function getWebhookDeliveryDetail(
 ): Promise<WebhookDeliveryDetail> {
   const row = await findWebhookDelivery(db, workspaceId, id)
   if (!row) throw deliveryNotFound()
-  return toDeliveryDetail(row, await listWebhookAttempts(db, row.id))
+  const [attempts, endpoint] = await Promise.all([
+    listWebhookAttempts(db, row.id),
+    findWebhookEndpoint(db, workspaceId, row.endpointId),
+  ])
+  return toDeliveryDetail(row, attempts, endpoint?.url ?? null)
 }
 
 /**
@@ -119,7 +133,7 @@ export async function replayWebhookDelivery(
     return replay
   })
   publishDeliveries(options.bus, workspaceId, [
-    { delivery: replay, connectionId: endpoint.connectionId },
+    { delivery: replay, connectionId: endpoint.connectionId, endpointUrl: endpoint.url },
   ])
   return replay
 }

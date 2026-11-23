@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, or, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, lt, or, type SQL } from 'drizzle-orm'
 import type { Executor } from '../client'
 import { workspaces } from '../schema/workspaces'
 
@@ -29,6 +29,10 @@ export async function insertWorkspace(db: Executor, row: NewWorkspace): Promise<
 
 export interface ListWorkspacesOptions {
   includeEphemeral: boolean
+  /** Only the ephemeral workspaces (wins over `includeEphemeral`). */
+  onlyEphemeral?: boolean
+  /** Case-insensitive substring of the slug or the name. */
+  search?: string
   /** Id of the last workspace of the previous page (exclusive). */
   after?: string
   limit: number
@@ -43,7 +47,13 @@ export async function listWorkspaces(
   options: ListWorkspacesOptions,
 ): Promise<Workspace[]> {
   const filters: SQL[] = []
-  if (!options.includeEphemeral) filters.push(eq(workspaces.ephemeral, false))
+  if (options.onlyEphemeral) filters.push(eq(workspaces.ephemeral, true))
+  else if (!options.includeEphemeral) filters.push(eq(workspaces.ephemeral, false))
+  if (options.search) {
+    const pattern = `%${options.search.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
+    const match = or(ilike(workspaces.slug, pattern), ilike(workspaces.name, pattern))
+    if (match) filters.push(match)
+  }
   if (options.after) filters.push(lt(workspaces.id, options.after))
   return db
     .select()
@@ -60,4 +70,13 @@ export async function deleteWorkspace(db: Executor, id: string): Promise<boolean
     .where(eq(workspaces.id, id))
     .returning({ id: workspaces.id })
   return rows.length > 0
+}
+
+/** Number of ephemeral workspaces (picker switch caption): one aggregate, never a list. */
+export async function countEphemeralWorkspaces(db: Executor): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(workspaces)
+    .where(eq(workspaces.ephemeral, true))
+  return Number(row?.total ?? 0)
 }

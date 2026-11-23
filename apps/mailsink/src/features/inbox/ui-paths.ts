@@ -13,7 +13,7 @@ export const inboxPaths = {
   raw: (slug: string, messageId: string) => `${ws(slug)}/${messageId}/raw`,
   attachment: (slug: string, messageId: string, attachmentId: string) =>
     `${ws(slug)}/${messageId}/attachments/${attachmentId}`,
-  /** HTML body for the sandboxed preview iframe. */
-  html: (slug: string, messageId: string, scheme: PreviewScheme) =>
-    `${ws(slug)}/${messageId}/html?scheme=${scheme}`,
+  /** HTML body for the sandboxed preview iframe; `blockRemote` keeps remote images out. */
+  html: (slug: string, messageId: string, scheme: PreviewScheme, blockRemote = false) =>
+    `${ws(slug)}/${messageId}/html?scheme=${scheme}${blockRemote ? '&remote=blocked' : ''}`,
 }

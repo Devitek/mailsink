@@ -1,6 +1,6 @@
 import { CreateWorkspaceRequest } from '@mailsink/contracts'
 import { findWorkspaceByRef } from '@mailsink/db'
-import { describeDb } from '@mailsink/db/testing'
+import { createTestMessage, describeDb } from '@mailsink/db/testing'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { installTestRuntime } from '../http/test-fixtures'
 import { stopRuntime } from '../runtime/boot'
@@ -16,6 +16,7 @@ import {
   createWorkspaceFromUi,
   deleteWorkspaceFromUi,
   editWorkspace,
+  rotateWorkspaceKeyFromUi,
 } from './workspaces-manage.server'
 
 describeDb('UI workspace and connection management', (ctx) => {
@@ -111,5 +112,30 @@ describeDb('UI workspace and connection management', (ctx) => {
     })
     await deleteWorkspaceFromUi(runtime, 'edit-ui')
     expect(await findWorkspaceByRef(ctx.db, 'edit-ui')).toBeUndefined()
+  })
+
+  it('counts the messages of each connection and rotates the workspace key', async () => {
+    const created = await create({
+      name: 'Counts',
+      slug: 'counts-ui',
+      connections: [
+        { kind: 'resend', name: 'R' },
+        { kind: 'brevo', name: 'B' },
+      ],
+    })
+    if (!created.ok) throw new Error('expected a workspace')
+    const [resend, brevo] = created.connections
+    const ws = await findWorkspaceByRef(ctx.db, 'counts-ui')
+    await createTestMessage(ctx.db, ws?.id ?? '', { connectionId: resend?.id })
+    await createTestMessage(ctx.db, ws?.id ?? '', { connectionId: resend?.id })
+    const page = await readConnectionsPage(runtime, 'counts-ui')
+    const count = (id?: string) => page?.connections.find((c) => c.id === id)?.messageCount
+    expect([count(resend?.id), count(brevo?.id)]).toEqual([2, 0])
+    expect(page?.workspace.keyPreview).toBe(`${created.workspaceKey.slice(0, 13)}…`)
+
+    const rotated = await rotateWorkspaceKeyFromUi(runtime, 'counts-ui')
+    expect(rotated.workspaceKey).not.toBe(created.workspaceKey)
+    const after = await readConnectionsPage(runtime, 'counts-ui')
+    expect(after?.workspace.keyPreview).toBe(rotated.keyPreview)
   })
 })
