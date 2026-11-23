@@ -27,6 +27,13 @@ export {
   verifySmtpPassword,
 } from './connections/credentials'
 export {
+  addConnection,
+  type ManageOptions,
+  removeConnection,
+  rotateConnectionCredentials,
+  updateConnectionSettings,
+} from './connections/manage'
+export {
   buildCredentials,
   type CredentialSecrets,
   envSnippet,
@@ -64,6 +71,7 @@ export {
   recordEngagement,
 } from './events-api/engagement'
 export { type TriggeredEvents, triggerMessageEvent } from './events-api/manual'
+export { triggerAndPublishEvent } from './events-api/publish-trigger'
 export { attachmentContentType, composeEml, messageIdHeader } from './ingestion/compose-eml'
 export * from './ingestion/idempotency'
 export { type ExtractedLink, extractLinks } from './ingestion/links'
@@ -110,7 +118,12 @@ export {
   type OverrideExpirySchedulerOptions,
   startOverrideExpiryScheduler,
 } from './overrides/expiry'
-export { overrideChangedFrame, publishExpiredOverrides } from './overrides/publish'
+export {
+  activateAndPublishOverride,
+  overrideChangedFrame,
+  publishExpiredOverrides,
+  resetAndPublishOverride,
+} from './overrides/publish'
 export { activateOverride, getOverrideState, resetOverride } from './overrides/service'
 export { toOverrideView } from './overrides/views'
 export {
@@ -202,4 +215,5 @@ export {
   removeWorkspace,
 } from './workspaces/queries'
 export { generateSlug, slugify } from './workspaces/slug'
+export { updateWorkspaceSettings } from './workspaces/update'
 export { toConnectionView, toWorkspaceView, workspaceUrls } from './workspaces/views'

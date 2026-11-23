@@ -14,6 +14,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `GET /admin/workspaces?includeEphemeral=` | Admin key | admin | List |
 | `GET /admin/workspaces/:id` | Admin key | admin | Detail |
 | `DELETE /admin/workspaces/:id` | Admin key | admin | Immediate hard delete |
+| `POST /admin/workspaces/:id/connections/:connectionId/rotate` | Admin key | admin | New connection secret, previous one revoked (#38) |
 | `POST /v1/emails` · `POST /v1/emails/batch` | `Bearer msk_` (any kind) | native | Native ingestion |
 | `POST /emails` · `POST /emails/batch` · `GET /emails/:id` | `Bearer msk_` (resend) | resend | Resend drop-in |
 | `POST /v3/smtp/email` | `api-key: msk_` (brevo) | brevo | Brevo drop-in |
@@ -39,6 +40,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `POST /capture/demo` | workspace scope | capture | Seed the workspace with demo messages through the ingestion pipeline (#62) |
 | `GET /capture/stream` | workspace scope | capture | SSE |
 | `POST|GET|DELETE /mcp` | workspace scope | mcp | MCP Streamable HTTP |
+| `GET /login` · `POST /login` | none (admin key in the body) | not logged | Web UI sign-in page and key exchange for the session cookie (D162, « Web UI auth ») |
 
 Workspace scope = `Authorization: Bearer msk_…|mskw_…`, or Admin key +
 `X-Mailsink-Workspace: <id|slug>`. Every authenticated call touches workspace activity.
@@ -350,6 +352,33 @@ Admin API behaviour (#13, #19; services in `core/workspaces/` and `core/connecti
   malformed cursor is a 422.
 - `GET` and `DELETE /admin/workspaces/:id` take an id or a slug; `DELETE` answers 204 and
   cascades to every workspace-owned row; an unknown workspace is a 404.
+- `POST /admin/workspaces/:id/connections/:connectionId/rotate` (#38, D172): `resend` and
+  `brevo` get a new `msk_` key and every previous key of the connection is revoked in the
+  same transaction (no grace period); `smtp` gets a new password, same username. Answers
+  200 `CreatedConnection`, the secret shown once; a connection of another workspace is a
+  404.
+
+### Workspace and connection management (`workspace-manage.ts`, #38, D170 to D174)
+
+```ts
+export const UpdateWorkspaceRequest = z.object({ name: Name.optional(),
+  description: z.string().max(500).nullable().optional(), retention: Retention.optional(),
+  rateLimit: RateLimitSettings.nullable().optional() })          // at least one key
+export const UpdateConnectionRequest = z.object({ name: Name.optional(),
+  enabled: z.boolean().optional() })                             // at least one key
+export const CreatedConnection = ConnectionView.extend({ credentials: ConnectionCredentials,
+  envSnippet: z.string() })                                      // creation or rotation
+```
+
+Core services (`core/connections/manage.ts`, `core/workspaces/update.ts`), called by the
+web UI server functions (`apps/mailsink/src/server-fns/{connections,workspaces-manage}-fns.ts`,
+session-checked, never the admin key from the browser) and by the rotation route:
+`addConnection`, `updateConnectionSettings` (rename; `enabled: false` sets `disabled_at`,
+`true` clears it), `rotateConnectionCredentials`, `removeConnection` (hard delete; keys,
+webhook endpoints and overrides cascade, messages and logs keep a null connection) and
+`updateWorkspaceSettings` (the slug never changes). The UI names workspaces by slug only
+and touches their activity on every call (D163); a taken slug or SMTP username comes back
+as a field conflict, not a failure.
 
 ## Native ingestion (`native.ts`)
 
@@ -880,10 +909,11 @@ export const StreamQuery = z.object({ connectionId: ConnectionId.optional(),
     z.array(StreamEventType)).optional() })
 ```
 
-## MCP (`POST /mcp`, `mailsink mcp`, #44, propositions D165 to D169)
+## MCP (`POST /mcp`, `mailsink mcp`, #44, D165 to D169, proposition D180)
 
 `packages/mcp` holds the server factory and the tools (transport-agnostic, one server bound
-to one authenticated workspace) and `handleMcpRequest(request, { db, bus, workspace })`, the
+to one authenticated workspace) and `handleMcpRequest(request, { db, bus, workspace,
+publicUrl })`, the
 stateless Streamable HTTP handler. The app route wraps it in `defineApi({ auth: 'workspace'
 })`. Tool input schemas are built from the contracts below (`packages/mcp/src/schemas.ts`):
 
@@ -892,7 +922,9 @@ const { wait, timeout, ...messageFilters } = ListMessagesQuery.shape
 export const ListEmailsInput = z.object(messageFilters)          // list_emails
 export const WaitForEmailInput = z.object({ ...messageFilters,   // wait_for_email
   timeout: z.number().int().min(0).max(WAIT_TIMEOUT_MAX_MS).default(WAIT_TIMEOUT_MAX_MS) })
-export const GetEmailInput = z.object({ id: MessageId })          // get_email
+export const GetEmailInput = z.object({ id: MessageId })          // get_email, get_email_source
+export const GetEmailAttachmentInput = z.object({ id: MessageId,  // get_email_attachment
+  attachmentId: AttachmentId })
 export const TriggerEmailEventInput = z.object({ id: MessageId,   // trigger_email_event
   event: TriggerEventRequest })
 export const SetOverrideInput = ActivateOverrideRequest           // set_override_config
@@ -908,13 +940,15 @@ export const GetWebhookDeliveriesInput = ListWebhookDeliveriesQuery.extend({
 | Tool | Service (same as) | Annotations |
 | --- | --- | --- |
 | `list_emails` | `listCapturedMessages` (`GET /capture/messages`) | read only |
-| `get_email` | `getCapturedMessage` (`GET /capture/messages/:id`) | read only |
+| `get_email` | `getCapturedMessage` (`GET /capture/messages/:id`), absolute `rawUrl` and `downloadUrl` | read only |
+| `get_email_source` | `readRawMessage` (`GET /capture/messages/:id/raw`) | read only |
+| `get_email_attachment` | `readAttachment` (`GET /capture/messages/:id/attachments/:attId`) | read only |
 | `wait_for_email` | `waitForMessages` (`wait=true`), aborted with the call | read only |
-| `trigger_email_event` | `triggerMessageEvent`, origin `mcp`, frames published | open world (webhooks) |
-| `set_override_config` | `activateOverride`, via `mcp`, `override.changed` published | |
-| `reset_override_config` | `resetOverride`, `override.changed` published | idempotent |
+| `trigger_email_event` | `triggerAndPublishEvent`, origin `mcp` | open world (webhooks) |
+| `set_override_config` | `activateAndPublishOverride`, via `mcp` | |
+| `reset_override_config` | `resetAndPublishOverride` | idempotent |
 | `get_override_config` | `getOverrideState` | read only |
-| `purge_emails` | `purgeCapturedMessages`, `messages.purged` published | destructive |
+| `purge_emails` | `purgeAndPublish` | destructive |
 | `get_delivery_logs` | `listApiLogViews` / `getApiLogView`, `listSmtpSessionViews` / `getSmtpSessionView` | read only |
 | `get_webhook_deliveries` | `listWebhookDeliveryViews` / `getWebhookDeliveryDetail` | read only |
 | `list_suppressions` | `listSuppressionViews` | read only |
@@ -925,6 +959,16 @@ Behaviour:
   comments during a long `wait_for_email`); the request log keeps the request body and no
   response body for SSE (D146). Auth, activity and the log row are those of every
   `defineApi()` route (dialect `mcp`).
+- **Publishing** (D180): the state-changing tools call the same `core` services as their
+  HTTP twins, which publish on the bus after commit (events, aggregate status, webhook
+  deliveries, `override.changed`, `messages.purged`), so the UI and SSE streams see them.
+- **Content** (D180): `get_email_source` answers a JSON summary (`id`, `url`, `contentType`,
+  `sizeBytes`) then an embedded resource `{ uri: <absolute raw URL>, mimeType:
+  'message/rfc822', text }`; `get_email_attachment` a summary (`filename`, `contentType`,
+  `disposition`, `sizeBytes`, `url`, `encoding`) then `{ uri, mimeType, text }` for text
+  types (`text/*`, JSON, XML) or `{ uri, mimeType, blob }` (base64) otherwise. The URLs
+  answer the same key as `/mcp`.
+- **Version** (D181): `serverInfo` is `{ name: 'mailsink', version: MAILSINK_VERSION }`.
 - **Answers** (D166): the HTTP JSON as text and as `structuredContent`. Failures are
   `isError` results whose text is the HTTP error body (`not_found`, `wait_timeout`,
   `validation_error` with `details.in = 'arguments'`…). English only (D19).
@@ -997,7 +1041,8 @@ Behaviour:
   reads the body nothing consumed (bounded by `MAILSINK_MAX_MESSAGE_BYTES`), so a call
   refused by a later extension still logs its body and no body is read twice (D157); a
   body cut by the 413 cap logs `null`. `ip` is the socket address srvx gives the request
-  (verified on the build; `X-Forwarded-For` is not read). `onResponse` clones a JSON or text response (bounded to 1 MiB) and hands
+  (verified on the build), or with `MAILSINK_TRUST_PROXY=true` the last `X-Forwarded-For`
+  entry (D182, D185). `onResponse` clones a JSON or text response (bounded to 1 MiB) and hands
   the row to the runtime log writer, which inserts it after the response left. A failed
   write is logged on the server, never sent. Redaction and truncation rules: doc 02,
   « `schema/logs.ts` ». `durationMs` is measured up to the built response.
@@ -1437,6 +1482,8 @@ export const LogsSearch = z.object({ tab: z.enum(['api', 'smtp', 'webhooks']).de
   sort: z.string().default('-createdAt'), page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(10).max(200).default(50), inspect: z.string().optional() })
 export const PickerSearch = z.object({ ephemeral: z.boolean().default(false) })
+/** `/w/$workspaceSlug/connections` (#38): connection id in the panel, or `new`. */
+export const ConnectionsSearch = z.object({ connection: z.string().max(64).optional() })
 ```
 
 ## Web UI inbox (#39, #40, propositions D175 to D179)
@@ -1490,7 +1537,7 @@ Code: `apps/mailsink/src/auth/`.
 |---|---|
 | `GET /login?redirect=` | Sign-in screen. `redirect` is kept only when it is a path of the app (not `//host`, a scheme or `/login` itself). Already signed in, or `MAILSINK_UI_AUTH=none`: redirects to `redirect`, else to the last opened workspace, else `/` |
 | `POST /login` | Exchanges the admin key for the session cookie |
-| `/`, `/w/$workspaceSlug` | Signed-in pages: without a valid session, redirect to `/login?redirect=<href>` |
+| `/`, `/w/$workspaceSlug`, `/w/$workspaceSlug/connections` | Signed-in pages: without a valid session, redirect to `/login?redirect=<href>` |
 
 `POST /login` (route server handler, not `defineApi()`, D162):
 
@@ -1507,7 +1554,9 @@ Code: `apps/mailsink/src/auth/`.
 - The answer never reveals how many attempts remain (B2-2). The refused key that reaches
   the threshold already answers `429`; during the pause every call answers `429` with the
   seconds left, the right key included, and the pause is not extended (D161).
-- Limiter key: the socket address (`X-Forwarded-For` is not trusted). Threshold and pause:
+- Limiter key: the socket address; with `MAILSINK_TRUST_PROXY=true`, the last
+  `X-Forwarded-For` entry, the one the proxy in front of Mailsink appended (D182, D185).
+  Threshold and pause:
   `MAILSINK_UI_LOGIN_MAX_ATTEMPTS` (5) failures within `MAILSINK_UI_LOGIN_LOCK_SECONDS` (60),
   then a pause of `MAILSINK_UI_LOGIN_LOCK_SECONDS`.
 - Session (D160): signed with `MAILSINK_SESSION_SECRET`, else a secret derived from the admin
@@ -1524,3 +1573,4 @@ Code: `apps/mailsink/src/auth/`.
 | `MAILSINK_SESSION_TTL` | `604800` (7 days) | Session lifetime: seconds or a duration (`12h`), 60 s to 1 year |
 | `MAILSINK_UI_LOGIN_MAX_ATTEMPTS` | `5` | Refused keys before a pause (1 to 1000) |
 | `MAILSINK_UI_LOGIN_LOCK_SECONDS` | `60` | Counting window and pause, sent as `Retry-After` (1 to 86400) |
+| `MAILSINK_TRUST_PROXY` | `false` | `true`: client address from `X-Forwarded-For` (limiter and request log `ip`) |
