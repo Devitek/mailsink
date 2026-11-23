@@ -1,6 +1,6 @@
 import { type BootOptions, bootRuntime, stopRuntime } from './boot'
 import type { Runtime } from './container'
-import { type PendingRestart, runtimeSlot } from './slot'
+import { type PendingRestart, requestsInFlight, runtimeSlot, whenRequestsDrained } from './slot'
 
 /**
  * One edit makes Vite re-evaluate the Nitro plugin more than once (one `full-reload` per
@@ -10,14 +10,28 @@ import { type PendingRestart, runtimeSlot } from './slot'
 export const RESTART_DEBOUNCE_MS = 500
 
 /**
- * Stops the running runtime, then boots a new one from the current code. Requests arriving
- * meanwhile wait for the new runtime (slot.ts). Restarts requested during a restart run
- * after it, so the last evaluated code always wins.
+ * Longest wait for the requests still running on the old runtime before stopping it
+ * (#86); a `wait=true` long poll (up to 30 s) is cut short rather than block the edit.
  */
-export function restartRuntime(options: BootOptions = {}): Promise<Runtime> {
+export const RESTART_DRAIN_TIMEOUT_MS = 10_000
+
+/**
+ * Waits for the requests running on the old runtime, stops it, then boots a new one from
+ * the current code. Requests arriving meanwhile wait for the new runtime (slot.ts).
+ * Restarts requested during a restart run after it, so the last evaluated code always wins.
+ */
+export function restartRuntime(
+  options: BootOptions = {},
+  drainTimeoutMs: number = RESTART_DRAIN_TIMEOUT_MS,
+): Promise<Runtime> {
   const slot = runtimeSlot()
   const previous = slot.restarting?.catch(() => {}) ?? Promise.resolve()
   const restarting = previous.then(async () => {
+    if (!(await whenRequestsDrained(drainTimeoutMs))) {
+      ;(options.log ?? console).warn(
+        `[mailsink] restart: ${requestsInFlight()} request(s) still running after ${drainTimeoutMs} ms, stopping anyway`,
+      )
+    }
     await stopRuntime()
     return bootRuntime(options)
   })
