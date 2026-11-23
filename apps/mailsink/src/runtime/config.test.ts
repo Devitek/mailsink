@@ -24,7 +24,34 @@ describe('readRuntimeConfig', () => {
         backoffMaxSeconds: 900,
         failedRetentionSeconds: 604_800,
       },
+      ui: {
+        auth: 'admin-key',
+        sessionTtlSeconds: 604_800,
+        loginMaxAttempts: 5,
+        loginLockSeconds: 60,
+      },
     })
+  })
+
+  it('reads the web UI sign-in settings', () => {
+    const config = readRuntimeConfig({
+      MAILSINK_UI_AUTH: 'none',
+      MAILSINK_SESSION_SECRET: 's'.repeat(32),
+      MAILSINK_SESSION_TTL: '12h',
+      MAILSINK_UI_LOGIN_MAX_ATTEMPTS: '3',
+      MAILSINK_UI_LOGIN_LOCK_SECONDS: '5',
+    })
+    expect(config.ui).toEqual({
+      auth: 'none',
+      sessionSecret: 's'.repeat(32),
+      sessionTtlSeconds: 43_200,
+      loginMaxAttempts: 3,
+      loginLockSeconds: 5,
+    })
+    expect(() => readRuntimeConfig({ MAILSINK_UI_AUTH: 'off' })).toThrow(/MAILSINK_UI_AUTH/)
+    expect(() => readRuntimeConfig({ MAILSINK_SESSION_SECRET: 'short' })).toThrow(
+      /MAILSINK_SESSION_SECRET: must be at least 32 characters/,
+    )
   })
 
   it('reads the job runner settings', () => {

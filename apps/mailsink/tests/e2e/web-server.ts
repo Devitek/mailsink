@@ -9,6 +9,10 @@ export const SMTP_PORT = Number(process.env.E2E_SMTP_PORT ?? 2906)
 export const BASE_URL = `http://127.0.0.1:${HTTP_PORT}`
 /** Admin key of the server under test: the recipe fixture creates its workspaces with it. */
 export const ADMIN_KEY = process.env.E2E_ADMIN_KEY ?? 'e2e-admin-key-not-a-secret'
+/** Session secret of the server under test: the expired-session scenario signs a cookie. */
+export const SESSION_SECRET = 'e2e-session-secret-not-a-secret-0123456789'
+/** Sign-in limiter of the server under test: 3 failures pause a client for 5 s. */
+export const LOGIN_LIMIT = { maxAttempts: 3, lockSeconds: 5 }
 
 const appRoot = fileURLToPath(new URL('../..', import.meta.url))
 const ci = Boolean(process.env.CI)
@@ -16,7 +20,15 @@ const ci = Boolean(process.env.CI)
 type WebServer = NonNullable<PlaywrightTestConfig['webServer']>
 
 /** Runs `node <entry>` through tests/e2e/serve.ts, preceded by an optional build. */
-export function webServer({ entry, build }: { entry: string; build?: string }): WebServer {
+export function webServer({
+  entry,
+  build,
+  env = {},
+}: {
+  entry: string
+  build?: string
+  env?: Record<string, string>
+}): WebServer {
   const serve = `node tests/e2e/serve.ts ${entry}`
   return {
     command: build ? `${build} && ${serve}` : serve,
@@ -30,6 +42,10 @@ export function webServer({ entry, build }: { entry: string; build?: string }): 
       MAILSINK_PUBLIC_URL: BASE_URL,
       // Simulation jobs are picked up within 100 ms, so assertions wait less.
       MAILSINK_JOBS_POLL_INTERVAL_MS: '100',
+      MAILSINK_SESSION_SECRET: SESSION_SECRET,
+      MAILSINK_UI_LOGIN_MAX_ATTEMPTS: String(LOGIN_LIMIT.maxAttempts),
+      MAILSINK_UI_LOGIN_LOCK_SECONDS: String(LOGIN_LIMIT.lockSeconds),
+      ...env,
     },
     reuseExistingServer: false,
     timeout: 180_000,

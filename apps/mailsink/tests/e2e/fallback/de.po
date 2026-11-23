@@ -11,9 +11,13 @@ msgstr ""
 # (whose tagline the test build overrides, see messages.ts).
 
 #: apps/mailsink/src/routes/index.tsx
-msgid "Catch every email your app sends, without delivering a single one."
+msgid "Each workspace keeps its own messages, connections and webhooks."
 msgstr ""
 
-#: apps/mailsink/src/i18n/locale-switcher.tsx
+#: apps/mailsink/src/features/shell/session-menu.tsx
+msgid "Language and session"
+msgstr "Sprache und Sitzung"
+
+#: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Language"
 msgstr "Sprache"
