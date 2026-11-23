@@ -198,8 +198,7 @@ mailsink/
 │       │   │   ├── shell/                 # app header, nav tabs (typed Links, inline or
 │       │   │   │                          # mobile bar), « Language and session » menu,
 │       │   │   │                          # instance block, use-copy.ts and copy-button.tsx
-│       │   │   │                          # (clipboard + toast), count.tsx,
-│       │   │   │                          # use-media-query.ts (narrow layouts)
+│       │   │   │                          # (clipboard + toast), count.tsx
 │       │   │   ├── workspaces/            # picker popover and page sections (search, paged
 │       │   │   │                          # sections, Base UI Switch "show ephemeral"),
 │       │   │   │                          # ephemeral badge and banner, create / edit dialogs

@@ -8,6 +8,7 @@ export {
   DataTable,
   type DataTableColumn,
   type DataTableFeatures,
+  type DataTableNarrow,
   type DataTableProps,
   type DataTableSorting,
   dataTableColumns,

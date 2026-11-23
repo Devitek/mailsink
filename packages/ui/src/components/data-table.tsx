@@ -7,7 +7,7 @@ import {
   tableFeatures,
   useTable,
 } from '@tanstack/react-table'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '../lib/cn'
 import { DataTableRows, type DataTableVirtual } from './data-table-rows'
 
@@ -43,8 +43,11 @@ export interface DataTableProps<TData extends RowData> {
   empty?: ReactNode
   /** Dims the rows while the next page loads. */
   pending?: boolean
-  /** Ids of columns left out (narrow screens). */
-  hiddenColumns?: readonly string[]
+  /**
+   * Layout below the `md` breakpoint (768 px), applied in CSS so the server render already
+   * fits a phone (no jump after hydration): columns left out and widths replacing `widths`.
+   */
+  narrow?: DataTableNarrow
   /** Accessible name of a row (the cells concatenated otherwise, cut by some browsers). */
   rowLabel?: (row: TData) => string
   /** Renders only the rows in view beyond a threshold (long client-side lists). */
@@ -52,8 +55,29 @@ export interface DataTableProps<TData extends RowData> {
   className?: string
 }
 
-const columnId = (column: { id?: string; accessorKey?: unknown }) =>
-  column.id ?? (typeof column.accessorKey === 'string' ? column.accessorKey : undefined)
+export interface DataTableNarrow {
+  hiddenColumns?: readonly string[]
+  widths?: Record<string, string>
+}
+
+type ColumnStyle = CSSProperties & Record<'--col-w' | '--col-w-narrow', string | undefined>
+
+/**
+ * Classes of the cells of a column: hidden on narrow screens, or padded and right aligned
+ * when it is the last column shown (on wide screens, narrow screens or both).
+ */
+function columnClasses(ids: readonly string[], narrow: DataTableNarrow | undefined) {
+  const hidden = new Set(narrow?.hiddenColumns)
+  const lastWide = ids.at(-1)
+  const lastNarrow = ids.filter((id) => !hidden.has(id)).at(-1)
+  return (id: string) => {
+    if (hidden.has(id)) return 'max-md:hidden'
+    if (id === lastWide && id === lastNarrow) return 'pr-6 text-right'
+    if (id === lastWide) return 'md:pr-6 md:text-right'
+    if (id === lastNarrow) return 'max-md:pr-6 max-md:text-right'
+    return undefined
+  }
+}
 
 const SORT_ICON = { asc: '↑', desc: '↓' } as const
 
@@ -69,17 +93,14 @@ export function DataTable<TData extends RowData>({
   onRowClick,
   empty,
   pending = false,
-  hiddenColumns,
+  narrow,
   rowLabel,
   virtual,
   className,
 }: Readonly<DataTableProps<TData>>) {
-  const shownColumns = hiddenColumns?.length
-    ? columns.filter((c) => !hiddenColumns.includes(columnId(c) ?? ''))
-    : columns
   const table = useTable({
     features: dataTableFeatures,
-    columns: shownColumns,
+    columns,
     data,
     getRowId: (row) => getRowId(row),
     manualSorting: true,
@@ -93,6 +114,11 @@ export function DataTable<TData extends RowData>({
     },
   })
   const rows = table.getRowModel().rows
+  const leafColumns = table.getAllLeafColumns()
+  const edge = columnClasses(
+    leafColumns.map((c) => c.id),
+    narrow,
+  )
 
   return (
     <table
@@ -101,9 +127,22 @@ export function DataTable<TData extends RowData>({
       className={cn('w-full table-fixed border-collapse font-mono text-xs', className)}
     >
       <colgroup>
-        {table.getAllLeafColumns().map((column) => (
-          <col key={column.id} style={{ width: widths[column.id] }} />
-        ))}
+        {leafColumns.map((column) => {
+          const style: ColumnStyle = {
+            '--col-w': widths[column.id],
+            '--col-w-narrow': narrow ? narrow.widths?.[column.id] : widths[column.id],
+          }
+          return (
+            <col
+              key={column.id}
+              style={style}
+              className={cn(
+                'w-(--col-w) max-md:w-(--col-w-narrow)',
+                narrow?.hiddenColumns?.includes(column.id) && 'max-md:hidden',
+              )}
+            />
+          )
+        })}
       </colgroup>
       <thead className="sticky top-0 z-[1] bg-ms-bg">
         {table.getHeaderGroups().map((group) => (
@@ -119,7 +158,10 @@ export function DataTable<TData extends RowData>({
                   aria-sort={
                     sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : undefined
                   }
-                  className="px-2 text-left font-sans text-label font-medium tracking-[0.06em] whitespace-nowrap text-ms-text-faint uppercase first:pl-6 last:pr-6 last:text-right"
+                  className={cn(
+                    'px-2 text-left font-sans text-label font-medium tracking-[0.06em] whitespace-nowrap text-ms-text-faint uppercase first:pl-6',
+                    edge(header.column.id),
+                  )}
                 >
                   {header.isPlaceholder ? null : canSort ? (
                     <button
@@ -144,21 +186,21 @@ export function DataTable<TData extends RowData>({
       <tbody className={cn(pending && 'opacity-60')}>
         {rows.length === 0 && empty ? (
           <tr>
-            <td colSpan={shownColumns.length} className="px-6 py-12 text-center font-sans">
+            <td colSpan={leafColumns.length} className="px-6 py-12 text-center font-sans">
               {empty}
             </td>
           </tr>
         ) : (
           <DataTableRows
             rows={rows}
-            columnCount={shownColumns.length}
+            columnCount={leafColumns.length}
             selectedRowId={selectedRowId}
             onRowClick={onRowClick}
             rowLabel={rowLabel}
             virtual={virtual}
             renderCells={(row) =>
               row.getAllCells().map((cell) => (
-                <td key={cell.id} className="truncate px-2 first:pl-6 last:pr-6 last:text-right">
+                <td key={cell.id} className={cn('truncate px-2 first:pl-6', edge(cell.column.id))}>
                   <table.FlexRender cell={cell} />
                 </td>
               ))

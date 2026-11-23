@@ -55,6 +55,12 @@ test('seeds the demo set, keeps the suppression list live and links to the logs'
   await expect(table.getByRole('row').filter({ hasText: 'email.delivered' })).toHaveCount(1)
   await expect(page.getByRole('button', { name: /More filters/ })).toContainText('1')
 
+  // Demo messages have their request log too (#118): the source panel links to it.
+  await page.goto(`/w/${slug}?m=${messageIds[0]}&tab=headers`)
+  await page.getByRole('link', { name: 'See in the logs →' }).click()
+  await expect(page).toHaveURL(new RegExp(`/w/${slug}/logs\\?inspect=req_`))
+  await expect(page.getByRole('dialog')).toContainText('/emails')
+
   await receiver.close()
   await ws.dispose()
 })
