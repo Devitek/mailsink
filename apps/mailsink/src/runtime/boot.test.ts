@@ -21,6 +21,9 @@ const base = {
   publicUrl: 'http://localhost:3000',
   defaultIdleTtlSeconds: 3600,
 }
+// A real boot migrates a PGlite database: 3 to 5 s alone, far more under a loaded full
+// suite, hence the generous limit (#94).
+const BOOT_TIMEOUT_MS = 60_000
 const fake = (smtpPort = 1) => ({ smtpPort, stop: vi.fn(async () => {}) }) as unknown as Runtime
 
 describe('bootRuntime / stopRuntime', () => {
@@ -91,7 +94,7 @@ describe('bootRuntime / stopRuntime', () => {
     await expect(after.verify()).rejects.toThrow()
     after.close()
     await expect(runtime.db.db.select().from(workspaces)).rejects.toThrow()
-  }, 30_000)
+  }, BOOT_TIMEOUT_MS)
 
   it('fails to start when the SMTP port is taken, closing the database again', async () => {
     const blocker = createServer().listen(0, '127.0.0.1')
@@ -106,5 +109,5 @@ describe('bootRuntime / stopRuntime', () => {
       close.mockRestore()
       blocker.close()
     }
-  }, 30_000)
+  }, BOOT_TIMEOUT_MS)
 })

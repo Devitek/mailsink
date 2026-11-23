@@ -7,6 +7,8 @@ import { simulateDeliveryHandler } from './handlers/simulate'
 import { createJobRunner } from './queue'
 
 const MESSAGES = 40
+// About 1.5 s alone, several times that when the whole suite loads the machine (#94).
+const TIMEOUT_MS = 60_000
 
 describeDb('two workers on one queue', (ctx) => {
   it('simulates every message exactly once', async () => {
@@ -51,5 +53,5 @@ describeDb('two workers on one queue', (ctx) => {
       .groupBy(messageEvents.messageId, messageEvents.recipientEmail, messageEvents.type)
     expect(perRecipient).toHaveLength(2 * 2 * MESSAGES)
     expect(perRecipient.every((r) => r.n === 1)).toBe(true)
-  })
+  }, TIMEOUT_MS)
 })
