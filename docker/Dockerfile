@@ -39,8 +39,11 @@ FROM deps AS build
 COPY . .
 RUN pnpm install --offline --frozen-lockfile && pnpm build
 # The CLI bin keeps drizzle-orm, pg and PGlite external (packages/cli/tsdown.config.ts):
-# deploy it with its production dependencies installed next to dist/.
-RUN pnpm --filter @mailsink/cli deploy --prod --offline /deploy/cli
+# deploy it with its production dependencies installed next to dist/. Not --offline: pnpm
+# checks the deploy lockfile against its supply-chain policies, which needs registry
+# metadata (publish dates) that `pnpm fetch` does not cache; the packages themselves come
+# from the store filled by `pnpm fetch` (#114).
+RUN pnpm --filter @mailsink/cli deploy --prod /deploy/cli
 
 FROM node:24-slim AS runtime
 ENV NODE_ENV=production \
