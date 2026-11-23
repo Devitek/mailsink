@@ -296,6 +296,10 @@ msgstr "Base URL"
 msgid "beyond: <0>429</0> / <1>421</1>"
 msgstr "beyond: <0>429</0> / <1>421</1>"
 
+#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
+msgid "Billing Service - Staging"
+msgstr "Billing Service - Staging"
+
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Block remote images"
 msgstr "Block remote images"
@@ -830,10 +834,6 @@ msgstr "From"
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Give it a name."
 msgstr "Give it a name."
-
-#: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
-msgid "Billing Service - Staging"
-msgstr "Billing Service - Staging"
 
 #: apps/mailsink/src/features/override/override-panel.tsx
 msgid "Hard bounces and complaints add the address to the <0>suppression list</0>."
