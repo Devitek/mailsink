@@ -1,32 +1,71 @@
 {
-  "name": "@mailsink/cli",
-  "version": "0.0.0",
-  "private": true,
-  "description": "mailsink command line: migrate, mcp (stdio proxy)",
+  "name": "@devitek/mailsink-cli",
+  "version": "0.1.0",
+  "description": "Mailsink command line for CI and shell scripts: ephemeral workspaces, wait for an email, simulation overrides, purge, MCP stdio proxy and migrations",
+  "keywords": [
+    "mailsink",
+    "email",
+    "testing",
+    "e2e",
+    "ci",
+    "cli",
+    "mcp"
+  ],
+  "license": "MIT",
+  "author": "Devitek",
+  "homepage": "https://github.com/Devitek/mailsink/blob/main/docs/guides/cli.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Devitek/mailsink.git",
+    "directory": "packages/cli"
+  },
+  "bugs": "https://github.com/Devitek/mailsink/issues",
   "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "build": "tsdown"
-  },
-  "devDependencies": {
-    "@mailsink/core": "workspace:*",
-    "@mailsink/db": "workspace:*",
-    "@mailsink/mcp": "workspace:*",
-    "tsdown": "^0.23.7"
-  },
-  "dependencies": {
-    "@electric-sql/pglite": "^0.5.17",
-    "@modelcontextprotocol/client": "^2.4.0",
-    "drizzle-orm": "^0.45.4",
-    "pg": "^8.23.1"
-  },
   "bin": {
     "mailsink": "./dist/bin.mjs"
   },
   "files": [
     "dist"
-  ]
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1"
+  },
+  "peerDependenciesMeta": {
+    "@electric-sql/pglite": {
+      "optional": true
+    },
+    "drizzle-orm": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@devitek/mailsink": "workspace:*",
+    "@electric-sql/pglite": "^0.5.17",
+    "@mailsink/contracts": "workspace:*",
+    "@mailsink/core": "workspace:*",
+    "@mailsink/db": "workspace:*",
+    "@mailsink/mcp": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1",
+    "tsdown": "^0.23.7"
+  }
 }

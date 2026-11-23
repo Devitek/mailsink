@@ -1726,3 +1726,28 @@ Code: `apps/mailsink/src/auth/`.
 | `MAILSINK_UI_LOGIN_MAX_ATTEMPTS` | `5` | Refused keys before a pause (1 to 1000) |
 | `MAILSINK_UI_LOGIN_LOCK_SECONDS` | `60` | Counting window and pause, sent as `Retry-After` (1 to 86400) |
 | `MAILSINK_TRUST_PROXY` | `false` | `true`: client address from `X-Forwarded-For` (limiter and request log `ip`) |
+
+## CLI (`mailsink`, #50, propositions D250 to D254)
+
+Package `@devitek/mailsink-cli` (`packages/cli`), bin `mailsink`; guide: `docs/guides/cli.md`.
+The piloting commands only call the Admin and Capture APIs through the SDK.
+
+| Command | API call | Credential |
+|---|---|---|
+| `workspace create [--ephemeral] [--ttl] [--name] [--slug] [--retention] [--connection <kind>[:<name>]]…` | `POST /admin/workspaces` | Admin key |
+| `workspace list [--ephemeral]` | `GET /admin/workspaces` (every page) | Admin key |
+| `workspace delete <id\|slug>…` | `DELETE /admin/workspaces/:id` | Admin key |
+| `wait [filters] [--since] [--timeout] [--link]` | `GET /capture/messages?wait=true`, then the detail | workspace |
+| `override set [rates] [--latency] [--error-rate] [--rule]… [--config] [--ttl] [--connection]` | `POST /capture/override` | workspace |
+| `override reset [--connection]` | `POST /capture/override/reset` | workspace |
+| `purge [--connection] [--before] [--keep-logs]` | `DELETE /capture/messages` | workspace |
+
+- **Settings** (D250): `--url`/`MAILSINK_URL`, `--admin-key`/`MAILSINK_ADMIN_KEY`,
+  `--key`/`MAILSINK_KEY`, `--workspace`/`MAILSINK_WORKSPACE`; "workspace" means a `mskw_`
+  or `msk_` key, or the Admin key with the workspace id or slug. `--json` prints the API
+  answer (`wait` adds `extractedLinks` and `link`, `workspace delete` prints
+  `{ deleted: [refs] }`, `workspace list` the array of workspaces).
+- **Exit codes** (D252): `0` success, `1` failure, `2` invalid command line, `3` wait
+  timeout.
+- **Server side** (D251): `migrate` and `mcp` (above) are lazy chunks; `migrate` needs the
+  optional peers `drizzle-orm`, `pg` and `@electric-sql/pglite`, present in the image.
