@@ -1,4 +1,5 @@
 export { decodeCursor, encodeCursor, type MessageCursor } from './cursor'
+export { purgeAndPublish } from './publish-purge'
 export { parseTagFilter, toMessageSearch } from './query'
 export {
   type AttachmentContent,
