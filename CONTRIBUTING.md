@@ -63,8 +63,14 @@ evaluations join one restart and the message is logged once. A request reaching 
 server while the worker is busy restarting (PGlite initialisation blocks its event loop
 for a few seconds) waits; one `read ECONNRESET` was seen once before restarts were
 debounced, on a keep-alive socket between Vite and the Nitro worker. It was not reproduced
-since (16 chained edits 0.4 s apart under 600 requests on `/healthz`, `/capture/messages`
-and `/`); if it shows up, retry the request and report the edit sequence.
+since: 16 chained edits 0.4 s apart under 600 requests on `/healthz`, `/capture/messages`
+and `/`, then 126 chained edits of `packages/core`, `packages/db` and `src/runtime`
+(0.1 s to 3 s apart) under about 33 000 keep-alive requests from 12 concurrent clients
+(`/healthz`, `/`, Admin GET and POST, `POST /v1/emails` with a 5 kB body). If it shows
+up, retry the request and report the edit sequence. Those runs did show two known dev-only
+glitches: a request in flight while the runtime stops may answer 500 (`PGlite is closed`),
+and an SSR render racing a hot update may answer 500 (`useTheme must be used inside
+<ThemeProvider>`); retry the request.
 
 Layout: `apps/mailsink` is the TanStack Start app (web UI and every HTTP surface);
 `packages/*` hold the shared code (`contracts`, `db`, `core`, `smtp`, `mcp`, `ui`, `cli`),

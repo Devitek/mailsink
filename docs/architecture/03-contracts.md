@@ -915,6 +915,16 @@ unreadable body or a malformed auth header):
 | `not_found` | 404 | `wait_timeout` | 408 |
 | `conflict`, `idempotency_mismatch` | 409 | `internal_error` | 500 |
 
+Request body cap (`defineApi` option `maxBodyBytes`, `http/body-limit.ts`, D105): every
+route reads its body under a byte cap before any parsing. A declared `Content-Length` over
+the cap is refused without reading, a streamed body is cut as soon as it crosses it; both
+answer `413 payload_too_large` with `details: { maxBytes }`. The cap is 1 MiB
+(`DEFAULT_MAX_BODY_BYTES`) unless the route sets one: Admin and Capture routes keep that
+default (their bodies are small JSON documents); ingestion routes (`POST /v1/emails`,
+`POST /v1/emails/batch`, and the provider dialects when they land) set
+`maxBodyBytes: 'message'`, which resolves to `MAILSINK_MAX_MESSAGE_BYTES` (25 MiB by
+default). A number sets a route-specific cap in bytes.
+
 `details` of a `validation_error` (`http/validation.ts`):
 
 ```ts
