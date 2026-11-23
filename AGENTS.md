@@ -8,6 +8,9 @@ sequence and roadmap, plus the decision log (D1, D2…) in `docs/architecture/RE
   `docs/` are written in English. Never use an em dash.
 - Commits follow Conventional Commits in French, with the issue number:
   `feat(ingestion): ajoute l'endpoint batch natif (#12)`.
+- Pull requests are squash merged and the squash commit is the PR title alone: a PR title
+  is a valid Conventional Commit, `type(scope): description (#N)`, with no space before the
+  colon (French typography does not apply there), or release-please skips it (D225).
 
 ## Tracking conventions
 - Repo: Devitek/mailsink. Every feature, bug, fix, idea, decision or documentation request

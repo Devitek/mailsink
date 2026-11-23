@@ -1,7 +1,8 @@
 name: docker
 
-# Builds the image and smoke-tests it through docker/docker-compose.yml (#18). Publishing to
-# GHCR is a separate concern (#45).
+# Builds the image and smoke-tests it through docker/docker-compose.yml (#18). Nothing is
+# pushed from here: releases publish to GHCR through release-please.yml and
+# release-image.yml (#45).
 on:
   push:
     branches: [main]
