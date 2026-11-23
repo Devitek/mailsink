@@ -17,8 +17,9 @@ const pre =
   'm-0 max-h-[440px] overflow-auto rounded-md border border-ms-border bg-ms-bg px-[22px] py-[19px] font-mono text-xs leading-[1.65] break-all whitespace-pre-wrap text-ms-text-muted'
 
 function originText(origin: MessageOrigin): string {
-  if (origin.kind === 'smtp') return origin.envelope.join('\n')
-  return `${origin.method} ${origin.path} → ${origin.statusCode}\n\n${origin.body ?? ''}`
+  if (origin.kind === 'smtp') return `${origin.sessionId}\n\n${origin.envelope.join('\n')}`
+  const request = `${origin.method} ${origin.path} → ${origin.statusCode} · ${origin.logId}`
+  return `${request}\n\n${origin.body ?? ''}`
 }
 
 // « Payload Resend / Source EML » of the prototype (Headers & MIME tab): the logged request
@@ -43,7 +44,12 @@ export function SourcePanel({ slug, message }: Readonly<{ slug: string; message:
         : origin.data
           ? originText(origin.data)
           : t`No log holds this message any more (retention or purge).`
-  const copyable = view === 'eml' ? raw.data?.text : origin.data && originText(origin.data)
+  const payload = origin.data
+    ? origin.data.kind === 'api'
+      ? (origin.data.body ?? undefined)
+      : origin.data.envelope.join('\n')
+    : undefined
+  const copyable = view === 'eml' ? raw.data?.text : payload
 
   return (
     <section>
@@ -70,12 +76,12 @@ export function SourcePanel({ slug, message }: Readonly<{ slug: string; message:
             </a>
           ) : (
             origin.data && (
-              <a href={workspacePagePaths.logs(slug)} className={buttonVariants({ size: 'sm' })}>
-                {origin.data.kind === 'api' ? (
-                  <Trans>Request {origin.data.logId} in the logs</Trans>
-                ) : (
-                  <Trans>Session {origin.data.sessionId} in the logs</Trans>
-                )}
+              <a
+                href={workspacePagePaths.logs(slug)}
+                title={origin.data.kind === 'api' ? origin.data.logId : origin.data.sessionId}
+                className={buttonVariants({ size: 'sm' })}
+              >
+                <Trans>See in the logs →</Trans>
               </a>
             )
           )}

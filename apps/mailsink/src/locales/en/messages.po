@@ -690,11 +690,6 @@ msgstr "Regenerate SMTP_PASS?"
 msgid "Remove the tag filter {0}"
 msgstr "Remove the tag filter {0}"
 
-#. placeholder {0}: origin.data.logId
-#: apps/mailsink/src/features/message-viewer/source-panel.tsx
-msgid "Request {0} in the logs"
-msgstr "Request {0} in the logs"
-
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Retention"
 msgstr "Retention"
@@ -737,6 +732,10 @@ msgstr "Search subject, body, to:, from:…"
 msgid "Search workspaces"
 msgstr "Search workspaces"
 
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+msgid "See in the logs →"
+msgstr "See in the logs →"
+
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "See in the logs explorer →"
 msgstr "See in the logs explorer →"
@@ -744,11 +743,6 @@ msgstr "See in the logs explorer →"
 #: apps/mailsink/src/features/connections/connections-screen.tsx
 msgid "Select a connection."
 msgstr "Select a connection."
-
-#. placeholder {0}: origin.data.sessionId
-#: apps/mailsink/src/features/message-viewer/source-panel.tsx
-msgid "Session {0} in the logs"
-msgstr "Session {0} in the logs"
 
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Settings"
