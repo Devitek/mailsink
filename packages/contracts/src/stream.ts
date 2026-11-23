@@ -15,7 +15,8 @@ export const StreamEvent = z.discriminatedUnion('type', [
     status: DeliveryStatus,
     recipient: z.string().nullable(), // null: the aggregated message status
   }),
-  z.object({ type: z.literal('message.event'), event: MessageEventView }),
+  // `messageId`: the message the event belongs to, so a client refreshes only its view.
+  z.object({ type: z.literal('message.event'), messageId: MessageId, event: MessageEventView }),
   z.object({ type: z.literal('webhook.delivery'), delivery: WebhookDeliveryView }),
   z.object({ type: z.literal('log.api'), log: ApiLogSummary }),
   z.object({ type: z.literal('log.smtp'), session: SmtpSessionSummary }),

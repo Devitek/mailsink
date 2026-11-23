@@ -5,6 +5,7 @@ export {
   listMessageWebhookDeliveries,
   listWebhookDeliveryViews,
   replayWebhookDelivery,
+  toDeliveryViews,
 } from './deliveries'
 export {
   createWebhookEndpoint,
@@ -32,4 +33,9 @@ export {
   privateAddressGuard,
   type UrlGuard,
 } from './url-guard'
-export { toDeliveryDetail, toDeliveryView, toEndpointView } from './views'
+export {
+  type DeliveryFacts,
+  toDeliveryDetail,
+  toDeliveryView,
+  toEndpointView,
+} from './views'

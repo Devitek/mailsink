@@ -91,12 +91,22 @@ export function HistoryTab({ slug, message }: Readonly<{ slug: string; message: 
               >
                 <div className="min-w-0">
                   <div className="truncate">{d.dialectEvent}</div>
-                  <div className="truncate text-badge text-ms-text-faint">
-                    {d.payloadFormat} · {d.endpointId} · {time(d.createdAt)}
+                  <div
+                    className="truncate text-badge text-ms-text-faint"
+                    title={d.endpointUrl ?? d.endpointId}
+                  >
+                    {d.payloadFormat} · {d.endpointUrl ?? d.endpointId} · {time(d.createdAt)}
                   </div>
                 </div>
-                <span className="font-semibold" style={{ color: deliveryColor(d) }}>
-                  {d.lastStatusCode ?? d.status}
+                <span className="text-right">
+                  <span className="font-semibold" style={{ color: deliveryColor(d) }}>
+                    {d.lastStatusCode ?? d.status}
+                  </span>
+                  {d.durationMs !== null && (
+                    <span className="block text-badge text-ms-text-faint">
+                      <Trans>{d.durationMs} ms</Trans>
+                    </span>
+                  )}
                 </span>
                 <span className="text-right text-ms-text-muted">
                   <Trans>{d.attemptCount} att.</Trans>
