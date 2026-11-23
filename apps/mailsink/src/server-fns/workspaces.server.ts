@@ -82,13 +82,19 @@ export async function openWorkspace(
   if (!workspace || workspace.slug !== slug) return null
   await runtime.activity.touch(workspace.id)
   const { setCookie } = await startServer()
+  // Just touched: an ephemeral workspace now lives a whole idle TTL from now (D16).
+  const ttl = workspace.idleTtlSeconds
+  const expiresAt =
+    workspace.ephemeral && ttl !== null
+      ? new Date(Math.max(workspace.expiresAt?.getTime() ?? 0, Date.now() + ttl * 1000))
+      : workspace.expiresAt
   setCookie(LAST_WORKSPACE_COOKIE, workspace.slug, {
     path: '/',
     maxAge: 365 * 86_400,
     sameSite: 'lax',
     httpOnly: true,
   })
-  return summary(workspace)
+  return { ...summary({ ...workspace, expiresAt }), idleTtlSeconds: ttl }
 }
 
 export async function lastWorkspaceHome(runtime: Runtime): Promise<string> {

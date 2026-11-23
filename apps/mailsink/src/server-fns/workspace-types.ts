@@ -7,6 +7,8 @@ export type WorkspaceSummary = {
   ephemeral: boolean
   /** Ephemeral workspaces only: when the GC deletes it if nothing touches it. */
   expiresAt: string | null
+  /** Ephemeral workspaces only: the idle TTL that `expiresAt` restarts from. */
+  idleTtlSeconds?: number | null
   /** Picker lists only: captured messages of a persistent workspace. */
   messageCount?: number
 }

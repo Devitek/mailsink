@@ -107,6 +107,17 @@ describeDb('UI workspace server functions', (ctx) => {
     expect(pages).toBe(Math.ceil(520 / PICKER_PAGE_SIZE))
   })
 
+  it('opening an ephemeral workspace restarts its idle TTL in the answer', async () => {
+    const ws = await createTestWorkspace(ctx.db, {
+      ephemeral: true,
+      idleTtlSeconds: 600,
+      expiresAt: new Date(Date.now() + 60_000),
+    })
+    const opened = await openWorkspace(runtime, ws.slug)
+    expect(opened?.idleTtlSeconds).toBe(600)
+    expect(Date.parse(opened?.expiresAt ?? '')).toBeGreaterThan(Date.now() + 590_000)
+  })
+
   it('opening a workspace touches it and remembers it as the next home', async () => {
     const ws = await createTestWorkspace(ctx.db, {
       lastActivityAt: new Date(Date.now() - 60_000),
