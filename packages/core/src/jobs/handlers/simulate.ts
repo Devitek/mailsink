@@ -1,6 +1,7 @@
 import { type SimulateDeliveryOptions, simulateDelivery } from '../../simulation/simulate-delivery'
 import { type JobHandler, PermanentJobError } from '../queue'
 import { type PublishSimulationOptions, publishSimulation } from './simulate-publish'
+import { fanOutSimulation, type SimulationWebhookOptions } from './simulate-webhooks'
 
 /** Payload enqueued by ingestion, in the same transaction as the message. */
 export interface SimulateDeliveryPayload {
@@ -23,11 +24,13 @@ function parsePayload(payload: unknown): SimulateDeliveryPayload {
  * transitions (D6).
  */
 export function simulateDeliveryHandler(
-  options: SimulateDeliveryOptions & PublishSimulationOptions = {},
+  options: SimulateDeliveryOptions & PublishSimulationOptions & SimulationWebhookOptions = {},
 ): JobHandler {
   return async (job, { db }) => {
     const { messageId } = parsePayload(job.payload)
     const result = await simulateDelivery(db, messageId, options)
     publishSimulation(job.workspaceId, messageId, result, options)
+    // Automatic opened / clicked and webhook fan-out of the run's events (#33, #34).
+    await fanOutSimulation(db, job.workspaceId, result, options)
   }
 }
