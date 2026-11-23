@@ -83,6 +83,7 @@ const Env = z
       .default(DEFAULT_MAX_MESSAGE_BYTES),
     MAILSINK_PUBLIC_URL: PublicUrl.default('http://localhost:3000'),
     MAILSINK_DEFAULT_IDLE_TTL: IdleTtl.default(3600),
+    MAILSINK_WEBHOOK_BLOCK_PRIVATE: z.stringbool({ error: 'must be true or false' }).default(false),
   })
   .refine(
     (e) => (e.MAILSINK_SMTP_TLS_CERT === undefined) === (e.MAILSINK_SMTP_TLS_KEY === undefined),
@@ -126,6 +127,11 @@ export type RuntimeConfig = {
   publicUrl: string
   /** Idle TTL of ephemeral workspaces created without `idleTtlSeconds` (#19). */
   defaultIdleTtlSeconds: number
+  /**
+   * `MAILSINK_WEBHOOK_BLOCK_PRIVATE` (D150): refuse webhook URLs resolving to private,
+   * loopback or link-local addresses, at creation and at send time. Off when unset.
+   */
+  webhookBlockPrivate?: boolean
 }
 
 type EnvSource = Record<string, string | undefined>
@@ -155,6 +161,7 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     maxMessageBytes: e.MAILSINK_MAX_MESSAGE_BYTES,
     publicUrl: e.MAILSINK_PUBLIC_URL,
     defaultIdleTtlSeconds: e.MAILSINK_DEFAULT_IDLE_TTL,
+    webhookBlockPrivate: e.MAILSINK_WEBHOOK_BLOCK_PRIVATE,
     jobs: {
       batchSize: e.MAILSINK_JOBS_BATCH_SIZE,
       lockSeconds: e.MAILSINK_JOBS_LOCK_SECONDS,

@@ -9,6 +9,7 @@ import {
   deliverWebhookHandler,
   type EventBus,
   type LogWriter,
+  privateAddressGuard,
   publishExpiredOverrides,
   type Random,
   type RateLimiter,
@@ -17,6 +18,7 @@ import {
   startOverrideExpiryScheduler,
   startRetentionScheduler,
   startWorker,
+  type UrlGuard,
 } from '@mailsink/core'
 import { createDb, type DbHandle, migrate } from '@mailsink/db'
 import { readTlsFiles, startSmtpServer } from '@mailsink/smtp'
@@ -41,6 +43,8 @@ export type Runtime = {
   chaosRandom: Random
   /** Asynchronous writer of api_logs and smtp_sessions (#35), flushed by stop(). */
   logs: LogWriter
+  /** Set when `MAILSINK_WEBHOOK_BLOCK_PRIVATE` is on (D150): endpoint writes and sends. */
+  webhookUrlGuard?: UrlGuard | undefined
   smtpPort: number
   stop: () => Promise<void>
 }
@@ -83,6 +87,7 @@ export async function createRuntime(
     // SMTP server's recordSmtpSession hook (logs.recordSmtpSession).
     const logs = createLogWriter({ db: db.db, bus, log })
     const rateLimiter = createRateLimiter()
+    const webhookUrlGuard = config.webhookBlockPrivate ? privateAddressGuard() : undefined
     // SMTP ingestion (#31): AUTH against smtp connections, the shared rate limiter and the
     // chaos source of the runtime (read at each draw, so tests can swap it), the ingestion
     // pipeline, and the session journal (#35).
@@ -109,7 +114,7 @@ export async function createRuntime(
       db: db.db,
       handlers: {
         simulate_delivery: simulateDeliveryHandler({ bus }),
-        deliver_webhook: deliverWebhookHandler({ bus }),
+        deliver_webhook: deliverWebhookHandler({ bus, urlGuard: webhookUrlGuard }),
       },
       batchSize: jobs.batchSize,
       lockSeconds: jobs.lockSeconds,
@@ -150,6 +155,7 @@ export async function createRuntime(
       rateLimiter,
       chaosRandom: Math.random,
       logs,
+      webhookUrlGuard,
       smtpPort: smtp.port,
       async stop() {
         // Stop accepting mail, drain the worker that would process it and the retention
