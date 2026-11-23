@@ -52,6 +52,8 @@ const Env = z
     MAILSINK_SMTP_PORT: Port.default(1025),
     MAILSINK_SMTP_PUBLIC_HOST: Host.optional(),
     MAILSINK_SMTP_PUBLIC_PORT: Int(1, 65_535, 'a port number').optional(),
+    MAILSINK_SMTP_TLS_CERT: z.string().optional(),
+    MAILSINK_SMTP_TLS_KEY: z.string().optional(),
     MAILSINK_RETENTION_INTERVAL_SECONDS: Int(1, 86_400, 'a number of seconds').default(60),
     MAILSINK_JOBS_POLL_INTERVAL_MS: Int(10, 60_000, 'a number of milliseconds').default(
       DEFAULT_JOB_SETTINGS.pollIntervalMs,
@@ -82,6 +84,13 @@ const Env = z
     MAILSINK_PUBLIC_URL: PublicUrl.default('http://localhost:3000'),
     MAILSINK_DEFAULT_IDLE_TTL: IdleTtl.default(3600),
   })
+  .refine(
+    (e) => (e.MAILSINK_SMTP_TLS_CERT === undefined) === (e.MAILSINK_SMTP_TLS_KEY === undefined),
+    {
+      path: ['MAILSINK_SMTP_TLS_KEY'],
+      message: 'must be set together with MAILSINK_SMTP_TLS_CERT',
+    },
+  )
   .refine((e) => e.MAILSINK_JOBS_BACKOFF_MAX_SECONDS >= e.MAILSINK_JOBS_BACKOFF_BASE_SECONDS, {
     path: ['MAILSINK_JOBS_BACKOFF_MAX_SECONDS'],
     message: 'must not be below MAILSINK_JOBS_BACKOFF_BASE_SECONDS',
@@ -97,6 +106,8 @@ export type RuntimeConfig = {
   smtpPublicHost?: string
   /** Port written in SMTP credentials; unset = the port the listener is bound to. */
   smtpPublicPort?: number
+  /** STARTTLS PEM files (`MAILSINK_SMTP_TLS_CERT` / `_KEY`); unset = no STARTTLS. */
+  smtpTls?: { certPath: string; keyPath: string }
   /** Job worker polling period (`MAILSINK_JOBS_POLL_INTERVAL_MS`). */
   workerIntervalMs: number
   /**
@@ -136,6 +147,9 @@ export function readRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     smtpPort: e.MAILSINK_SMTP_PORT,
     smtpPublicHost: e.MAILSINK_SMTP_PUBLIC_HOST,
     smtpPublicPort: e.MAILSINK_SMTP_PUBLIC_PORT,
+    ...(e.MAILSINK_SMTP_TLS_CERT && e.MAILSINK_SMTP_TLS_KEY
+      ? { smtpTls: { certPath: e.MAILSINK_SMTP_TLS_CERT, keyPath: e.MAILSINK_SMTP_TLS_KEY } }
+      : {}),
     workerIntervalMs: e.MAILSINK_JOBS_POLL_INTERVAL_MS,
     retentionIntervalMs: e.MAILSINK_RETENTION_INTERVAL_SECONDS * 1000,
     maxMessageBytes: e.MAILSINK_MAX_MESSAGE_BYTES,

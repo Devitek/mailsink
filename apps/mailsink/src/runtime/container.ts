@@ -6,6 +6,7 @@ import {
   createLogWriter,
   createRateLimiter,
   DEFAULT_JOB_SETTINGS,
+  deliverWebhookHandler,
   type EventBus,
   type LogWriter,
   publishExpiredOverrides,
@@ -18,7 +19,7 @@ import {
   startWorker,
 } from '@mailsink/core'
 import { createDb, type DbHandle, migrate } from '@mailsink/db'
-import { startSmtpListener } from '@mailsink/smtp'
+import { readTlsFiles, startSmtpServer } from '@mailsink/smtp'
 import type { RuntimeConfig } from './config'
 
 export type Logger = Pick<Console, 'info' | 'warn' | 'error'>
@@ -34,7 +35,7 @@ export type Runtime = {
   bus: EventBus
   /** Throttled workspace activity (D16): every surface touches it. */
   activity: ActivityTracker
-  /** In-memory token buckets per connection (D7): HTTP ingestion now, SMTP with #31. */
+  /** In-memory token buckets per connection (D7), shared by HTTP and SMTP ingestion. */
   rateLimiter: RateLimiter
   /** Source of the request-level chaos draws (#25), injectable in tests. */
   chaosRandom: Random
@@ -72,20 +73,29 @@ export async function createRuntime(
     log.info(`[mailsink] database ready (${db.driver}, migrations applied)`)
 
     const bus = createEventBus(log)
-    // HTTP surfaces touch it through the defineApi activity extension; SMTP ingestion
-    // (#31) calls activity.touch(workspaceId) once AUTH resolves the connection.
+    // HTTP surfaces touch it through the defineApi activity extension; the SMTP server
+    // touches it once AUTH resolves the connection, then on every transaction.
     const activity = createActivityTracker({ db: db.db, log })
     // api_logs through the defineApi request log extension; smtp_sessions through the
-    // SMTP listener's recordSmtpSession hook (logs.recordSmtpSession).
+    // SMTP server's recordSmtpSession hook (logs.recordSmtpSession).
     const logs = createLogWriter({ db: db.db, bus, log })
-    const smtp = await startSmtpListener({
+    const rateLimiter = createRateLimiter()
+    // SMTP ingestion (#31): AUTH against smtp connections, the shared rate limiter and the
+    // chaos source of the runtime (read at each draw, so tests can swap it), the ingestion
+    // pipeline, and the session journal (#35).
+    let self: Runtime | undefined
+    const smtp = await startSmtpServer({
       host: config.smtpHost,
       port: config.smtpPort,
-      onMessage: (message) => {
-        log.info(
-          `[mailsink] smtp: message from ${message.from ?? '<>'} to ${message.to.join(', ')} (${message.raw.length} bytes)`,
-        )
-      },
+      db: db.db,
+      bus,
+      activity,
+      rateLimiter,
+      random: () => (self?.chaosRandom ?? Math.random)(),
+      maxMessageBytes: config.maxMessageBytes,
+      ...(config.smtpTls ? { tls: await readTlsFiles(config.smtpTls) } : {}),
+      recordSmtpSession: (record) => logs.recordSmtpSession(record),
+      log,
     })
 
     // Job queue (D5): handlers join here (deliver_webhook with #33); kinds without a
@@ -93,7 +103,10 @@ export async function createRuntime(
     const jobs = config.jobs ?? DEFAULT_JOB_SETTINGS
     const runJobs = createJobRunner({
       db: db.db,
-      handlers: { simulate_delivery: simulateDeliveryHandler({ bus }) },
+      handlers: {
+        simulate_delivery: simulateDeliveryHandler({ bus }),
+        deliver_webhook: deliverWebhookHandler({ bus }),
+      },
       batchSize: jobs.batchSize,
       lockSeconds: jobs.lockSeconds,
       maxAttempts: jobs.maxAttempts,
@@ -122,12 +135,12 @@ export async function createRuntime(
       onExpired: (closed) => publishExpiredOverrides(db.db, bus, closed),
     })
 
-    return {
+    self = {
       config,
       db,
       bus,
       activity,
-      rateLimiter: createRateLimiter(),
+      rateLimiter,
       chaosRandom: Math.random,
       logs,
       smtpPort: smtp.port,
@@ -142,6 +155,7 @@ export async function createRuntime(
         await db.close()
       },
     }
+    return self
   } catch (error) {
     await db.close().catch(() => {})
     throw error
