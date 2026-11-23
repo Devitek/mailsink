@@ -84,7 +84,9 @@ export const test = base.extend<{ mailsink: Mailsink }, { workerMailsink: Mailsi
         capture,
       })
       await capture.dispose()
-      await admin.delete(`/admin/workspaces/${created.workspace.id}`)
+      // maxRetries: the admin context sat idle for the whole worker, so its keep-alive
+      // socket may be closing; Playwright retries only ECONNRESET, before the server saw it.
+      await admin.delete(`/admin/workspaces/${created.workspace.id}`, { maxRetries: 3 })
       await admin.dispose()
     },
     { scope: 'worker' },

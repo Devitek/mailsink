@@ -7,6 +7,7 @@ import type { IngestTarget } from '../ingestion/normalize'
 import { persistEmails } from '../ingestion/pipeline'
 import { prepareEmail } from '../ingestion/prepare'
 import { demoMessages } from './catalog'
+import { writeDemoLog } from './logs'
 
 const MINUTE_MS = 60_000
 
@@ -26,7 +27,8 @@ function targetsOf(workspaceId: string, connections: readonly Connection[]): Ing
  * ingestion pipeline (blobs, raw EML, links, suppression check, simulation jobs, webhook
  * fan-out, stream frames). Each message carries its planned outcomes as a temporary rule
  * set (`messages.simulation.rules`), so the simulation gives the same varied statuses
- * whatever the workspace settings, without touching them or any override. Seeding again
+ * whatever the workspace settings, without touching them or any override, and comes with
+ * the log line of the request or SMTP session that would have sent it (#118). Seeding again
  * adds the set again (addresses bounced by the first run then come out `suppressed`).
  */
 export async function seedDemoMessages(
@@ -57,7 +59,10 @@ export async function seedDemoMessages(
         source: 'native' as const,
       }
       const [message] = await persistEmails(tx, target, [item], { frames })
-      if (message) stored.push(message.id)
+      if (!message) continue
+      stored.push(message.id)
+      const { email, createdAt } = item
+      frames.push(await writeDemoLog(tx, { target, email, message, createdAt }))
     }
     return stored
   })

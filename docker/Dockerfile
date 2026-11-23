@@ -3,12 +3,20 @@
 #   docker build -f docker/Dockerfile -t mailsink .
 # Stages: pnpm-spec and base (pinned pnpm), deps (pnpm store), build (app + CLI),
 # runtime (node:24-slim, non-root).
+#
+# Multi-platform builds (linux/amd64 and linux/arm64, release-image.yml): every stage but
+# the runtime runs on the build platform ($BUILDPLATFORM), natively, never under QEMU. Their
+# output is platform independent: the Nitro output is JavaScript plus the PGlite WASM
+# assets, with no native addon traced, and the CLI deploy has no package with an `os` or
+# `cpu` field (checked for #118). Only the runtime stage, a few file operations, runs on
+# the target platform. A dependency that ships a native binary to the runtime would have to
+# be installed in the runtime stage instead.
 
 # The pnpm version pinned by `packageManager` in package.json (`pnpm@x.y.z`, hash suffix
 # dropped), and the root manifest without its `version`. BuildKit keys the COPY --from below
 # on these files' content, so editing package.json elsewhere (scripts...) keeps the pnpm
 # layer cached, and a release bump of `version` keeps the deps layer cached (#106).
-FROM node:24-slim AS pnpm-spec
+FROM --platform=$BUILDPLATFORM node:24-slim AS pnpm-spec
 COPY package.json /tmp/package.json
 RUN node -e "const fs = require('fs'); const pkg = require('/tmp/package.json'); \
       const s = pkg.packageManager.split('+')[0]; \
@@ -19,7 +27,7 @@ RUN node -e "const fs = require('fs'); const pkg = require('/tmp/package.json');
 
 # pnpm installed with npm (shipped with every Node image) rather than corepack, which
 # Node 25+ no longer bundles.
-FROM node:24-slim AS base
+FROM --platform=$BUILDPLATFORM node:24-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 COPY --from=pnpm-spec /pnpm-spec /pnpm-spec
@@ -44,6 +52,9 @@ RUN pnpm install --offline --frozen-lockfile && pnpm build
 # metadata (publish dates) that `pnpm fetch` does not cache; the packages themselves come
 # from the store filled by `pnpm fetch` (#114).
 RUN pnpm --filter @mailsink/cli deploy --prod /deploy/cli
+# Guard of the build platform stages: no native addon may reach the runtime from here.
+RUN if find apps/mailsink/.output /deploy/cli -name '*.node' | grep .; then \
+      echo 'native addon in the build output: install it in the runtime stage' >&2; exit 1; fi
 
 FROM node:24-slim AS runtime
 ENV NODE_ENV=production \

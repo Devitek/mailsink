@@ -1,0 +1,161 @@
+import {
+  ActivateOverrideRequest,
+  AttachmentId,
+  DeleteSuppressionsQuery,
+  DeleteSuppressionsResponse,
+  ListMessagesQuery,
+  ListMessagesResponse,
+  ListSuppressionsQuery,
+  ListSuppressionsResponse,
+  MessageDetail,
+  MessageId,
+  OverrideState,
+  PurgeQuery,
+  PurgeResponse,
+  ResetOverrideRequest,
+  SeedDemoRequest,
+  SeedDemoResponse,
+  StreamQuery,
+  TriggerEventRequest,
+  TriggerEventResponse,
+} from '@mailsink/contracts'
+import { z } from 'zod'
+import type { RouteSpec } from '../route'
+
+const MessageParams = z.object({ id: MessageId })
+const messages = { tag: 'Capture: messages', auth: 'workspace' } as const
+const settings = { tag: 'Capture: settings', auth: 'workspace' } as const
+
+/** Capture API (03-contracts, « Capture », « Stream »): workspace scope (D12). */
+export const CAPTURE_ROUTES: RouteSpec[] = [
+  {
+    ...messages,
+    operationId: 'listMessages',
+    method: 'get',
+    path: '/capture/messages',
+    summary: 'Search captured messages',
+    description:
+      '`wait=true` long polls until a message matches or `timeout` milliseconds elapse (`408 wait_timeout`).',
+    query: ListMessagesQuery,
+    success: [{ status: 200, description: 'One page.', schema: ListMessagesResponse }],
+    errors: ['wait_timeout'],
+  },
+  {
+    ...messages,
+    operationId: 'purgeMessages',
+    method: 'delete',
+    path: '/capture/messages',
+    summary: 'Purge messages (and logs unless includeLogs=false)',
+    query: PurgeQuery,
+    success: [{ status: 200, description: 'Purged.', schema: PurgeResponse }],
+  },
+  {
+    ...messages,
+    operationId: 'getMessage',
+    method: 'get',
+    path: '/capture/messages/{id}',
+    summary: 'Message detail: recipients, events, attachments',
+    params: MessageParams,
+    success: [{ status: 200, description: 'The message.', schema: MessageDetail }],
+  },
+  {
+    ...messages,
+    operationId: 'getRawMessage',
+    method: 'get',
+    path: '/capture/messages/{id}/raw',
+    summary: 'MIME source of a message',
+    params: MessageParams,
+    success: [{ status: 200, description: 'The `.eml` source.', mediaType: 'message/rfc822' }],
+  },
+  {
+    ...messages,
+    operationId: 'getAttachment',
+    method: 'get',
+    path: '/capture/messages/{id}/attachments/{attId}',
+    summary: 'Attachment bytes, with their type and disposition',
+    params: z.object({ id: MessageId, attId: AttachmentId }),
+    success: [{ status: 200, description: 'The bytes.', mediaType: '*/*' }],
+  },
+  {
+    ...messages,
+    operationId: 'triggerMessageEvent',
+    method: 'post',
+    path: '/capture/messages/{id}/events',
+    summary: 'Force opened, clicked or a simulated status',
+    params: MessageParams,
+    body: TriggerEventRequest,
+    success: [{ status: 202, description: 'Events recorded.', schema: TriggerEventResponse }],
+    errors: ['conflict'],
+  },
+  {
+    ...messages,
+    operationId: 'seedDemo',
+    method: 'post',
+    path: '/capture/demo',
+    summary: 'Seed the workspace with demo messages (#62)',
+    body: SeedDemoRequest,
+    success: [{ status: 201, description: 'Seeded.', schema: SeedDemoResponse }],
+  },
+  {
+    ...messages,
+    operationId: 'streamEvents',
+    method: 'get',
+    path: '/capture/stream',
+    summary: 'Server-Sent Events of the workspace',
+    description:
+      'Each frame has no `event:` field; its `data:` is one `StreamEvent` JSON (see `components.schemas.StreamEvent`), told apart by `type`. `retry: 3000`, then a `: ping` comment every 15 s.',
+    query: StreamQuery,
+    headers: z.object({
+      'Last-Event-ID': z
+        .string()
+        .optional()
+        .meta({ description: 'Replays up to 500 events after this `evt_…` id.' }),
+    }),
+    success: [{ status: 200, description: 'The event stream.', mediaType: 'text/event-stream' }],
+  },
+  {
+    ...settings,
+    operationId: 'getOverride',
+    method: 'get',
+    path: '/capture/override',
+    summary: 'Active overrides and effective settings per connection',
+    success: [{ status: 200, description: 'The state.', schema: OverrideState }],
+  },
+  {
+    ...settings,
+    operationId: 'activateOverride',
+    method: 'post',
+    path: '/capture/override',
+    summary: 'Replace the active override of a scope (optional TTL)',
+    body: ActivateOverrideRequest,
+    success: [{ status: 200, description: 'The new state.', schema: OverrideState }],
+    errors: ['conflict'],
+  },
+  {
+    ...settings,
+    operationId: 'resetOverride',
+    method: 'post',
+    path: '/capture/override/reset',
+    summary: 'Back to the settings for a scope (idempotent)',
+    body: ResetOverrideRequest,
+    success: [{ status: 200, description: 'The new state.', schema: OverrideState }],
+  },
+  {
+    ...settings,
+    operationId: 'listSuppressions',
+    method: 'get',
+    path: '/capture/suppressions',
+    summary: 'Suppression list',
+    query: ListSuppressionsQuery,
+    success: [{ status: 200, description: 'One page.', schema: ListSuppressionsResponse }],
+  },
+  {
+    ...settings,
+    operationId: 'deleteSuppressions',
+    method: 'delete',
+    path: '/capture/suppressions',
+    summary: 'Remove one address, or the whole list',
+    query: DeleteSuppressionsQuery,
+    success: [{ status: 200, description: 'Removed.', schema: DeleteSuppressionsResponse }],
+  },
+]

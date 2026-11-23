@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { createServer, type IncomingHttpHeaders } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import type { Page } from '@playwright/test'
+import { deleteWorkspace } from './recipe/fixtures'
 import { expect, test as ui } from './ui/fixtures'
 
 // Fixtures of the settings scenarios (#43): a workspace with a Resend and an SMTP
@@ -23,9 +25,19 @@ export const test = ui.extend<{ settingsWorkspace: SettingsWorkspace }>({
     expect(res.status(), await res.text()).toBe(201)
     const { workspace } = await res.json()
     await use({ id: workspace.id, slug: workspace.slug })
-    await admin.delete(`/admin/workspaces/${workspace.id}`)
+    await deleteWorkspace(admin, workspace.id)
   },
 })
+
+/**
+ * Opens a settings section once the page is hydrated: the stream status turns live only in
+ * the browser, so a click after it never lands on the inert server HTML (#118, a click
+ * lost on a loaded host left a dialog closed).
+ */
+export async function openSettings(page: Page, slug: string, section: string): Promise<void> {
+  await page.goto(`/w/${slug}/settings?section=${section}`)
+  await expect(page.getByRole('status').filter({ hasText: 'SSE Live' })).toBeVisible()
+}
 
 export async function startReceiver() {
   const received: Received[] = []

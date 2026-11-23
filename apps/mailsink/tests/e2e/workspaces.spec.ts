@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { deleteWorkspace } from './recipe/fixtures'
 import { expect, signIn, test } from './ui/fixtures'
 
 // Workspace and connection management (#38): « New workspace » of the picker, the
@@ -44,7 +45,7 @@ test('creates a persistent workspace with a first connection from the picker', a
   const detail = await (await admin.get(`/admin/workspaces/${slug}`)).json()
   expect(detail).toMatchObject({ ephemeral: false, retentionSeconds: 86_400 })
   expect(detail.connections).toHaveLength(1)
-  await admin.delete(`/admin/workspaces/${slug}`)
+  await deleteWorkspace(admin, slug)
 })
 
 test('the header picker opens the creation dialog too', async ({ page, workspace }) => {
