@@ -248,9 +248,6 @@ importers:
       '@types/nodemailer':
         specifier: ^8.0.2
         version: 8.0.2
-      '@types/smtp-server':
-        specifier: ^3.5.13
-        version: 3.5.13
       nodemailer:
         specifier: ^10.6.1
         version: 10.6.1
@@ -1661,9 +1658,6 @@ packages:
 
   '@types/react@19.3.0':
     resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
-
-  '@types/smtp-server@3.5.13':
-    resolution: {integrity: sha512-S3rGl2KbViH+98/CgHipPIWgtAFnjxLsppxIRbgJHNuZL7Y+py+7kZjT7xS+wOmCxYTn4O7IqLqkvekg99MDVQ==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -4234,11 +4228,6 @@ snapshots:
   '@types/react@19.3.0':
     dependencies:
       csstype: 3.2.4
-
-  '@types/smtp-server@3.5.13':
-    dependencies:
-      '@types/node': 26.6.6
-      '@types/nodemailer': 8.0.2
 
   '@types/yargs-parser@21.0.3': {}
 

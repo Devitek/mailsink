@@ -9,7 +9,10 @@ import {
   setMessageSimulation,
   setMessageStatus,
 } from '@mailsink/db'
+import type { EngagementOptions } from '../events-api/engagement'
+import type { FannedOut } from '../webhooks/fanout'
 import { aggregateStatus } from './aggregate'
+import { fanOutRun } from './fan-out-run'
 import type { DeliveryPlanner, PlanRecipient } from './planner'
 import { createRecorder, type RecipientTransition } from './recorder'
 import { randomSeed } from './rng'
@@ -31,6 +34,8 @@ export interface SimulateDeliveryOptions {
   seed?: number
   deferredRetryMs?: number
   maxDeferrals?: number
+  /** Draws of the automatic opened / clicked events (#34). */
+  engagement?: EngagementOptions
 }
 
 export type SimulationResult =
@@ -45,6 +50,10 @@ export type SimulationResult =
       /** The `message_events` rows written by the run, in write order: what the job handler
        * publishes on the event bus without reading them back (D95). */
       events: MessageEventRow[]
+      /** Automatic opened / clicked rows written after the run's events, same transaction. */
+      engagement: MessageEventRow[]
+      /** Webhook deliveries created by the run, same transaction (D152). */
+      deliveries: FannedOut[]
       /** Addresses added to the suppression list by this run. */
       suppressed: string[]
       /** When the follow-up job runs (a decision is still pending), else null. */
@@ -60,7 +69,9 @@ const IN_FLIGHT = new Set(['sent', 'deferred'])
  *    join the suppression list);
  * 3. recipients that just went `deferred` are decided again for later;
  * 4. the decisions go to `messages.simulation`, the aggregate to `messages.status`, and a
- *    follow-up job is enqueued at the earliest pending decision.
+ *    follow-up job is enqueued at the earliest pending decision;
+ * 5. automatic opened / clicked events and the webhook fan-out of every written event
+ *    (D152), so the deliveries commit with the run.
  * A replay finds nothing queued nor due and writes nothing, so the handler is idempotent.
  */
 export async function simulateDelivery(
@@ -144,12 +155,21 @@ export async function simulateDelivery(
         },
       ])
     }
+    const { engagement, deliveries } = await fanOutRun(
+      tx,
+      message.workspaceId,
+      message.connectionId,
+      recorder.events,
+      options.engagement,
+    )
     return {
       kind: 'done',
       messageStatus,
       connectionId: message.connectionId,
       transitions: recorder.transitions,
       events: recorder.events,
+      engagement,
+      deliveries,
       suppressed,
       nextRunAt,
     }

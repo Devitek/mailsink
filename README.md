@@ -55,6 +55,11 @@ PGlite volume takes about 10 seconds. The `mailsink` CLI is available in the ima
 example `docker compose -f docker/docker-compose.yml --profile postgres exec
 mailsink-postgres mailsink migrate`.
 
+STARTTLS on SMTP is optional: put the PEM certificate and key in a host directory readable
+by uid 1001, then set `MAILSINK_SMTP_TLS_DIR` (mounted read-only on `/app/tls`, relative
+paths start from `docker/`), `MAILSINK_SMTP_TLS_CERT=/app/tls/cert.pem` and
+`MAILSINK_SMTP_TLS_KEY=/app/tls/key.pem`.
+
 Without Compose:
 
 ```sh

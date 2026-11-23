@@ -449,7 +449,7 @@ export const webhookAttempts = pgTable('webhook_attempts', {
 }, (t) => [index('attempts_delivery_idx').on(t.deliveryId)])
 ```
 
-How the webhook tables are written (#32, #33, propositions D135 to D144, no migration):
+How the webhook tables are written (#32, #33, D135 to D144, D152 to D155, no migration):
 - `webhook_endpoints.events` holds canonical events only, sorted in enum order. For the
   brevo format `secret` holds the bearer token or `user:password` (null with
   `brevo_auth = 'none'`); leaving brevo writes a fresh `whsec_` secret, so the
@@ -463,9 +463,15 @@ How the webhook tables are written (#32, #33, propositions D135 to D144, no migr
 - `replay_of` always holds the first delivery of a replay chain (its id is the signing id
   of every replay). A test send (`POST /capture/webhooks/:id/test`) has `event_id` and
   `message_id` null.
-- Nothing prevents two deliveries for one (endpoint, event) pair: the fan-out runs once
-  per committed simulation run or manual event, and a crash between the run's commit and
-  the fan-out's loses its deliveries rather than duplicating them.
+- Nothing prevents two deliveries for one (endpoint, event) pair: the fan-out runs once,
+  in the transaction that writes the events (ingestion `suppressed`, a simulation run,
+  manual events; D152, D153), so a crash loses or keeps both together.
+- Retention (D154, `repositories/retention-webhooks.ts`): the retention pass deletes the
+  `succeeded` and `failed` deliveries older than the effective retention of their
+  endpoint scope (connection `retention_seconds` when the endpoint has a connection that
+  sets one, else the workspace's); attempts cascade. One range scan per endpoint on
+  `deliveries_ws_time_idx` through a `lateral (… offset 0)` subquery, as for messages.
+  `pending` and `retrying` deliveries are kept until they finish.
 
 ## `schema/logs.ts`
 
@@ -533,8 +539,11 @@ meanwhile, foreign key violation, is dropped silently). What a row keeps:
 Reads (`repositories/logs-api.ts`, `logs-smtp.ts`) are scoped to one workspace, filtered,
 sorted (`createdAt`, `durationMs`, `statusCode`; sessions by `startedAt`, ties broken by
 id) and paged by offset with a `count(*)` total: the UI pager needs page numbers, and the
-retention keeps the tables small (D147). Rows without a workspace (Admin calls, auth
-failures) are only reachable in the database and expire with the default retention (D49).
+retention keeps the tables small (D147). `listApiLogs` and `findApiLog` take a `null`
+workspace for the rows without one (Admin calls, auth failures), read by
+`GET /admin/logs/api` (D151, on `api_logs_ws_time_idx`, nulls included); SMTP sessions
+without workspace are only reachable in the database. Both expire with the default
+retention (D49).
 
 ## `schema/idempotency.ts` and `schema/jobs.ts`
 
@@ -571,7 +580,8 @@ given up on keeps its `last_error` with `run_at = 9999-12-31` and `failed_at` se
 D65). The retention pass (`repositories/retention.ts`, D49) deletes, in order: expired
 messages (cascading to recipients, attachments, events), messages over `max_messages`
 (oldest first), orphan blobs, expired idempotency keys, expired `api_logs` and
-`smtp_sessions`, then failed jobs older than `MAILSINK_JOBS_FAILED_RETENTION_SECONDS`
+`smtp_sessions`, finished webhook deliveries past their retention (D154), then failed jobs
+older than `MAILSINK_JOBS_FAILED_RETENTION_SECONDS`
 (7 days by default). Migration 0002 sets `failed_at = now()` on jobs failed before it.
 
 A `simulate_delivery` run commits its writes and its follow-up job (D70) in one

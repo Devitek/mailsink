@@ -1,5 +1,6 @@
 // Test harness of the SMTP contract tests: an smtp account and a server with spies.
 import { randomBytes } from 'node:crypto'
+import { createConnection } from 'node:net'
 import { createEventBus, createRateLimiter, hashSmtpPassword } from '@mailsink/core'
 import type { Database } from '@mailsink/db'
 import { createTestConnection, createTestWorkspace } from '@mailsink/db/testing'
@@ -67,4 +68,45 @@ export async function startTestServer(db: Database, patch: Partial<SmtpServerOpt
       ...extra,
     })
   return { server, bus, touched, records, credentialCache, transport }
+}
+
+/**
+ * Raw SMTP dialogue: sends each command after the previous reply and answers the last
+ * line of every reply, the greeting first.
+ */
+export async function smtpDialogue(port: number, commands: string[]): Promise<string[]> {
+  const socket = createConnection({ port, host: '127.0.0.1' })
+  const replies: string[] = []
+  let buffer = ''
+  let waiting: ((line: string) => void) | undefined
+  const pending: string[] = []
+  socket.on('data', (chunk) => {
+    buffer += chunk.toString()
+    let end = buffer.indexOf('\r\n')
+    while (end >= 0) {
+      const line = buffer.slice(0, end)
+      buffer = buffer.slice(end + 2)
+      if (/^\d{3} /.test(line)) {
+        if (waiting) {
+          const resolve = waiting
+          waiting = undefined
+          resolve(line)
+        } else pending.push(line)
+      }
+      end = buffer.indexOf('\r\n')
+    }
+  })
+  const next = () =>
+    new Promise<string>((resolve) => {
+      const line = pending.shift()
+      if (line !== undefined) resolve(line)
+      else waiting = resolve
+    })
+  replies.push(await next())
+  for (const command of commands) {
+    socket.write(`${command}\r\n`)
+    replies.push(await next())
+  }
+  socket.destroy()
+  return replies
 }

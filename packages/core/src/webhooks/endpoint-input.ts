@@ -1,6 +1,7 @@
 import type { BrevoAuth, CanonicalEvent, CustomHeader, PayloadFormat } from '@mailsink/contracts'
 import { DomainError } from '../errors'
 import { sortCanonical, toCanonical } from './formatters/events-map'
+import type { UrlGuard } from './url-guard'
 
 // Validation of endpoint input beyond the Zod contract: the dialect of the event names
 // depends on the resolved payload format (D20, D22).
@@ -58,4 +59,16 @@ export function brevoSecret(auth: BrevoAuth | undefined): {
   if (!auth || auth.type === 'none') return { brevoAuth: 'none', secret: null }
   if (auth.type === 'bearer') return { brevoAuth: 'bearer', secret: auth.token }
   return { brevoAuth: 'basic', secret: `${auth.username}:${auth.password}` }
+}
+
+/** `MAILSINK_WEBHOOK_BLOCK_PRIVATE` (D150): a refused URL is a 422 on `url`. */
+export async function checkEndpointUrl(guard: UrlGuard | undefined, url: string): Promise<void> {
+  const refused = await guard?.(url)
+  if (refused) {
+    throw bodyError(
+      'private_webhook_url',
+      'Webhook URL resolves to a private, loopback or link-local address',
+      ['url'],
+    )
+  }
 }

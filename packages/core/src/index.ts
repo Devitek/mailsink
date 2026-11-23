@@ -79,7 +79,7 @@ export {
 export { type SimulateDeliveryPayload, simulateDeliveryHandler } from './jobs/handlers/simulate'
 export type { PublishSimulationOptions } from './jobs/handlers/simulate-publish'
 export {
-  fanOutSimulation,
+  publishRunFanOut,
   type SimulationWebhookOptions,
 } from './jobs/handlers/simulate-webhooks'
 export {
