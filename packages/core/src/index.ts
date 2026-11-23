@@ -51,6 +51,14 @@ export {
 export { DEFAULT_JOB_SETTINGS, type JobSettings } from './jobs/settings'
 export { startWorker, type Worker, type WorkerOptions } from './jobs/worker'
 export {
+  expireOverrides,
+  OVERRIDE_EXPIRY_INTERVAL_MS,
+  type OverrideExpirySchedulerOptions,
+  startOverrideExpiryScheduler,
+} from './overrides/expiry'
+export { activateOverride, getOverrideState, resetOverride } from './overrides/service'
+export { toOverrideView } from './overrides/views'
+export {
   type RetentionOptions,
   type RetentionReport,
   retentionTotal,
@@ -58,18 +66,40 @@ export {
 } from './retention/run'
 export { type RetentionSchedulerOptions, startRetentionScheduler } from './retention/scheduler'
 export { aggregateStatus } from './simulation/aggregate'
+export { decideRecipient, type RecipientDecision } from './simulation/decide'
+export { loadEffectiveSettings } from './simulation/load-settings'
 export {
   baselinePlanner,
+  type DeliveryPlan,
   type DeliveryPlanner,
   type PlanInput,
+  type PlanRecipient,
   type RecipientOutcome,
 } from './simulation/planner'
+export { type Random, recipientRandom, seededRandom } from './simulation/rng'
+export { globToRegExp, matchesGlob, matchRule } from './simulation/rules'
+export { settingsPlanner } from './simulation/settings-planner'
 export {
+  type EffectiveSettings,
+  resolveSettings,
+  type SettingsLayer,
+  type SettingsLayers,
+  toSimulationSettings,
+} from './simulation/settings-resolver'
+export {
+  DEFERRED_RETRY_MS,
+  MAX_DEFERRALS,
   type RecipientTransition,
   type SimulateDeliveryOptions,
   type SimulationResult,
   simulateDelivery,
 } from './simulation/simulate-delivery'
+export type { RecipientDecisionEntry, SimulationSnapshot } from './simulation/snapshot'
+export {
+  listSuppressionViews,
+  resetSuppressions,
+  toSuppressionView,
+} from './suppression/service'
 export {
   ACTIVITY_THROTTLE_MS,
   type ActivityTracker,

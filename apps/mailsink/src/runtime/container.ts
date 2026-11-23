@@ -7,6 +7,7 @@ import {
   type EventBus,
   simulateDeliveryHandler,
   startEphemeralGc,
+  startOverrideExpiryScheduler,
   startRetentionScheduler,
   startWorker,
 } from '@mailsink/core'
@@ -98,6 +99,8 @@ export async function createRuntime(
       log,
     })
     const gc = startEphemeralGc({ db: db.db, bus, activity, log })
+    // Closes overrides past their TTL (#22); reads already ignore them.
+    const overrideExpiry = startOverrideExpiryScheduler({ db: db.db, log })
 
     return {
       config,
@@ -110,6 +113,7 @@ export async function createRuntime(
         // and GC passes in flight, write the pending activity, then close the db.
         await smtp.close()
         await Promise.all([worker.stop(), retention.stop(), gc.stop()])
+        await overrideExpiry.stop()
         await activity.stop()
         await db.close()
       },

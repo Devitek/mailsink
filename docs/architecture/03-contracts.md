@@ -195,6 +195,51 @@ export const OverrideState = z.object({
 })
 ```
 
+Override behaviour (#22, propositions D73 and D74):
+- `GET /capture/override`, `POST /capture/override` and `POST /capture/override/reset` all
+  answer 200 with the `OverrideState` after the call. `effective` lists every connection
+  of the workspace with its resolved simulation settings.
+- Resolution (`simulation/settings-resolver.ts`), field by field: connection override >
+  workspace override > connection settings > workspace settings. A field is taken whole
+  from the first layer that defines it (`rates` are never merged status by status).
+  `openRate` and `clickRate` come from the settings layers only, `chaos` from the overrides
+  only (none by default), `rateLimit` from the four layers (`null` = unlimited). The
+  resolver also returns the effective `chaos` and `rateLimit` for #24 and #25.
+- Activation closes the open override of the same scope (`reset_at`, kept as history, an
+  expired one included) and inserts the new one in one transaction, so a scope has at most
+  one active override. Two concurrent activations of one scope: the second answers 409
+  `conflict`. `activatedVia` is `api` over HTTP. The stored `config` is the parsed contract
+  output (`chaos.httpCodes` and `smtpCodes` defaulted, D44).
+- `ttl` sets `expiresAt = now + ttl`. An expired override is ignored at read time and
+  closed by the override expiry scheduler (every 5 s, `reset_at = expires_at`).
+- Reset is idempotent (nothing to close still answers 200). A `connectionId` of another
+  workspace answers 404 `not_found`, for activation and reset alike.
+
+Simulation behaviour (#21, propositions D70 to D72):
+- The first `simulate_delivery` run decides every `queued` recipient and moves it to
+  `sent` at once; its final status is written once its delay is over (rule `delayMs`, else
+  a uniform draw in `latency`). A run with decisions still pending enqueues a follow-up job
+  at the earliest one.
+- Per recipient: the first rule whose glob matches the address wins (case-insensitive,
+  whole address, `*` any run of characters `@` included, `?` one character). A rule with a
+  `status` fixes it; otherwise the status is drawn from `rates`: `deferred`, `soft_bounce`,
+  `hard_bounce`, `complained` and `failed` take their percentage in that order, the
+  remainder goes to `delivered`. A rule `smtpCode` lands in the final event
+  `data.smtpCode`, its reason (`rule <glob>`) in `data.reason` and `status_reason`.
+- Draws are reproducible: each recipient has its own generator seeded from the message
+  seed, its address and its attempt. The seed is random per message (injectable with
+  `simulateDelivery({ seed })`) and stored in the snapshot.
+- `deferred` is applied as an event and a recipient status, then the recipient is
+  decided again 1 s plus a new delay later, with the settings of that moment. Past 3
+  deferrals, a 4th `deferred` ends as `soft_bounce` (reason `deferred 3 times`).
+- `messages.simulation` keeps the decision snapshot: `{ seed, overrideIds: { workspace,
+  connection }, sources: { rates: 'workspace_override', … }, recipients: { [email]:
+  { status, source: 'rule' | 'rates', rule?, reason?, smtpCode?, delayMs, attempt,
+  decidedAt, dueAt, appliedAt? } } }`.
+- `hard_bounce` and `complained` add the address to the suppression list (D75).
+- The result of a run lists its transitions (`sent`, final or `deferred`, with the event
+  id) for the event bus (#26).
+
 ## Admin (`admin.ts`)
 
 ```ts
@@ -503,7 +548,29 @@ export const TriggerEventRequest = z.discriminatedUnion('type', [
 export const PurgeQuery = z.object({ connectionId: ConnectionId.optional(),
   before: IsoDateTime.optional(), includeLogs: QueryBool.default(true) })
 export const PurgeResponse = z.object({ count: z.number().int().min(0) })
+
+// suppression.ts
+export const SuppressionId = prefixedId('sup')
+export const SuppressionReason = z.enum(['hard_bounce', 'complained', 'manual'])
+export const ListSuppressionsQuery = z.object({ email: z.string().optional(), // substring
+  limit: PageLimit, cursor: SuppressionId.optional() })
+export const DeleteSuppressionsQuery = z.object({ email: Email.optional() }) // omitted = all
+export const SuppressionView = z.object({ id: SuppressionId, email: z.string(),
+  reason: SuppressionReason, messageId: MessageId.nullable(), createdAt: IsoDateTime })
+export const ListSuppressionsResponse = Page(SuppressionView)
+export const DeleteSuppressionsResponse = z.object({ count: z.number().int().min(0) })
 ```
+
+Suppression list (#23, proposition D75):
+- The simulation adds an address when it writes `hard_bounce` or `complained` for it
+  (reason = that status, `messageId` = the message). An address already listed keeps its
+  first row.
+- Ingestion stores a listed recipient `suppressed` with a `suppressed` event (canonical
+  `email.suppressed`); a message whose recipients are all listed gets no job (D55).
+- `GET /capture/suppressions`: newest first, keyset cursor (the id of the last row),
+  `email` is a literal case-insensitive substring. `DELETE /capture/suppressions?email=`
+  removes one address (exact, lower-cased), without `email` the whole list of the
+  workspace; both answer `{ count }`.
 
 Capture behaviour (#15, owner decisions D59 to D61 of 23/11):
 - Isolation: every query is scoped to the authenticated workspace (D12, D41). A message or
