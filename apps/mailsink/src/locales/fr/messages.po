@@ -16,13 +16,23 @@ msgstr "Snippet .env (secret masqué : affiché seulement à la création ou à 
 msgid "(no subject)"
 msgstr "(sans objet)"
 
+#. placeholder {0}: c.messageCount
+#: apps/mailsink/src/features/connections/connection-list.tsx
+msgid "{0, plural, one {# message} other {# messages}}"
+msgstr "{0, plural, one {# message} other {# messages}}"
+
 #. placeholder {0}: d.attemptCount
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "{0} att."
 msgstr "{0} tent."
 
+#. placeholder {0}: d.durationMs
+#: apps/mailsink/src/features/message-viewer/history-tab.tsx
+msgid "{0} ms"
+msgstr "{0} ms"
+
 #. placeholder {0}: workspace.messageCount
-#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+#: apps/mailsink/src/features/workspaces/workspace-row.tsx
 msgid "{0} msg"
 msgstr "{0} msg"
 
@@ -112,6 +122,10 @@ msgstr "Pièces jointes · {0}"
 msgid "Base URL"
 msgstr "URL de base"
 
+#: apps/mailsink/src/features/message-viewer/preview-tab.tsx
+msgid "Block remote images"
+msgstr "Bloquer les images distantes"
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 #: apps/mailsink/src/features/message-viewer/purge-button.tsx
 #: apps/mailsink/src/features/workspaces/confirm-dialog.tsx
@@ -159,22 +173,26 @@ msgid "Connection kind"
 msgstr "Type de connexion"
 
 #: apps/mailsink/src/features/connections/connection-list.tsx
+#: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Connections"
 msgstr "Connexions"
 
-#: apps/mailsink/src/features/connections/copy-button.tsx
-#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
-msgid "Copied"
-msgstr "Copié"
+#: apps/mailsink/src/routes/w.$workspaceSlug.connections.tsx
+msgid "Connections · {slug}"
+msgstr "Connexions · {slug}"
+
+#: apps/mailsink/src/features/shell/use-copy.ts
+msgid "Copied to the clipboard"
+msgstr "Copié dans le presse-papiers"
 
 #: apps/mailsink/src/features/connections/copy-button.tsx
-#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
 msgid "Copy"
 msgstr "Copier"
 
-#: apps/mailsink/src/features/connections/copy-button.tsx
-msgid "Copy failed"
-msgstr "Échec de la copie"
+#: apps/mailsink/src/features/shell/use-copy.ts
+msgid "Copy failed: the browser refused access to the clipboard"
+msgstr "Copie impossible : le navigateur refuse l'accès au presse-papiers"
 
 #: apps/mailsink/src/features/connections/credentials-reveal.tsx
 msgid "Copy SMTP_PASS"
@@ -203,6 +221,7 @@ msgstr "Copier l'URL de base"
 msgid "Copy the secrets below now: they are shown only once."
 msgstr "Copiez les secrets ci-dessous maintenant : ils ne sont affichés qu'une fois."
 
+#: apps/mailsink/src/features/connections/workspace-key-card.tsx
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "Copy the workspace key"
 msgstr "Copier la clé du workspace"
@@ -218,6 +237,10 @@ msgstr "Créer la connexion"
 #: apps/mailsink/src/features/workspaces/new-workspace-form.tsx
 msgid "Create the workspace"
 msgstr "Créer le workspace"
+
+#: apps/mailsink/src/features/workspaces/ephemeral-banner.tsx
+msgid "created through <0>POST /admin/workspaces</0> · hidden from the main list by default · purged automatically after inactivity."
+msgstr "créé via <0>POST /admin/workspaces</0> · masqué par défaut de la liste principale · purge automatique après inactivité."
 
 #: apps/mailsink/src/features/message-viewer/simulate-bar.tsx
 msgid "Custom URL"
@@ -281,7 +304,7 @@ msgstr "Désactivée : ses credentials sont refusés (HTTP 403, SMTP 535) jusqu'
 msgid "Download"
 msgstr "Télécharger"
 
-#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
 msgid "Download .eml"
 msgstr "Télécharger le .eml"
 
@@ -309,6 +332,10 @@ msgstr "Aperçu de l'email"
 msgid "Emails sent through a connection of this workspace show up here in real time. No message ever leaves Mailsink."
 msgstr "Les emails envoyés via une connexion de ce workspace apparaissent ici en temps réel. Aucun message ne quitte Mailsink."
 
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+msgid "EML source"
+msgstr "Source EML"
+
 #: apps/mailsink/src/features/inbox/empty-inbox.tsx
 msgid "Empty inbox for <0>{slug}</0>"
 msgstr "Boîte vide pour <0>{slug}</0>"
@@ -333,6 +360,10 @@ msgstr "Éphémère · {left}"
 msgid "Ephemeral equivalent (CI / E2E), hidden by default, deleted after one idle hour:"
 msgstr "Équivalent éphémère (CI / E2E), masqué par défaut, supprimé après 1 h d'inactivité :"
 
+#: apps/mailsink/src/features/workspaces/ephemeral-banner.tsx
+msgid "Ephemeral workspace"
+msgstr "Workspace éphémère"
+
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Ephemeral workspaces"
 msgstr "Workspaces éphémères"
@@ -345,8 +376,8 @@ msgstr "Événements enregistrés : {events}. Livraisons webhook en file : {deli
 msgid "Every email caught. None delivered."
 msgstr "Tout arrive. Rien ne part."
 
-#. placeholder {0}: formatBytes(raw.sizeBytes, i18n.locale)
-#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+#. placeholder {0}: formatBytes(raw.data.sizeBytes, i18n.locale)
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
 msgid "First 512 KB of {0}: download the file for the whole source."
 msgstr "Premiers 512 Ko sur {0} : téléchargez le fichier pour la source complète."
 
@@ -389,6 +420,10 @@ msgstr "Historique"
 msgid "https://… custom URL"
 msgstr "https://… URL personnalisée"
 
+#: apps/mailsink/src/features/workspaces/ephemeral-banner.tsx
+msgid "Idle time left"
+msgstr "Temps d'inactivité restant"
+
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "iframe sandbox · scripts blocked · 375 px"
 msgstr "iframe sandbox · scripts bloqués · 375 px"
@@ -400,6 +435,10 @@ msgstr "iframe sandbox · scripts bloqués · fluide"
 #: apps/mailsink/src/features/inbox/inbox-page.tsx
 msgid "Inbox"
 msgstr "Boîte de réception"
+
+#: apps/mailsink/src/routes/w.$workspaceSlug.index.tsx
+msgid "Inbox · {slug}"
+msgstr "Boîte de réception · {slug}"
 
 #: apps/mailsink/src/features/shell/session-menu.tsx
 msgid "Instance"
@@ -452,11 +491,12 @@ msgstr "Chargement du message…"
 msgid "Loading older messages…"
 msgstr "Chargement des messages plus anciens…"
 
-#: apps/mailsink/src/features/workspaces/workspace-picker.tsx
+#: apps/mailsink/src/features/workspaces/workspace-section-list.tsx
 msgid "Loading workspaces…"
 msgstr "Chargement des workspaces…"
 
-#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+#: apps/mailsink/src/features/workspaces/workspace-section-list.tsx
 msgid "Loading…"
 msgstr "Chargement…"
 
@@ -476,10 +516,6 @@ msgstr "Message"
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Messages"
 msgstr "Messages"
-
-#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
-msgid "MIME source (EML)"
-msgstr "Source MIME (EML)"
 
 #: apps/mailsink/src/features/message-viewer/preview-tab.tsx
 msgid "Mobile"
@@ -504,6 +540,10 @@ msgstr "Nouveau workspace persistant"
 msgid "New workspace"
 msgstr "Nouveau workspace"
 
+#: apps/mailsink/src/features/connections/workspace-key-card.tsx
+msgid "No active key: rotate to create one."
+msgstr "Aucune clé active : faites une rotation pour en créer une."
+
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "No attachment."
 msgstr "Aucune pièce jointe."
@@ -512,9 +552,17 @@ msgstr "Aucune pièce jointe."
 msgid "No connection yet: create one to receive mail from Resend, Brevo or SMTP clients."
 msgstr "Aucune connexion pour l'instant : créez-en une pour recevoir les mails de Resend, Brevo ou de clients SMTP."
 
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "No ephemeral workspace."
+msgstr "Aucun workspace éphémère."
+
 #: apps/mailsink/src/features/message-viewer/links-tab.tsx
 msgid "No link."
 msgstr "Aucun lien."
+
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+msgid "No log holds this message any more (retention or purge)."
+msgstr "Plus aucun journal ne contient ce message (rétention ou purge)."
 
 #: apps/mailsink/src/features/inbox/message-list.tsx
 msgid "No message matches."
@@ -524,7 +572,7 @@ msgstr "Aucun message ne correspond."
 msgid "No message to show with these filters."
 msgstr "Aucun message à afficher avec ces filtres."
 
-#: apps/mailsink/src/features/message-viewer/headers-tab.tsx
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
 msgid "No MIME source was kept for this message."
 msgstr "Aucune source MIME n'a été conservée pour ce message."
 
@@ -539,6 +587,10 @@ msgstr "Aucune livraison webhook pour ce message."
 #: apps/mailsink/src/routes/w.$workspaceSlug.tsx
 msgid "No workspace is named <0>{workspaceSlug}</0>. It may have expired."
 msgstr "Aucun workspace ne s'appelle <0>{workspaceSlug}</0>. Il a peut-être expiré."
+
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "No workspace matches."
+msgstr "Aucun workspace ne correspond."
 
 #: apps/mailsink/src/features/inbox/relative-time.tsx
 msgid "now"
@@ -564,6 +616,11 @@ msgstr "Optionnel : généré à partir du slug du workspace."
 msgid "Paste"
 msgstr "Coller"
 
+#. placeholder {0}: connectionOf(message, []).label
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+msgid "Payload {0}"
+msgstr "Payload {0}"
+
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Persistent workspaces"
 msgstr "Workspaces persistants"
@@ -588,6 +645,10 @@ msgstr "Protection désactivée <0>MAILSINK_UI_AUTH=none</0> : pas de connexion 
 msgid "Purge the inbox"
 msgstr "Purger la boîte"
 
+#: apps/mailsink/src/features/workspaces/ephemeral-banner.tsx
+msgid "Purged in"
+msgstr "Purge dans"
+
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Rate limit"
 msgstr "Rate limit"
@@ -595,6 +656,10 @@ msgstr "Rate limit"
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "Rate limit override"
 msgstr "Override rate limit"
+
+#: apps/mailsink/src/features/connections/workspace-key-card.tsx
+msgid "Reads every message of the workspace through the Capture API and MCP, whatever the connection."
+msgstr "Lit tous les messages du workspace via l'API Capture et MCP, quelle que soit la connexion."
 
 #: apps/mailsink/src/features/connections/credentials-reveal.tsx
 msgid "Ready-to-copy .env snippet"
@@ -625,11 +690,17 @@ msgstr "Régénérer SMTP_PASS ?"
 msgid "Remove the tag filter {0}"
 msgstr "Retirer le filtre de tag {0}"
 
+#. placeholder {0}: origin.data.logId
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+msgid "Request {0} in the logs"
+msgstr "Requête {0} dans les logs"
+
 #: apps/mailsink/src/features/workspaces/workspace-summary.tsx
 msgid "Retention"
 msgstr "Rétention"
 
 #: apps/mailsink/src/features/connections/connection-panel.tsx
+#: apps/mailsink/src/features/connections/workspace-key-card.tsx
 msgid "Rotate"
 msgstr "Rotation"
 
@@ -637,10 +708,22 @@ msgstr "Rotation"
 msgid "Rotate the API key?"
 msgstr "Faire une rotation de la clé API ?"
 
+#: apps/mailsink/src/features/connections/workspace-key-card.tsx
+msgid "Rotate the key"
+msgstr "Faire la rotation de la clé"
+
+#: apps/mailsink/src/features/connections/workspace-key-card.tsx
+msgid "Rotate the workspace key?"
+msgstr "Faire une rotation de la clé du workspace ?"
+
 #: apps/mailsink/src/features/connections/connection-name.tsx
 #: apps/mailsink/src/features/workspaces/edit-workspace-dialog.tsx
 msgid "Save"
 msgstr "Enregistrer"
+
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "Search by slug or name…"
+msgstr "Rechercher par slug ou nom…"
 
 #: apps/mailsink/src/features/inbox/filter-bar.tsx
 msgid "Search messages"
@@ -650,6 +733,10 @@ msgstr "Rechercher des messages"
 msgid "Search subject, body, to:, from:…"
 msgstr "Rechercher sujet, corps, to:, from:…"
 
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "Search workspaces"
+msgstr "Rechercher un workspace"
+
 #: apps/mailsink/src/features/message-viewer/history-tab.tsx
 msgid "See in the logs explorer →"
 msgstr "Voir dans l'explorateur de logs →"
@@ -657,6 +744,11 @@ msgstr "Voir dans l'explorateur de logs →"
 #: apps/mailsink/src/features/connections/connections-screen.tsx
 msgid "Select a connection."
 msgstr "Sélectionnez une connexion."
+
+#. placeholder {0}: origin.data.sessionId
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+msgid "Session {0} in the logs"
+msgstr "Session {0} dans les logs"
 
 #: apps/mailsink/src/features/shell/nav-tabs.tsx
 msgid "Settings"
@@ -669,6 +761,10 @@ msgstr "Afficher"
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "Show ephemeral workspaces"
 msgstr "Afficher les workspaces éphémères"
+
+#: apps/mailsink/src/features/workspaces/workspace-section-list.tsx
+msgid "Show more"
+msgstr "Afficher plus"
 
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "Show the messages tagged {value}"
@@ -717,6 +813,10 @@ msgstr "Simulation refusée : {0}"
 msgid "Slug"
 msgstr "Slug"
 
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+msgid "SMTP envelope"
+msgstr "Enveloppe SMTP"
+
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "SMTP username"
 msgstr "Utilisateur SMTP"
@@ -725,9 +825,14 @@ msgstr "Utilisateur SMTP"
 msgid "SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS are generated on creation. Works with Nodemailer, Symfony Mailer, Django…"
 msgstr "SMTP_HOST, SMTP_PORT, SMTP_USER et SMTP_PASS seront générés à la création. Compatible Nodemailer, Symfony Mailer, Django…"
 
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
 #: apps/mailsink/src/features/message-viewer/viewer-header.tsx
 msgid "Source"
 msgstr "Source"
+
+#: apps/mailsink/src/features/message-viewer/source-panel.tsx
+msgid "Source view"
+msgstr "Vue de la source"
 
 #: apps/mailsink/src/features/inbox/filter-bar.tsx
 msgid "Status"
@@ -752,6 +857,10 @@ msgstr "L'opération a échoué. Réessayez."
 #: apps/mailsink/src/features/connections/new-connection-form.tsx
 msgid "The connection could not be created. Try again."
 msgstr "La connexion n'a pas pu être créée. Réessayez."
+
+#: apps/mailsink/src/features/connections/workspace-key-card.tsx
+msgid "The current mskw_ key stops working at once: every CI job, script or MCP client using it must get the new one."
+msgstr "La clé mskw_ actuelle cesse de fonctionner immédiatement : chaque job de CI, script ou client MCP qui l'utilise doit recevoir la nouvelle."
 
 #: apps/mailsink/src/features/login/login-screen.tsx
 msgid "The key is never stored in your browser: it is exchanged for a session cookie."
@@ -833,6 +942,7 @@ msgstr "Workspace"
 msgid "Workspace {slug} created"
 msgstr "Workspace {slug} créé"
 
+#: apps/mailsink/src/features/connections/workspace-key-card.tsx
 #: apps/mailsink/src/features/workspaces/workspace-created.tsx
 msgid "Workspace key"
 msgstr "Clé du workspace"

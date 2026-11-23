@@ -20,6 +20,13 @@ describe('pageTitle', () => {
     })
   })
 
+  it('reads the values carried by a msg descriptor (msg`Inbox · ${slug}`)', () => {
+    const matches = [root('fr', { box: 'Boîte · {slug}' })]
+    expect(pageTitle(matches, { id: 'box', values: { slug: 'qa' } })).toEqual({
+      title: 'Boîte · qa · Mailsink',
+    })
+  })
+
   it('falls back to the source message before the root loader ran', () => {
     expect(pageTitle([{ routeId: '/login' }], SIGN_IN)).toEqual({ title: 'Sign in · Mailsink' })
     expect(headI18n([{ routeId: '__root__', loaderData: { locale: 'xx' } }])).toBeUndefined()
