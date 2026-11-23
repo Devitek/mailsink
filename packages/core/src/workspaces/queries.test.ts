@@ -59,7 +59,8 @@ describeDb('workspace queries', (ctx) => {
 
   it('deletes a workspace with its connections and keys', async () => {
     const created = await create({ name: 'Gone', connections: [{ kind: 'brevo', name: 'B' }] })
-    await removeWorkspace(ctx.db, created.workspace.slug)
+    // By slug, it resolves with the id (the caller publishes workspace.deleted on it).
+    expect(await removeWorkspace(ctx.db, created.workspace.slug)).toBe(created.workspace.id)
     await expect(getWorkspaceDetail(ctx.db, created.workspace.id, URL)).rejects.toMatchObject({
       code: 'not_found',
     })

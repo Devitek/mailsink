@@ -40,12 +40,21 @@ export const getWorkspace = defineApi({
     getWorkspaceDetail(runtime.db.db, params.id, runtime.config.publicUrl),
 })
 
-/** `DELETE /admin/workspaces/:id`: immediate hard delete, 204. */
+/**
+ * `DELETE /admin/workspaces/:id`: immediate hard delete, 204. Like the ephemeral GC, it
+ * publishes `workspace.deleted` so open streams and `wait=true` calls end (D97).
+ */
 export const deleteWorkspace = defineApi({
   auth: 'admin',
   params: RefParams,
   handler: async ({ runtime, params }) => {
-    await removeWorkspace(runtime.db.db, params.id)
+    const workspaceId = await removeWorkspace(runtime.db.db, params.id)
+    runtime.activity.forget(workspaceId)
+    runtime.bus.publish(workspaceId, {
+      id: null,
+      connectionId: null,
+      event: { type: 'workspace.deleted', workspaceId },
+    })
     return new Response(null, { status: 204 })
   },
 })

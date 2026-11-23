@@ -527,6 +527,15 @@ messages (cascading to recipients, attachments, events), messages over `max_mess
 `smtp_sessions`, then failed jobs older than `MAILSINK_JOBS_FAILED_RETENTION_SECONDS`
 (7 days by default). Migration 0002 sets `failed_at = now()` on jobs failed before it.
 
+A `simulate_delivery` run commits its writes and its follow-up job (D70) in one
+transaction, but the claimed job is deleted afterwards, by a separate statement. A crash
+between the two leaves the claimed job leased: once `locked_until` passes it runs again,
+finds nothing queued nor due, so it writes no event and publishes nothing, yet it enqueues
+a follow-up job again at the same pending decision when one remains. The message then has two
+follow-up jobs for one decision; the first to run applies it, the second finds nothing due
+and completes without effect (D99, known limit, no fix planned: a duplicate job costs one
+idle run).
+
 Retention statements are written as range scans per workspace or connection (D69): one
 `DELETE … USING connections c CROSS JOIN LATERAL (… OFFSET 0)` for rows whose connection
 sets `retention_seconds`, one over `workspaces` for the others (`NOT EXISTS` on a connection
