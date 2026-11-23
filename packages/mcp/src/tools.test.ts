@@ -6,6 +6,8 @@ import { afterAll, beforeAll, expect, it } from 'vitest'
 import type { McpContext } from './context'
 import { connectClient, toolJson } from './testing'
 
+const PUBLIC_URL = 'https://mail.example.com'
+
 describeDb('MCP tools', (db) => {
   let bus: EventBus
   let ctx: McpContext
@@ -17,8 +19,8 @@ describeDb('MCP tools', (db) => {
     const a = await createTestWorkspaceWithConnection(db.db, { workspace: { name: 'A' } })
     const b = await createTestWorkspaceWithConnection(db.db, { workspace: { name: 'B' } })
     connectionId = a.connection.id
-    ctx = { db: db.db, bus, workspace: a.workspace }
-    other = { db: db.db, bus, workspace: b.workspace }
+    ctx = { db: db.db, bus, workspace: a.workspace, publicUrl: PUBLIC_URL }
+    other = { db: db.db, bus, workspace: b.workspace, publicUrl: PUBLIC_URL }
     client = await connectClient(ctx)
   })
   afterAll(() => client.close())
@@ -31,6 +33,8 @@ describeDb('MCP tools', (db) => {
     expect(tools.map((t) => t.name).sort()).toEqual([
       'get_delivery_logs',
       'get_email',
+      'get_email_attachment',
+      'get_email_source',
       'get_override_config',
       'get_webhook_deliveries',
       'list_emails',

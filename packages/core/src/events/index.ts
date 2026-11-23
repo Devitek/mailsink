@@ -7,4 +7,5 @@ export {
 } from './bus'
 export { frameMatches, type StreamFilter } from './filter'
 export { createdFrame, eventFrame, framesOfRows, statusFrame, toEventView } from './frames'
+export type { LiveDeps } from './live'
 export { REPLAY_LIMIT, replayFrames } from './replay'

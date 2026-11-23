@@ -7,6 +7,11 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: fr\n"
 
+#. placeholder {0}: workspace.messageCount
+#: apps/mailsink/src/features/workspaces/workspace-sections.tsx
+msgid "{0} msg"
+msgstr "{0} msg"
+
 #: apps/mailsink/src/features/workspaces/workspace-sections.tsx
 msgid "{count, plural, one {# created through the Admin API (CI / E2E)} other {# created through the Admin API (CI / E2E)}}"
 msgstr "{count, plural, one {# créé via l'API Admin (CI / E2E)} other {# créés via l'API Admin (CI / E2E)}}"
@@ -126,6 +131,7 @@ msgid "Show ephemeral workspaces"
 msgstr "Afficher les workspaces éphémères"
 
 #: apps/mailsink/src/features/login/login-form.tsx
+#: apps/mailsink/src/routes/login.tsx
 msgid "Sign in"
 msgstr "Se connecter"
 

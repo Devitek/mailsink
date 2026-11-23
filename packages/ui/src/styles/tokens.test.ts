@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { contrastRatio } from './contrast'
 import { declarationsBySelector, referencedVariables } from './css-declarations'
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
@@ -18,6 +19,25 @@ describe('tokens.css', () => {
     const root = declarationsBySelector(extension)[':root']
     expect(root?.['--ms-danger']).toBe('var(--ms-status-failed)')
     expect(root?.['--ms-control-h-xl']).toBe('44px')
+  })
+
+  it('keeps faint text at 4.5:1 on the text surfaces of both themes (D184)', () => {
+    const base = declarationsBySelector(bundled)
+    const ext = declarationsBySelector(extension)
+    const themes = [
+      [base[':root,[data-theme="light"]'], ext[':root:not([data-theme="dark"])']],
+      [base['[data-theme="dark"]'], ext[':root[data-theme="dark"]']],
+    ]
+    for (const [palette, override] of themes) {
+      const faint = override?.['--ms-text-faint'] ?? ''
+      const bg = palette?.['--ms-bg'] ?? ''
+      for (const surface of ['--ms-bg', '--ms-panel', '--ms-raised']) {
+        expect(contrastRatio(faint, palette?.[surface] ?? '')).toBeGreaterThanOrEqual(4.5)
+      }
+      // Still a step below muted text.
+      const muted = palette?.['--ms-text-muted'] ?? ''
+      expect(contrastRatio(faint, bg)).toBeLessThan(contrastRatio(muted, bg))
+    }
   })
 })
 

@@ -143,7 +143,9 @@ is the HTTP error body, for example `{"error":{"code":"wait_timeout","message":"
 | Tool | What it does | HTTP twin |
 | --- | --- | --- |
 | `list_emails` | Search captured emails (to, from, subject, tag, status, connectionId, since, until, q, cursor) | `GET /capture/messages` |
-| `get_email` | One email in full: bodies, headers, links, attachments, recipients, events, webhooks | `GET /capture/messages/:id` |
+| `get_email` | One email in full: bodies, headers, links, attachments, recipients, events, webhooks; `rawUrl` and `downloadUrl` are absolute | `GET /capture/messages/:id` |
+| `get_email_source` | The raw MIME source (EML) as an embedded `message/rfc822` resource | `GET /capture/messages/:id/raw` |
+| `get_email_attachment` | One attachment (`attachmentId` from `get_email`): text types as text, others base64 | `GET /capture/messages/:id/attachments/:attId` |
 | `wait_for_email` | Wait (default and max 30 s) until an email matches, then the first page | `GET /capture/messages?wait=true` |
 | `trigger_email_event` | Opened, clicked or a forced status, origin `mcp` | `POST /capture/messages/:id/events` |
 | `set_override_config` | Force status rates, rules, latency, chaos or rate limit, optional TTL | `POST /capture/override` |

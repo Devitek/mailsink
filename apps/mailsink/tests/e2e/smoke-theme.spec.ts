@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { BASE_URL } from './web-server'
 
 // B1-4: light by default, prefers-color-scheme ignored, the choice is remembered in a
 // cookie and applied during SSR (no flash).
@@ -50,3 +51,36 @@ test('fonts are self-hosted', async ({ page }) => {
   }
   expect([...origins]).toEqual([new URL(page.url()).origin])
 })
+
+// Proposition D184: faint texts (section labels, reassurance line, instance block) at 4.5:1
+// on the page, panel and raised backgrounds, in both themes, as the browser resolves them.
+for (const theme of ['light', 'dark'] as const) {
+  test(`faint text reads at 4.5:1 in the ${theme} theme`, async ({ page, context }) => {
+    await context.addCookies([{ name: 'mailsink_theme', value: theme, url: BASE_URL }])
+    await page.goto('/login')
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
+    const ratios = await page.evaluate(() => {
+      const rgb = (name: string) => {
+        const probe = document.createElement('div')
+        probe.style.color = `var(${name})`
+        document.body.append(probe)
+        const parts = getComputedStyle(probe).color.match(/\d+(\.\d+)?/g) ?? []
+        probe.remove()
+        return parts.slice(0, 3).map(Number)
+      }
+      const luminance = (name: string) => {
+        const [r = 0, g = 0, b = 0] = rgb(name).map((c) => {
+          const s = c / 255
+          return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+        })
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+      }
+      const faint = luminance('--ms-text-faint')
+      return ['--ms-bg', '--ms-panel', '--ms-raised'].map((surface) => {
+        const [a, b] = [faint, luminance(surface)].sort((x, y) => y - x)
+        return ((a ?? 0) + 0.05) / ((b ?? 0) + 0.05)
+      })
+    })
+    for (const ratio of ratios) expect(ratio).toBeGreaterThanOrEqual(4.5)
+  })
+}
