@@ -75,6 +75,39 @@ test('an override forces a bounce on matching recipients only', async ({
   ])
 })
 
+test('each recipient has its own status', async ({ app, expectEmail, mailsink }) => {
+  await mailsink.withOverride({ rules: [{ match: '*+bounce@*', status: 'hard_bounce' }] })
+  await app.send({
+    to: ['jane+bounce@example.com', 'bob@example.com'],
+    subject: 'Team invite',
+    text: 'x',
+  })
+
+  const email = await expectEmail({ subject: 'Team invite' })
+  await expect(email).toHaveStatus('hard_bounce', { recipient: 'jane+bounce@example.com' })
+  await expect(email).toHaveStatus('delivered', { recipient: 'bob@example.com' })
+  await expect(email).not.toHaveStatus('delivered', { recipient: 'nobody@example.com' })
+})
+
+test('a link to the production URL opens on the server under test (rebase)', async ({
+  app,
+  expectEmail,
+  page,
+}) => {
+  // The application writes its public URL; the test runs it elsewhere.
+  await app.send({
+    to: 'jane@example.com',
+    subject: 'Confirm your address',
+    html: '<a href="https://app.acme.test/login?source=email#confirm">Confirm</a>',
+  })
+
+  const email = await expectEmail({ subject: 'Confirm your address' })
+  const { url, response } = await openLink(page, email, '/login', { rebase: BASE_URL })
+  expect(url).toBe(`${BASE_URL}/login?source=email#confirm`)
+  expect(response?.ok()).toBe(true)
+  await expect(page.getByRole('heading', { name: 'Sign in to this instance' })).toBeVisible()
+})
+
 test.describe('with an override for every test of the group', () => {
   test.use({ mailsinkOverride: { rates: { failed: 100 } } })
 

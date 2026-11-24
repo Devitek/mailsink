@@ -1,3 +1,4 @@
+import { gotoHydrated } from '../goto-hydrated'
 import { ADMIN_KEY, expect, plantExpiredSession, test } from './fixtures'
 
 // Sign-in screen of brief 2 (L1a to L1d) against the real server: admin key exchanged for
@@ -9,7 +10,7 @@ test('a signed-out visitor signs in and lands on the page asked for', async ({
   context,
 }) => {
   const ws = await workspace()
-  await page.goto(`/w/${ws.slug}`)
+  await gotoHydrated(page, `/w/${ws.slug}`)
 
   await expect(page).toHaveURL(`/login?redirect=${encodeURIComponent(`/w/${ws.slug}`)}`)
   await expect(page.getByRole('heading', { name: 'Sign in to this instance' })).toBeVisible()
@@ -37,7 +38,7 @@ test('a refused key keeps the visitor on the screen, without an attempts count',
   page,
   context,
 }) => {
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   const field = page.getByLabel('Admin key')
   await field.fill('msk_admin_wrong')
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
@@ -68,7 +69,7 @@ test('an expired session returns to its page after signing in again', async ({
 }) => {
   const ws = await workspace()
   await plantExpiredSession(page)
-  await page.goto(`/w/${ws.slug}`)
+  await gotoHydrated(page, `/w/${ws.slug}`)
 
   // L1d: a status banner naming the page to return to.
   const banner = page.getByRole('status')
@@ -84,7 +85,7 @@ test('signing out drops the session; the sign-in page then shows no expiry banne
   page,
   context,
 }) => {
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   await page.getByLabel('Admin key').fill(ADMIN_KEY)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Choose a workspace' })).toBeVisible()
@@ -95,15 +96,15 @@ test('signing out drops the session; the sign-in page then shows no expiry banne
   await expect(page).toHaveURL('/login')
   await expect(page.getByRole('status')).toHaveCount(0)
   expect((await context.cookies()).some((c) => c.name === 'mailsink_session')).toBe(false)
-  await page.goto('/')
+  await gotoHydrated(page, '/')
   await expect(page).toHaveURL('/login?redirect=%2F')
 })
 
 test('a signed-in visitor skips the sign-in page', async ({ page }) => {
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   await page.getByLabel('Admin key').fill(ADMIN_KEY)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page).toHaveURL('/')
-  await page.goto('/login?redirect=https://evil.test/')
+  await gotoHydrated(page, '/login?redirect=https://evil.test/')
   await expect(page).toHaveURL('/')
 })

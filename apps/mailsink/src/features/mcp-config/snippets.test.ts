@@ -24,6 +24,12 @@ describe('mcpSnippets', () => {
       expect(() => JSON.parse(snippet.code)).not.toThrow()
     }
     const desktop = JSON.parse(snippets[3]?.code ?? '{}')
+    // stdio through the published CLI, no checkout needed.
+    expect(desktop.mcpServers.mailsink).toMatchObject({
+      command: 'npx',
+      args: ['-y', '@devitek/mailsink-cli', 'mcp'],
+    })
+    expect(snippets[1]?.code).toContain('-- npx -y @devitek/mailsink-cli mcp')
     expect(desktop.mcpServers.mailsink.env).toEqual({
       MAILSINK_URL: 'https://mail.test',
       MAILSINK_KEY: 'mskw_...',

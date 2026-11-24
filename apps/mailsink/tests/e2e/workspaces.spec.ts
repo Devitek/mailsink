@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
-import { deleteWorkspace } from './recipe/fixtures'
+import { gotoHydrated } from './goto-hydrated'
 import { expect, signIn, test } from './ui/fixtures'
+import { deleteWorkspace } from './workspace-api'
 
 // Workspace and connection management (#38): « New workspace » of the picker, the
 // connections page (create, secrets shown once, rotation, enable / disable, delete), and
@@ -15,7 +16,7 @@ test('creates a persistent workspace with a first connection from the picker', a
 }) => {
   const slug = `ui-new-${randomUUID().slice(0, 8)}`
   await signIn(page)
-  await page.goto('/')
+  await gotoHydrated(page, '/')
   await page.getByRole('button', { name: 'New workspace' }).click()
 
   const dialog = page.getByRole('dialog', { name: 'New persistent workspace' })
@@ -51,7 +52,7 @@ test('creates a persistent workspace with a first connection from the picker', a
 test('the header picker opens the creation dialog too', async ({ page, workspace }) => {
   const ws = await workspace()
   await signIn(page)
-  await page.goto(`/w/${ws.slug}`)
+  await gotoHydrated(page, `/w/${ws.slug}`)
   await page
     .getByRole('banner')
     .getByRole('button', { name: `Workspace: ${ws.slug}` })
@@ -68,7 +69,7 @@ test('the header picker opens the creation dialog too', async ({ page, workspace
 test('a taken slug is reported on its field', async ({ page, workspace }) => {
   const taken = await workspace()
   await signIn(page)
-  await page.goto('/')
+  await gotoHydrated(page, '/')
   await page.getByRole('button', { name: 'New workspace' }).click()
   const dialog = page.getByRole('dialog', { name: 'New persistent workspace' })
   await dialog.getByLabel('Name').fill('Duplicate')
@@ -80,7 +81,7 @@ test('a taken slug is reported on its field', async ({ page, workspace }) => {
 test('manages the connections of a workspace', async ({ page, admin, workspace }) => {
   const ws = await workspace()
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/connections`)
+  await gotoHydrated(page, `/w/${ws.slug}/connections`)
 
   // No connection yet: the creation form is open; SMTP shows its username field.
   await page.getByRole('radio', { name: 'SMTP' }).click()
@@ -129,7 +130,7 @@ test('manages the connections of a workspace', async ({ page, admin, workspace }
 test('edits then deletes a workspace, ephemeral included', async ({ page, admin, workspace }) => {
   const ws = await workspace({ ephemeral: true })
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/connections`)
+  await gotoHydrated(page, `/w/${ws.slug}/connections`)
 
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
   const edit = page.getByRole('dialog', { name: 'Edit the workspace' })

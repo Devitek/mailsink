@@ -96,6 +96,9 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
+      '@devitek/mailsink':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       '@devitek/mailsink-playwright':
         specifier: workspace:*
         version: link:../../packages/playwright
@@ -310,6 +313,9 @@ importers:
       '@mailsink/db':
         specifier: workspace:*
         version: link:../db
+      '@mailsink/openapi':
+        specifier: workspace:*
+        version: link:../openapi
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(tsx@4.23.15)(typescript@7.0.2)

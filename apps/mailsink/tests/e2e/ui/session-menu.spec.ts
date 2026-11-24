@@ -1,10 +1,11 @@
+import { gotoHydrated } from '../goto-hydrated'
 import { expect, signIn, test } from './fixtures'
 
 // « Language and session » menu of the header (H2a to H2c, B2-4).
 
 test('the menu switches the language in place and stays open', async ({ page, context }) => {
   await signIn(page)
-  await page.goto('/')
+  await gotoHydrated(page, '/')
   await page.evaluate(() => {
     ;(window as Window & { e2eMarker?: boolean }).e2eMarker = true
   })

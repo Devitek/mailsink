@@ -255,15 +255,23 @@ mailsink/
 │       │                                  # og-image-{en,fr}-1200x630.png (docs/design/og/)
 │       └── tests/e2e/                     # Playwright against the production build
 │           ├── web-server.ts              # shared config: ports, admin key, webServer
+│           ├── goto-hydrated.ts           # gotoHydrated(page, url): waits for <html
+│           │                              # data-hydrated> before any click (D263)
+│           ├── workspace-api.ts           # workspaces of the UI scenarios through the SDK
+│           │                              # (createWorkspace, adminSdk) and the raw
+│           │                              # adminContext / deleteWorkspace (D263)
 │           ├── serve.ts                   # node <entry> on a throwaway PGlite directory
 │           ├── smoke.spec.ts  smoke-theme.spec.ts  locale.spec.ts
 │           ├── inbox.spec.ts  inbox-fixtures.ts  workspaces.spec.ts  workspaces-screens.spec.ts
 │           ├── ui/                        # sign-in, picker (search, banner), session menu,
-│           │                              # contrast, mobile (390 px), workspace key; the
+│           │                              # contrast, mobile (390 px), workspace key,
+│           │                              # ephemeral banner on a skewed clock (D261); the
 │           │                              # login-limit.spec.ts scenario runs alone, last
-│           ├── recipe/                    # docs/guides/e2e.md: fixtures.ts (ephemeral workspace
-│           │                              # per worker, reset, cleanup), recipe.spec.ts (send,
-│           │                              # wait=true, bounce override), realtime.spec.ts (SSE
+│           ├── recipe/                    # docs/guides/e2e.md, on @devitek/mailsink-playwright:
+│           │                              # fixtures.ts (workspace per worker, `app` sending
+│           │                              # with the Resend SDK), recipe.spec.ts (send, matchers,
+│           │                              # per-recipient status, links with rebase, bounce
+│           │                              # override), realtime.spec.ts (SSE
 │           │                              # stream, wait=true on the built server),
 │           │                              # brevo.spec.ts (official SDK, template),
 │           │                              # webhooks.spec.ts (local receiver, test send)
@@ -287,6 +295,7 @@ mailsink/
 │   │       │                            # ConnectionsSearch)
 │   │       ├── workspace-manage.ts      # workspace / connection edits, CreatedConnection,
 │   │       │                            # RotatedWorkspaceKey, slugify
+│   │       ├── server-clock.ts          # server time from Date headers (SDK, web UI, D261)
 │   │       └── version.ts               # MAILSINK_VERSION, from the root package.json (D181)
 │   ├── db/                                # Drizzle (doc 02)
 │   │   ├── drizzle.config.ts
@@ -395,18 +404,42 @@ mailsink/
 │   │   └── src/                           # contracts (D230 to D234): registry.ts, routes/,
 │   │                                      # document.ts, cli.ts (`pnpm openapi [file]`)
 │   ├── sdk/                               # npm @devitek/mailsink: TypeScript SDK (D235 to D239)
-│   │   ├── src/                           # client.ts (Mailsink interface), http.ts, admin/,
+│   │   ├── src/                           # client.ts (Mailsink interface, now()), http.ts
+│   │   │                                  # (transport, server clock D261), admin/,
 │   │   │                                  # capture/ (messages, waitFor, overrides, webhooks,
-│   │   │                                  # logs), stream/ (SSE), helpers/ (links, codes)
-│   │   ├── test/                          # Vitest on the real routes (@mailsink/app/testing)
-│   │   └── tsdown.config.ts               # dist/index.js + index.d.ts, contracts bundled
-│   ├── playwright/                        # npm @devitek/mailsink-playwright: Playwright
-│   │                                      # fixtures and matchers (workspace per worker)
-│   ├── vitest/                            # npm @devitek/mailsink-vitest: Vitest and Jest
-│   │                                      # helpers, matchers, global setup
-│   └── cli/                               # npm @devitek/mailsink-cli: `mailsink` bin (migrate,
-│                                          # mcp stdio proxy D14, CI commands), built by tsdown
-│                                          # into dist/bin.mjs (+ migrations)
+│   │   │                                  # logs), stream/ (SSE), helpers/ (links, codes),
+│   │   │                                  # contract-types.ts (Zod-derived types, source) and
+│   │   │                                  # types.ts (plain types generated from it, D260)
+│   │   ├── scripts/generate-types.ts      # `generate:types`: writes types.ts and
+│   │   │                                  # test/types-fidelity.ts (D260)
+│   │   ├── test/                          # Vitest on the real routes (@mailsink/app/testing),
+│   │   │                                  # openapi-responses.test.ts (answers vs registry, D262)
+│   │   └── tsdown.config.ts               # dist/index.js (contracts bundled) + index.d.ts
+│   ├── playwright/                        # npm @devitek/mailsink-playwright (#126, D240 to D244)
+│   │   ├── src/                           # fixtures.ts (mailsinkWorkspace per worker,
+│   │   │                                  # mailsink per test), workspace.ts (provision,
+│   │   │                                  # dispose, .env), options.ts, session.ts
+│   │   │                                  # (expectEmail, withOverride, since on the server
+│   │   │                                  # clock), expect-email.ts, matchers.ts (toHaveLink,
+│   │   │                                  # toHaveAttachment, toHaveStatus), links.ts (getLink,
+│   │   │                                  # getCode, openLink, rebaseUrl), reset.ts, refresh.ts
+│   │   └── test/                          # units.test.ts, lifecycle.test.ts (real routes,
+│   │                                      # both drivers)
+│   ├── vitest/                            # npm @devitek/mailsink-vitest (#127)
+│   │   ├── src/                           # global-setup.ts (workspace per run), setup.ts
+│   │   │                                  # (matchers), fixtures.ts (createMailsinkTest, file
+│   │   │                                  # or worker scope), workspace.ts, jest.ts,
+│   │   │                                  # matchers/ (received, message, context)
+│   │   └── test/                          # fixtures-suite.ts run on both drivers by
+│   │                                      # fixtures.test.ts and fixtures.postgres.test.ts
+│   │                                      # (D264), jest-project/ (Jest run)
+│   └── cli/                               # npm @devitek/mailsink-cli: `mailsink` bin, built by
+│       │                                  # tsdown into dist/bin.mjs (+ migrations, D251)
+│       ├── src/                           # bin.ts, index.ts (dispatch), parse.ts, usage.ts,
+│       │                                  # output.ts, config.ts, errors.ts (exit codes D252),
+│       │                                  # migrations-folder.ts, commands/ (migrate, mcp
+│       │                                  # stdio proxy D14, workspace, wait, override, purge)
+│       └── test/                          # cli, parse, pilot (real routes), mcp (stdio)
 ├── docker/
 │   ├── Dockerfile                         # multi-stage: pnpm-spec (pnpm version and
 │   │                                      # version-less root manifest from package.json)
@@ -441,7 +474,8 @@ mailsink/
 ├── AGENTS.md  README.md  CONTRIBUTING.md  LICENSE  CHANGELOG.md (release-please)
 ├── lingui.config.ts                       # locales [en, fr], sourceLocale en, catalogs path
 ├── biome.json  pnpm-workspace.yaml  tsconfig.base.json
-├── tsconfig.json                          # typechecks root files (lingui.config.ts, vitest.config.ts)
+├── tsconfig.json                          # typechecks root files (lingui.config.ts, vitest configs)
+├── vitest.config.ts  vitest.shared.ts     # projects, CI workers; DB suite timeouts (D264)
 ```
 
 ## Runtime topology (D3)

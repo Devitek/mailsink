@@ -82,6 +82,12 @@ router plugin on `dev` and `build`; commit it when routes change.
 
 Architecture lives in [docs/architecture](docs/architecture/README.md).
 
+To drive your local instance from an AI agent while you work, register its MCP server:
+`claude mcp add mailsink --env MAILSINK_URL=http://localhost:3000 --env
+MAILSINK_KEY=mskw_... -- npx -y @devitek/mailsink-cli mcp` uses the published CLI; to test
+CLI changes, run `node packages/cli/dist/bin.mjs mcp` after `pnpm build` instead. Other
+clients: [docs/guides/mcp.md](docs/guides/mcp.md).
+
 ### Docker image
 
 `docker/Dockerfile` builds from the repository root. `base` installs pnpm with npm at the
@@ -209,3 +215,7 @@ The image has no pnpm; `npm run` only reads the script and puts the local binari
 
 Select elements by role and accessible text, not by layout or CSS classes: pages are
 redesigned without breaking the scenarios.
+Navigate with `gotoHydrated(page, url)` (`tests/e2e/goto-hydrated.ts`), not `page.goto`, in
+every scenario that runs JavaScript: it waits for `<html data-hydrated>`, set once React
+owns the page, so a click never lands on the inert server HTML. UI scenarios that need a
+workspace of their own create it through the SDK (`tests/e2e/workspace-api.ts`).

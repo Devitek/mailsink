@@ -1,3 +1,4 @@
+import { gotoHydrated } from '../goto-hydrated'
 import { booking, expect, test } from '../inbox-fixtures'
 import { BASE_URL } from '../web-server'
 import { signIn } from './fixtures'
@@ -18,7 +19,7 @@ for (const theme of ['light', 'dark'] as const) {
     await signIn(page)
     await page.setViewportSize({ width: 1440, height: 900 })
 
-    await page.goto(`/w/${ws.slug}`)
+    await gotoHydrated(page, `/w/${ws.slug}`)
     await page.getByRole('tab', { name: 'Headers & MIME' }).click()
     await expect(page.getByText(`"subject": "${booking.subject}"`)).toBeVisible()
     await page.screenshot({ path: `${dir}/viewer-payload-${theme}.png` })
@@ -26,7 +27,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.getByRole('switch', { name: 'Block remote images' }).click()
     await page.screenshot({ path: `${dir}/preview-block-remote-${theme}.png` })
 
-    await page.goto(`/w/${ws.slug}/connections`)
+    await gotoHydrated(page, `/w/${ws.slug}/connections`)
     await page
       .getByRole('region', { name: 'Workspace key' })
       .getByRole('button', { name: 'Rotate' })
@@ -37,14 +38,14 @@ for (const theme of ['light', 'dark'] as const) {
     await page.waitForTimeout(400) // end of the entry transition
     await page.screenshot({ path: `${dir}/connections-key-toast-${theme}.png`, fullPage: true })
 
-    await page.goto(`/w/${ci.slug}`)
+    await gotoHydrated(page, `/w/${ci.slug}`)
     await page.getByRole('button', { name: `Workspace: ${ci.slug}` }).click()
     await page.getByRole('searchbox', { name: 'Search workspaces' }).fill('ui ')
     await page.waitForTimeout(400)
     await page.screenshot({ path: `${dir}/ephemeral-banner-picker-${theme}.png` })
 
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto(`/w/${ws.slug}`)
+    await gotoHydrated(page, `/w/${ws.slug}`)
     await page.screenshot({ path: `${dir}/mobile-inbox-${theme}.png` })
     await page.getByRole('list', { name: 'Messages' }).getByRole('link').first().click()
     await page.screenshot({ path: `${dir}/mobile-viewer-${theme}.png` })

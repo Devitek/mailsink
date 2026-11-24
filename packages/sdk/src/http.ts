@@ -1,3 +1,4 @@
+import { createServerClock, type ServerClock } from '@mailsink/contracts'
 import type { z } from 'zod'
 import { codeForStatus, MailsinkError } from './errors'
 import { type QueryValue, toSearchParams } from './query'
@@ -41,6 +42,8 @@ export const seg = (value: string): string => encodeURIComponent(value)
 
 export interface Transport {
   readonly options: Readonly<MailsinkOptions>
+  /** Server time estimated from the `Date` header of the answers (D261). */
+  readonly clock: ServerClock
   /** The URL of a call, query string included. */
   url(path: string, query?: Record<string, QueryValue>): URL
   /** Authentication and extra headers of a scope. */
@@ -51,13 +54,17 @@ export interface Transport {
   json<T>(call: Call): Promise<T>
 }
 
-export function createTransport(options: MailsinkOptions): Transport {
+export function createTransport(
+  options: MailsinkOptions,
+  clock: ServerClock = createServerClock(),
+): Transport {
   const base = new URL(String(options.url))
   if (!base.pathname.endsWith('/')) base.pathname += '/'
   const doFetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init))
 
   const transport: Transport = {
     options,
+    clock,
     url(path, query) {
       const url = new URL(path.replace(/^\//, ''), base)
       if (query) url.search = toSearchParams(query).toString()
@@ -79,6 +86,7 @@ export function createTransport(options: MailsinkOptions): Transport {
         body = JSON.stringify(call.body)
       }
       let response: Response
+      const sentAt = Date.now()
       try {
         response = await doFetch(transport.url(call.path, call.query), {
           method: call.method,
@@ -91,6 +99,7 @@ export function createTransport(options: MailsinkOptions): Transport {
         const message = `${call.method} ${call.path} failed: ${(cause as Error)?.message ?? cause}`
         throw new MailsinkError({ code: 'network_error', message, cause })
       }
+      clock.observe(response.headers.get('date'), sentAt, Date.now())
       if (!response.ok) throw await errorFrom(response)
       return response
     },

@@ -1,3 +1,4 @@
+import { gotoHydrated } from '../goto-hydrated'
 import { ADMIN_KEY, expect, lastActivityAt, signIn, test } from './fixtures'
 
 // Workspace picker (`/`, header popover) and direct access to `/w/$workspaceSlug`.
@@ -9,7 +10,7 @@ test('the picker hides ephemeral workspaces until the switch reveals them', asyn
   const qa = await workspace()
   const ci = await workspace({ ephemeral: true })
   await signIn(page)
-  await page.goto('/')
+  await gotoHydrated(page, '/')
 
   const persistent = page.getByRole('navigation', { name: 'Persistent workspaces' })
   await expect(persistent.getByRole('link', { name: qa.slug })).toBeVisible()
@@ -40,7 +41,7 @@ test('the picker searches by slug or name across both sections', async ({ page, 
   const qa = await workspace()
   const ci = await workspace({ ephemeral: true })
   await signIn(page)
-  await page.goto('/?ephemeral=true')
+  await gotoHydrated(page, '/?ephemeral=true')
 
   await page.getByRole('searchbox', { name: 'Search workspaces' }).fill(ci.slug)
   const ephemeral = page.getByRole('navigation', { name: 'Ephemeral workspaces' })
@@ -62,13 +63,13 @@ test('opening a workspace touches its activity and makes it the next home', asyn
   const ws = await workspace({ ephemeral: true })
   const before = await lastActivityAt(admin, ws.id)
   await signIn(page)
-  await page.goto(`/w/${ws.slug}`)
+  await gotoHydrated(page, `/w/${ws.slug}`)
   await expect(page.getByRole('heading', { name: ws.name })).toBeVisible()
   await expect.poll(() => lastActivityAt(admin, ws.id)).toBeGreaterThan(before)
 
   // After signing out and in again without a page to return to: the last workspace.
   await page.context().clearCookies({ name: 'mailsink_session' })
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   await page.getByLabel('Admin key').fill(ADMIN_KEY)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page).toHaveURL(`/w/${ws.slug}`)
@@ -81,7 +82,7 @@ test('the header picker switches workspace; an unknown slug answers 404', async 
   const first = await workspace()
   const second = await workspace()
   await signIn(page)
-  await page.goto(`/w/${first.slug}`)
+  await gotoHydrated(page, `/w/${first.slug}`)
 
   const banner = page.getByRole('banner')
   await banner.getByRole('button', { name: `Workspace: ${first.slug}` }).click()

@@ -1,6 +1,6 @@
 // MCP client configuration of a workspace (#43): the snippets of docs/guides/mcp.md with the
 // URLs of this instance. The workspace key is shown once at creation, so the snippets carry
-// a `mskw_...` placeholder (D204).
+// a `mskw_...` placeholder (D204). stdio runs the published CLI through npx (#141).
 
 export type McpClient = 'claude-code' | 'claude-desktop' | 'cursor'
 export type McpTransport = 'http' | 'stdio'
@@ -16,7 +16,7 @@ export type McpSnippet = {
 }
 
 export const KEY_PLACEHOLDER = 'mskw_...'
-const BIN = '/path/to/mailsink/packages/cli/dist/bin.mjs'
+const CLI = ['-y', '@devitek/mailsink-cli', 'mcp']
 
 const json = (value: unknown) => JSON.stringify(value, null, 2)
 const servers = (mailsink: unknown) => json({ mcpServers: { mailsink } })
@@ -30,7 +30,7 @@ export function mcpSnippets({
 }): McpSnippet[] {
   const env = { MAILSINK_URL: publicUrl, MAILSINK_KEY: KEY_PLACEHOLDER }
   const bearer = `Bearer ${KEY_PLACEHOLDER}`
-  const stdio = { command: 'node', args: [BIN, 'mcp'], env }
+  const stdio = { command: 'npx', args: CLI, env }
   return [
     {
       id: 'claude-code-http',
@@ -44,7 +44,7 @@ export function mcpSnippets({
       client: 'claude-code',
       transport: 'stdio',
       language: 'sh',
-      code: `claude mcp add mailsink \\\n  --env MAILSINK_URL=${publicUrl} --env MAILSINK_KEY=${KEY_PLACEHOLDER} \\\n  -- node ${BIN} mcp`,
+      code: `claude mcp add mailsink \\\n  --env MAILSINK_URL=${publicUrl} --env MAILSINK_KEY=${KEY_PLACEHOLDER} \\\n  -- npx ${CLI.join(' ')}`,
     },
     {
       id: 'claude-code-project',
@@ -61,7 +61,7 @@ export function mcpSnippets({
       }),
     },
     {
-      id: 'claude-desktop-node',
+      id: 'claude-desktop-npx',
       client: 'claude-desktop',
       transport: 'stdio',
       language: 'json',

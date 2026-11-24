@@ -9,8 +9,9 @@ Two transports, same tools:
 
 - **Streamable HTTP** at `<MAILSINK_PUBLIC_URL>/mcp` (stateless, no session). Use it when the
   client supports remote HTTP servers with headers.
-- **stdio** with `mailsink mcp`, a thin proxy to the HTTP endpoint (D14): for clients that
-  only start local commands. It needs no database access, only the URL and the key.
+- **stdio** with `mailsink mcp` (`npx @devitek/mailsink-cli mcp`), a thin proxy to the HTTP
+  endpoint (D14): for clients that only start local commands. It needs no database access,
+  only the URL and the key.
 
 ## 1. Pick a key
 
@@ -37,13 +38,17 @@ claude mcp add --transport http mailsink http://localhost:3000/mcp \
   --header "Authorization: Bearer mskw_..."
 ```
 
-stdio (from a checkout after `pnpm build`, or anywhere the `mailsink` bin is installed):
+stdio, through the published CLI (`npx @devitek/mailsink-cli`, Node 20+, nothing to clone):
 
 ```sh
 claude mcp add mailsink \
   --env MAILSINK_URL=http://localhost:3000 --env MAILSINK_KEY=mskw_... \
-  -- node /path/to/mailsink/packages/cli/dist/bin.mjs mcp
+  -- npx -y @devitek/mailsink-cli mcp
 ```
+
+From a checkout instead (after `pnpm build`), replace `npx -y @devitek/mailsink-cli` with
+`node /path/to/mailsink/packages/cli/dist/bin.mjs`; with the CLI installed globally, with
+`mailsink`.
 
 Or commit a project-scoped `.mcp.json` that reads the key from the environment:
 
@@ -67,15 +72,15 @@ Claude Desktop starts local servers over stdio. In `claude_desktop_config.json`:
 {
   "mcpServers": {
     "mailsink": {
-      "command": "node",
-      "args": ["/path/to/mailsink/packages/cli/dist/bin.mjs", "mcp"],
+      "command": "npx",
+      "args": ["-y", "@devitek/mailsink-cli", "mcp"],
       "env": { "MAILSINK_URL": "http://localhost:3000", "MAILSINK_KEY": "mskw_..." }
     }
   }
 }
 ```
 
-With the Docker image instead of a checkout (the image ships the `mailsink` bin):
+With the Docker image instead of npx (the image ships the `mailsink` bin):
 
 ```json
 {
@@ -114,8 +119,8 @@ or stdio:
 {
   "mcpServers": {
     "mailsink": {
-      "command": "node",
-      "args": ["/path/to/mailsink/packages/cli/dist/bin.mjs", "mcp"],
+      "command": "npx",
+      "args": ["-y", "@devitek/mailsink-cli", "mcp"],
       "env": { "MAILSINK_URL": "http://localhost:3000", "MAILSINK_KEY": "mskw_..." }
     }
   }

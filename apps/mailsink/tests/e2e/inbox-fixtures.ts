@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import type { APIRequestContext } from '@playwright/test'
-import { adminContext, deleteWorkspace } from './recipe/fixtures'
 import { test as base, expect } from './ui/fixtures'
 import { BASE_URL } from './web-server'
+import { adminContext, deleteWorkspace } from './workspace-api'
 
 // Inbox scenarios (#39, #40): a workspace with one Resend connection whose key sends
 // through the native API, as an application under test would, while the browser watches.

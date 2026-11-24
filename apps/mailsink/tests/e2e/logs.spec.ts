@@ -3,9 +3,10 @@ import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { APIRequestContext } from '@playwright/test'
 import { createTransport } from 'nodemailer'
-import { deleteWorkspace } from './recipe/fixtures'
+import { gotoHydrated } from './goto-hydrated'
 import { test as base, expect, signIn } from './ui/fixtures'
 import { BASE_URL, SMTP_PORT } from './web-server'
+import { deleteWorkspace } from './workspace-api'
 
 // The logs explorer (#41) on the built server: API calls, SMTP-less workspace, webhook
 // deliveries to a local receiver, the inspector sheet and the optimistic replay.
@@ -104,7 +105,7 @@ test('API calls show live, filter through the URL and open in the inspector', as
   const ws = await logs()
   expect(await ws.send(email)).toBe(200)
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/logs`)
+  await gotoHydrated(page, `/w/${ws.slug}/logs`)
   await expect(page).toHaveTitle(/^Logs · Mailsink$/)
   const table = page.getByRole('table', { name: 'API calls' })
   await expect(table.getByRole('row').filter({ hasText: /POST \/v1\/emails/ })).toHaveCount(1)
@@ -141,7 +142,7 @@ test('webhook deliveries: signature, masked Authorization, optimistic replay', a
   await ws.endpoint()
   await ws.endpoint({ payloadFormat: 'brevo', brevoAuth: { type: 'bearer', token: 'tok-123' } })
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/logs?tab=webhooks`)
+  await gotoHydrated(page, `/w/${ws.slug}/logs?tab=webhooks`)
   const table = page.getByRole('table', { name: 'Webhook deliveries' })
   await expect(
     table.getByRole('row').filter({ hasText: /email\.delivered|delivered/ }),
@@ -191,7 +192,7 @@ test('SMTP sessions with their outcome and the SMTP dialogue', async ({ page, lo
   const ws = await logs()
   await ws.smtp()
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/logs?tab=smtp`)
+  await gotoHydrated(page, `/w/${ws.slug}/logs?tab=smtp`)
   const table = page.getByRole('table', { name: 'SMTP sessions' })
   const rows = table.getByRole('row').filter({ hasText: 'smtp-legacy' })
   await expect(rows).toHaveCount(1)
@@ -235,19 +236,19 @@ test('screenshots of the logs explorer', async ({ page, logs }) => {
   await signIn(page)
   for (const theme of ['light', 'dark']) {
     await page.context().addCookies([{ name: 'mailsink_theme', value: theme, url: BASE_URL }])
-    await page.goto(`/w/${ws.slug}/logs`)
+    await gotoHydrated(page, `/w/${ws.slug}/logs`)
     await expect(page.getByRole('row').filter({ hasText: /POST \/v1/ })).toHaveCount(3)
     await page.screenshot({ path: `${dir}/logs-api-${theme}.png` })
     await page.getByRole('row').filter({ hasText: /422/ }).click()
     await expect(page.getByRole('heading', { name: 'Response' })).toBeVisible()
     await page.waitForTimeout(400) // the sheet slides in
     await page.screenshot({ path: `${dir}/logs-api-inspector-${theme}.png` })
-    await page.goto(`/w/${ws.slug}/logs?tab=smtp`)
+    await gotoHydrated(page, `/w/${ws.slug}/logs?tab=smtp`)
     await page.getByRole('row').filter({ hasText: 'smtp-legacy' }).click()
     await expect(page.getByRole('heading', { name: 'SMTP dialogue' })).toBeVisible()
     await page.waitForTimeout(400)
     await page.screenshot({ path: `${dir}/logs-smtp-inspector-${theme}.png` })
-    await page.goto(`/w/${ws.slug}/logs?tab=webhooks`)
+    await gotoHydrated(page, `/w/${ws.slug}/logs?tab=webhooks`)
     await page
       .getByRole('row')
       .filter({ hasText: /unified/ })

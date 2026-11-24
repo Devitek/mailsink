@@ -40,7 +40,13 @@ credential it needs fails with `unauthorized` before any request.
 Types: request bodies are the `z.input` of their contract, answers the `z.output`. List
 queries take the output type with every key optional; `since`, `until` and `before` also
 take a `Date`, arrays are sent comma-separated. Every type is exported (`MessageDetail`,
-`StreamEvent`, `CreateWorkspaceInput`…).
+`StreamEvent`, `CreateWorkspaceInput`, `ErrorCode`…) as a plain object type: the package
+declarations carry no Zod schema (D260). In this repository, they are generated from the
+contracts by `pnpm --filter @devitek/mailsink generate:types`; `pnpm typecheck` fails when
+a contract changed without a regeneration.
+
+`client.now()` is the current time of the server, estimated from the `Date` header of the
+answers received so far (see « Waiting for a message »).
 
 ## Namespaces
 
@@ -71,8 +77,12 @@ matching message of the page. Filters are those of `messages.list` (`to`, `from`
 
 - `since` defaults to the time of the call: a message stored before `waitFor` is called is
   not seen. Start the wait before the action and await it after, or take `since` before the
-  action. `since` comes from the client clock: against a remote server with a skewed clock,
-  pass it explicitly.
+  action with `mailsink.now()`.
+- `since` is read on the server clock. Every answer carries a `Date` header (one second
+  precision); `mailsink.now()` corrects the client clock by the skew those headers prove,
+  and only by it (D261). Before the first answer, or in a browser calling another origin
+  (the header is not exposed to cross-origin scripts), it is the client clock: against a
+  remote server with a skewed clock, make one call first (any `list`) or pass `since`.
 - A `timeout` over 30 s (the server maximum) is split into successive long polls.
 - No match: `MailsinkError` `wait_timeout`, its message and `details` carry the filters.
 

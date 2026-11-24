@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { gotoHydrated } from './goto-hydrated'
 import { BASE_URL } from './web-server'
 
 test('GET /healthz reports the database as ok', async ({ request }) => {
@@ -8,7 +9,7 @@ test('GET /healthz reports the database as ok', async ({ request }) => {
 })
 
 test('a signed-out visitor of the home page gets the branded sign-in screen', async ({ page }) => {
-  await page.goto('/')
+  await gotoHydrated(page, '/')
   await expect(page).toHaveURL('/login?redirect=%2F')
   await expect(page.getByText('mailsink', { exact: true })).toBeVisible()
   await expect(page.getByText('Every email caught. None delivered.')).toBeVisible()
@@ -31,13 +32,13 @@ test('each page has its own localized title and Open Graph image (#36, #99)', as
   context,
   request,
 }) => {
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   await expect(page).toHaveTitle('Sign in · Mailsink')
   const image = page.locator('meta[property="og:image"]')
   await expect(image).toHaveAttribute('content', `${BASE_URL}/og-image-en-1200x630.png`)
 
   await context.addCookies([{ name: 'mailsink_locale', value: 'fr', url: BASE_URL }])
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   await expect(page).toHaveTitle('Se connecter · Mailsink')
   await expect(image).toHaveAttribute('content', `${BASE_URL}/og-image-fr-1200x630.png`)
   await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute('content', 'fr_FR')
