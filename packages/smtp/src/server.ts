@@ -61,7 +61,7 @@ export function startSmtpServer(options: SmtpServerOptions): Promise<SmtpServerH
     name: 'mailsink',
     banner: 'Mailsink',
     authMethods: ['PLAIN', 'LOGIN'],
-    // A test sink: plain-text AUTH is allowed without STARTTLS (proposition D131).
+    // A test sink: plain-text AUTH is allowed without STARTTLS (D131).
     allowInsecureAuth: true,
     disabledCommands: options.tls ? [] : ['STARTTLS'],
     ...(options.tls ? { key: options.tls.key, cert: options.tls.cert } : {}),

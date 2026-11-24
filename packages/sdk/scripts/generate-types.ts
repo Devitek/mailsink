@@ -1,7 +1,8 @@
 // Expands every type of `src/contract-types.ts` into plain TypeScript (D260): the published
 // declarations then carry object shapes instead of the Zod schemas they were derived from.
 // The TypeScript declaration emitter does the expansion: a value typed `Expand<T>` is
-// printed structurally, with no alias left to reference the schemas.
+// printed structurally, with no alias left to reference the schemas. It drops the JSDoc of
+// the contract fields, put back by scripts/type-docs.ts.
 //
 // Writes `src/types.ts` and `test/types-fidelity.ts` (mutual assignability of each pair,
 // checked by `pnpm typecheck`). Run: `pnpm --filter @devitek/mailsink generate:types`.
@@ -9,6 +10,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { contractDocs, insertDocs } from './type-docs.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const source = readFileSync(join(root, 'src/contract-types.ts'), 'utf8')
@@ -53,7 +55,8 @@ try {
   })
   const emitted = readFileSync(join(work, 'out/packages/sdk/.types-gen/expand.d.ts'), 'utf8')
   if (/\bimport\b|\bz\./.test(emitted)) throw new Error('A type was not fully expanded')
-  writeFileSync(join(root, 'src/types.ts'), typesFile(emitted))
+  const docs = contractDocs(join(root, 'tsconfig.json'), join(root, 'src/contract-types.ts'), names)
+  writeFileSync(join(root, 'src/types.ts'), typesFile(insertDocs(emitted, docs)))
   writeFileSync(join(root, 'test/types-fidelity.ts'), fidelityFile())
 } finally {
   rmSync(work, { recursive: true, force: true })

@@ -1,5 +1,5 @@
 // `GET /openapi.json` (03-contracts, « OpenAPI », #124): the OpenAPI 3.1 document of the
-// instance, public (proposition D231): it describes routes and holds no data.
+// instance, public (D231): it describes routes and holds no data.
 import { createOpenApiDocument, type OpenApiDocument } from '@mailsink/openapi'
 import { defineApi } from './handler'
 

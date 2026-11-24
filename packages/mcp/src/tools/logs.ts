@@ -1,5 +1,5 @@
 // Log tools: get_delivery_logs (API request log and SMTP sessions, #35) and, as
-// propositions (D168), get_webhook_deliveries and list_suppressions. Read only.
+// (D168), get_webhook_deliveries and list_suppressions. Read only.
 import {
   ApiLogParams,
   ListApiLogsQuery,

@@ -20,7 +20,7 @@ const { wait: _wait, timeout: _timeout, ...messageFilters } = ListMessagesQuery.
 /** `list_emails`: the `GET /capture/messages` filters, without the long-poll knobs. */
 export const ListEmailsInput = z.object(messageFilters)
 
-/** `wait_for_email` waits the longest the API allows by default (proposition D167). */
+/** `wait_for_email` waits the longest the API allows by default (D167). */
 export const WAIT_FOR_EMAIL_DEFAULT_MS = WAIT_TIMEOUT_MAX_MS
 
 /** `wait_for_email`: the same filters plus the timeout of `wait=true`. */

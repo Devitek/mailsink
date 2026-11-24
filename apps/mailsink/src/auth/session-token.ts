@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
-// Stateless UI session token (D13, proposition D160): `v1.<expires>.<nonce>.<signature>`,
+// Stateless UI session token (D13, D160): `v1.<expires>.<nonce>.<signature>`,
 // expiry in epoch seconds, HMAC-SHA256 over the first three parts. Nothing is stored server
 // side: rotating the secret (or the admin key it derives from) ends every session.
 

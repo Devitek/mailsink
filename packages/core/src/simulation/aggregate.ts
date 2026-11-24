@@ -12,7 +12,7 @@ const FINAL: readonly DeliveryStatus[] = [
 ]
 
 /**
- * Message status from its recipients' statuses (D10, rule « proposition »):
+ * Message status from its recipients' statuses (D10, rule D48):
  * suppressed recipients are ignored unless all are; while any recipient is in flight the
  * least advanced in-flight status wins; once all are final, the most severe one wins.
  */

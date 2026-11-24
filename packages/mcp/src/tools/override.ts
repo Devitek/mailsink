@@ -1,5 +1,5 @@
 // Override tools (03-contracts, « Settings and override »): set_override_config,
-// reset_override_config and get_override_config (proposition D168). Every change publishes
+// reset_override_config and get_override_config (D168). Every change publishes
 // the new state (D96), activations are recorded with origin `mcp`.
 import { ResetOverrideRequest } from '@mailsink/contracts'
 import {

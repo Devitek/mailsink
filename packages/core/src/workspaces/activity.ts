@@ -11,7 +11,7 @@ export interface ActivityTrackerOptions {
 }
 
 /**
- * Workspace activity (D16, proposition D81). `touch` writes at once when the workspace was
+ * Workspace activity (D16, D81). `touch` writes at once when the workspace was
  * not written during the last window (leading edge), otherwise remembers the latest time
  * and writes it when the window closes (trailing edge). So there is at most one write per
  * workspace per window, and `expires_at` never lags behind the real last activity once the

@@ -8,7 +8,7 @@ import { registerMessageTools } from './tools/messages'
 import { registerOverrideTools } from './tools/override'
 
 export const MCP_SERVER_NAME = 'mailsink'
-/** Release version (one place, proposition D181), announced in `serverInfo`. */
+/** Release version (one place, D181), announced in `serverInfo`. */
 export const MCP_SERVER_VERSION = MAILSINK_VERSION
 
 const INSTRUCTIONS =

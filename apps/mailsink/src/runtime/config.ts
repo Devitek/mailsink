@@ -164,7 +164,7 @@ export type UiAuthConfig = {
   sessionSecret?: string
   /** Lifetime of a session cookie (`MAILSINK_SESSION_TTL`, 7 days by default). */
   sessionTtlSeconds: number
-  /** Failed sign-ins within `loginLockSeconds` before a pause (proposition D161). */
+  /** Failed sign-ins within `loginLockSeconds` before a pause (D161). */
   loginMaxAttempts: number
   /** Window and pause of the sign-in limiter, answered as `Retry-After`. */
   loginLockSeconds: number

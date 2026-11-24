@@ -2,7 +2,7 @@ import type { RuntimeConfig, UiAuthConfig } from '../runtime/config'
 import { UI_AUTH_DEFAULTS } from '../runtime/config'
 import { deriveSessionSecret, issueSessionToken, verifySessionToken } from './session-token'
 
-// Web UI session rules (D13, propositions D160 and D161), free of any request context so
+// Web UI session rules (D13, D160 and D161), free of any request context so
 // the sign-in handler and the server functions share them and tests call them directly.
 
 export const SESSION_COOKIE = 'mailsink_session'

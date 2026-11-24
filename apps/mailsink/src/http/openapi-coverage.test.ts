@@ -1,5 +1,5 @@
 // Every server route of `src/routes` is in the OpenAPI registry or deliberately left out of
-// it (UNDOCUMENTED_ROUTES), and every registry entry is served (#124, proposition D232).
+// it (UNDOCUMENTED_ROUTES), and every registry entry is served (#124, D232).
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROUTES, toOpenApiPath, UNDOCUMENTED_ROUTES } from '@mailsink/openapi'
