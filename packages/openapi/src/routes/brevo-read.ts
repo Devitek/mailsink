@@ -9,7 +9,7 @@ import type { RouteSpec } from '../route'
 
 const brevo = { tag: 'Brevo', auth: 'brevo', errorDialect: 'brevo', ingestion: true } as const
 
-/** Brevo read routes of a `brevo` connection (#149, propositions D275, D276). */
+/** Brevo read routes of a `brevo` connection (#149, D275, D276). */
 export const BREVO_READ_ROUTES: RouteSpec[] = [
   {
     ...brevo,

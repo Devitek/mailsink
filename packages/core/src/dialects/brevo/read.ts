@@ -16,7 +16,7 @@ import {
 } from '@mailsink/db'
 import { DomainError } from '../../errors'
 
-// Brevo read routes of a `brevo` connection (#149, propositions D275, D276).
+// Brevo read routes of a `brevo` connection (#149, D275, D276).
 
 const DAY_MS = 86_400_000
 /** Window of `GET /v3/smtp/emails` without dates: the past 30 days, as Brevo. */

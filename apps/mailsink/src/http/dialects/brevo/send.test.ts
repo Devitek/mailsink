@@ -129,14 +129,29 @@ describeDb('Brevo route POST /v3/smtp/email', (ctx) => {
     expect(admin.status).toBe(403)
   })
 
-  it('replays the idempotencyKey of the Brevo headers field, 400 duplicate_parameter on another body', async () => {
-    const body = { ...email, headers: { idempotencyKey: 'brevo-42' } }
-    const first = await send(body)
-    const again = await send(body)
-    expect(again.headers.get('idempotent-replayed')).toBe('true')
-    expect(await again.json()).toEqual(await first.json())
-    const other = await send({ ...body, subject: 'Other' })
-    expect(other.status).toBe(400)
-    expect((await other.json()).code).toBe('duplicate_parameter')
+  it('refuses a reused idempotencyKey with 400 duplicate_parameter, same body or not (D279)', async () => {
+    const key = 'c3d4e5f6-a7b8-4c3d-8e4f-5a6b7c8d9e0f'
+    const body = { ...email, headers: { idempotencyKey: key } }
+    expect((await send(body)).status).toBe(201)
+    for (const again of [body, { ...body, subject: 'Other' }]) {
+      const res = await send(again)
+      expect(res.status).toBe(400)
+      expect(await res.json()).toEqual({
+        code: 'duplicate_parameter',
+        message: `Request already processed: idempotencyKey ${key} was used in the last 30 minutes`,
+      })
+    }
+  })
+
+  it('refuses an idempotencyKey that is not a UUID and ignores the Idempotency-Key header', async () => {
+    const bad = await send({ ...email, headers: { idempotencyKey: 'order-42' } })
+    expect(bad.status).toBe(400)
+    expect(await bad.json()).toEqual({
+      code: 'invalid_parameter',
+      message: 'headers.idempotencyKey: idempotencyKey must be a UUID',
+    })
+    const viaHttp = { 'Idempotency-Key': 'http-key-1' }
+    expect((await send(email, viaHttp)).status).toBe(201)
+    expect((await send(email, viaHttp)).status).toBe(201)
   })
 })

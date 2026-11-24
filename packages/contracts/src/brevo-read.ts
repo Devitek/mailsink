@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { Email, issue } from './common'
 import { TemplateExternalId } from './templates'
 
-// Brevo read routes of a `brevo` connection (#149, propositions D275, D276), checked against
+// Brevo read routes of a `brevo` connection (#149, D275, D276), checked against
 // developers.brevo.com on 24/11/2026: `GET /v3/smtp/emails`, `GET /v3/smtp/blockedContacts`
 // and `DELETE /v3/smtp/blockedContacts/{email}`. Dates are calendar days (YYYY-MM-DD, UTC).
 

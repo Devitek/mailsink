@@ -641,10 +641,17 @@ Behaviour (#29, D125 to D127):
   stored, `url` attachments are never fetched and are listed in
   `metadata.brevo.attachmentUrls` with `scheduledAt` and `batchId`; header values are
   stringified and kept.
-- Idempotency: the `Idempotency-Key` HTTP header, else an `idempotencyKey` entry of the
-  `headers` body field (any case, `Idempotency-Key` too), with the native semantics (D53):
-  the same body replays the stored response; another body answers
-  `400 duplicate_parameter`, the error Brevo documents for a reused key (D279).
+- Idempotency, as Brevo documents it (« Idempotency for batch emails », checked on
+  24/11/2026, D279), not the native semantics of D53: the key is the `idempotencyKey`
+  entry of the `headers` body field (any case: the guide writes `idempotencyKey`, the send
+  reference `IdempotencyKey`), a UUID (else `400 invalid_parameter`,
+  `headers.idempotencyKey: idempotencyKey must be a UUID`). It lives 30 minutes, per
+  connection (a Brevo account); any reuse within that window, same body or not, answers
+  `400 duplicate_parameter` (`Request already processed: idempotencyKey <key> was used in
+  the last 30 minutes`) and stores nothing. A key covers the whole request
+  (`messageVersions` included); a request refused before being stored (invalid body,
+  unknown template) does not consume its key. The `Idempotency-Key` HTTP header is
+  ignored, as Brevo ignores it.
 - `X-Mailin-custom` in `headers` is kept with the message headers and returned in every
   Brevo format webhook of the message (`X-Mailin-custom` payload field, #149).
 - Rate limit headers: `X-RateLimit-*` (D91) plus Brevo's `x-sib-ratelimit-limit`,
@@ -674,7 +681,7 @@ The official SDK only types `400` (`Brevo.BadRequestError`, and `404 Brevo.NotFo
 `apps/mailsink/src/http/dialects/brevo/sdk.contract.test.ts` and
 `sdk-read.contract.test.ts` (read routes).
 
-### Brevo read routes (`brevo-read.ts`, #149, propositions D275, D276)
+### Brevo read routes (`brevo-read.ts`, #149, D275, D276)
 
 Checked against developers.brevo.com and `@getbrevo/brevo` 6.2 on 24/11/2026
 (`getTransacEmailsList`, `getTransacBlockedContacts`,

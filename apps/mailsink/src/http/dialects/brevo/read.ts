@@ -10,7 +10,7 @@ import { queryObject } from '../../validation'
 import { brevoErrorBody } from './errors'
 import { BREVO_EXTENSIONS, parseBrevoInput } from './route'
 
-// Brevo read routes of a `brevo` connection (#149, propositions D275, D276).
+// Brevo read routes of a `brevo` connection (#149, D275, D276).
 
 const common = {
   auth: 'connection',

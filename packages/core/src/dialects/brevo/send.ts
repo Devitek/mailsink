@@ -7,6 +7,7 @@ import type { IngestDeps, IngestOutcome } from '../../ingestion/native'
 import type { IngestTarget } from '../../ingestion/normalize'
 import { persistEmails } from '../../ingestion/pipeline'
 import { type PreparedEmail, prepareEmail } from '../../ingestion/prepare'
+import { brevoIdempotencyPolicy, brevoStoredKey } from './idempotency'
 import { brevoFieldError, fromBrevoRequest } from './normalize'
 
 const SCOPE = 'POST /v3/smtp/email'
@@ -41,7 +42,8 @@ async function prepareAll(
  * Brevo `POST /v3/smtp/email` (#29): one message per message version (or one message),
  * stored in one transaction through the shared pipeline with `source: 'brevo'`. Answers
  * 201 `{ messageId }`, or `{ messageIds }` (in version order) with `messageVersions`.
- * An `Idempotency-Key` replays the stored response like the native API (D53).
+ * An `idempotencyKey` (read by readBrevoIdempotencyKey) is refused when reused within 30
+ * minutes, whatever the body, as Brevo documents (D279).
  */
 export async function sendBrevoEmail(
   deps: IngestDeps,
@@ -53,7 +55,12 @@ export async function sendBrevoEmail(
   const outcome = await runIdempotent(
     deps.db,
     target.workspaceId,
-    idempotencyKey ? { key: idempotencyKey, requestHash: hashRequest(SCOPE, request) } : undefined,
+    idempotencyKey
+      ? {
+          key: brevoStoredKey(target.connectionId, idempotencyKey),
+          requestHash: hashRequest(SCOPE, request),
+        }
+      : undefined,
     {
       prepare: () => prepareAll(deps, target, request),
       persist: async (tx, prepared) => {
@@ -66,6 +73,7 @@ export async function sendBrevoEmail(
         return { status: 201, body }
       },
     },
+    idempotencyKey ? brevoIdempotencyPolicy(idempotencyKey) : undefined,
   )
   if (!outcome.replayed) publishAll(deps.bus, target.workspaceId, frames)
   return outcome

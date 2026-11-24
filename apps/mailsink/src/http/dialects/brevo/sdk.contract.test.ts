@@ -101,6 +101,22 @@ describeDb('Brevo SDK contract', (ctx) => {
     })
   })
 
+  it('refuses a reused idempotencyKey as Brevo.BadRequestError duplicate_parameter (D279)', async () => {
+    const request = {
+      sender: { email: 'hello@example.com' },
+      to: [{ email: 'jane@x.io' }],
+      subject: 'Once',
+      textContent: 'x',
+      headers: { idempotencyKey: 'd4e5f6a7-b8c9-4d4e-9f5a-6b7c8d9e0f1a' },
+    }
+    expect((await client.transactionalEmails.sendTransacEmail(request)).messageId).toBeDefined()
+    const error = await client.transactionalEmails
+      .sendTransacEmail(request)
+      .catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(Brevo.BadRequestError)
+    expect((error as BrevoError).body).toMatchObject({ code: 'duplicate_parameter' })
+  })
+
   it('surfaces an unknown key as a 401 BrevoError', async () => {
     const error = await sdk('msk_unknownunknownunknown')
       .transactionalEmails.sendTransacEmail({

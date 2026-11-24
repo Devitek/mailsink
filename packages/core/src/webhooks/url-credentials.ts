@@ -1,5 +1,5 @@
 // Basic auth credentials written in a webhook URL (`https://user:pass@host/…`), as Brevo
-// accepts them (#149, proposition D278). `fetch` refuses such a URL, so they are taken out
+// accepts them (#149, D278). `fetch` refuses such a URL, so they are taken out
 // at creation (stored as `brevoAuth` basic) and, for a row stored before, at send time.
 
 export interface BasicCredentials {
