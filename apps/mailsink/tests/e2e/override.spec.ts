@@ -58,9 +58,11 @@ test('applies a workspace override from the panel, then resets it from the pill'
   const { expiresAt, createdAt } = state.workspace ?? {}
   expect(Date.parse(expiresAt ?? '') - Date.parse(createdAt ?? '')).toBe(900_000)
 
+  // The pill resets optimistically: « Override… » shows before the server function has
+  // answered, so the API is polled rather than read once (#153).
   await pill.getByRole('button', { name: 'Reset the override' }).click()
   await expect(header.getByRole('button', { name: 'Override…' })).toBeVisible()
-  expect((await ws.sink.overrides.get()).workspace).toBeNull()
+  await expect.poll(async () => (await ws.sink.overrides.get()).workspace).toBeNull()
   await ws.dispose()
 })
 

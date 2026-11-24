@@ -19,6 +19,7 @@ const LAST_EVENT: Record<EventType, ResendLastEvent> = {
   hard_bounce: 'bounced',
   complained: 'complained',
   failed: 'failed',
+  invalid: 'failed',
   suppressed: 'suppressed',
   opened: 'opened',
   clicked: 'clicked',

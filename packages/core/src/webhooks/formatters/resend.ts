@@ -48,6 +48,9 @@ export const resendFormatter: WebhookFormatter = {
     if (event.canonical === 'email.failed') {
       data.failed = { reason: detail.reason ?? 'Simulated failure' }
     }
+    if (event.canonical === 'email.invalid') {
+      data.failed = { reason: detail.reason ?? 'Invalid recipient address' }
+    }
     const payload: ResendWebhookPayload = {
       type,
       created_at: event.occurredAt.toISOString(),

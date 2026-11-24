@@ -56,12 +56,13 @@ describe('override config', () => {
     const config = buildConfig({
       config: '{"rates":{"deferred":5},"chaos":{"errorRate":1,"httpCodes":[503]}}',
       'hard-bounce': '20',
+      invalid: '2',
       latency: '100-500',
       'error-rate': '10',
       rule: ['*@blocked.test=hard_bounce'],
     })
     expect(config).toEqual({
-      rates: { deferred: 5, hard_bounce: 20 },
+      rates: { deferred: 5, hard_bounce: 20, invalid: 2 },
       latency: { minMs: 100, maxMs: 500 },
       chaos: { errorRate: 10, httpCodes: [503] },
       rules: [{ match: '*@blocked.test', status: 'hard_bounce' }],

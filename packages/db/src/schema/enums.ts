@@ -11,6 +11,7 @@ export const deliveryStatus = pgEnum('delivery_status', [
   'hard_bounce',
   'complained',
   'failed',
+  'invalid',
   'suppressed',
 ])
 export const eventType = pgEnum('event_type', [
@@ -22,6 +23,7 @@ export const eventType = pgEnum('event_type', [
   'hard_bounce',
   'complained',
   'failed',
+  'invalid',
   'suppressed',
   'opened',
   'clicked',
@@ -49,6 +51,7 @@ export const webhookEvent = pgEnum('webhook_event', [
   'email.clicked',
   'email.suppressed',
   'email.failed',
+  'email.invalid',
 ])
 export const brevoAuthType = pgEnum('brevo_auth_type', ['none', 'bearer', 'basic'])
 export const replayMode = pgEnum('replay_mode', ['exact', 'resign'])

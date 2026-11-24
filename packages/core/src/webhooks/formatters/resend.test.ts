@@ -38,4 +38,12 @@ describe('resend formatter', () => {
     expect(click.data.click?.link).toBe('https://example.com/')
     expect(resendFormatter.eventName('email.suppressed')).toBeNull()
   })
+
+  it('emits an invalid address as email.failed with a reason (Resend has no invalid event)', () => {
+    const payload = ResendWebhookPayload.parse(
+      JSON.parse(resendFormatter.serialize(ctx('email.invalid'))),
+    )
+    expect(payload.type).toBe('email.failed')
+    expect(payload.data.failed?.reason).toBeTypeOf('string')
+  })
 })

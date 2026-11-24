@@ -27,6 +27,7 @@ const SAMPLE_DETAIL: Partial<Record<CanonicalEvent, WebhookEventDetail>> = {
   'email.soft_bounced': { reason: 'Mailbox full', smtpCode: 452 },
   'email.deferred': { reason: 'Greylisted', smtpCode: 451 },
   'email.failed': { reason: 'Simulated failure' },
+  'email.invalid': { reason: 'Invalid recipient address' },
   'email.suppressed': { reason: 'Address on the suppression list' },
   'email.opened': { userAgent: 'Mozilla/5.0 (Mailsink test)' },
   'email.clicked': { url: 'https://example.com/', userAgent: 'Mozilla/5.0 (Mailsink test)' },

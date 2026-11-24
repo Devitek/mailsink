@@ -21,6 +21,7 @@ export const DRAWN_STATUSES = [
   'hard_bounce',
   'complained',
   'failed',
+  'invalid',
 ] as const satisfies readonly SimulatedStatus[]
 export type DrawnStatus = (typeof DRAWN_STATUSES)[number]
 

@@ -31,8 +31,14 @@ const MAP: Record<CanonicalEvent, Row> = {
   'email.opened': { resend: 'email.opened', brevo: 'opened', brevoSubscription: 'opened' },
   'email.clicked': { resend: 'email.clicked', brevo: 'click', brevoSubscription: 'click' },
   'email.suppressed': { resend: null, brevo: 'blocked', brevoSubscription: 'blocked' },
-  // Brevo's only failure event is an invalid address (proposition D277): `invalid_email`.
-  'email.failed': { resend: 'email.failed', brevo: 'invalid_email', brevoSubscription: 'invalid' },
+  // Brevo `error` has no subscription name in Brevo's webhook API: Mailsink accepts `error`
+  // (proposition D280). Resend has no invalid-address event: `email.failed` covers it (D277).
+  'email.failed': { resend: 'email.failed', brevo: 'error', brevoSubscription: 'error' },
+  'email.invalid': {
+    resend: 'email.failed',
+    brevo: 'invalid_email',
+    brevoSubscription: 'invalid',
+  },
 }
 
 const CANONICAL = CanonicalEvent.options
@@ -42,7 +48,7 @@ const BREVO_ALIASES: Record<string, CanonicalEvent> = {
   sent: 'email.sent',
   soft_bounce: 'email.soft_bounced',
   hard_bounce: 'email.hard_bounced',
-  invalid_email: 'email.failed',
+  invalid_email: 'email.invalid',
 }
 
 /** Emitted name of `canonical` in `format`, or null when the format has no equivalent. */
@@ -57,14 +63,16 @@ export function subscriptionName(format: PayloadFormat, canonical: CanonicalEven
 
 /**
  * Canonical events a subscription name stands for (many-to-one on purpose: Resend
- * `email.delivery_delayed` is deferred + soft bounced). Canonical names are always
- * accepted; an unknown name gives an empty list.
+ * `email.delivery_delayed` is deferred + soft bounced, `email.failed` is failed + invalid).
+ * A dialect name of the format wins; canonical names are accepted otherwise; an unknown
+ * name gives an empty list.
  */
 export function toCanonical(format: PayloadFormat, name: string): CanonicalEvent[] {
-  if ((CANONICAL as readonly string[]).includes(name)) return [name as CanonicalEvent]
-  if (format === 'unified') return []
+  const canonical = (CANONICAL as readonly string[]).includes(name) ? [name as CanonicalEvent] : []
+  if (format === 'unified') return canonical
   if (format === 'brevo' && BREVO_ALIASES[name]) return [BREVO_ALIASES[name]]
-  return CANONICAL.filter((c) => subscriptionName(format, c) === name)
+  const dialect = CANONICAL.filter((c) => subscriptionName(format, c) === name)
+  return dialect.length > 0 ? dialect : canonical
 }
 
 /** Deduplicated canonical events, in the order of the contract enum. */
@@ -95,6 +103,7 @@ const FROM_EVENT_TYPE: Partial<Record<EventType, CanonicalEvent>> = {
   hard_bounce: 'email.hard_bounced',
   complained: 'email.complained',
   failed: 'email.failed',
+  invalid: 'email.invalid',
   suppressed: 'email.suppressed',
   opened: 'email.opened',
   clicked: 'email.clicked',

@@ -28,6 +28,7 @@ export const getBrevoEmails = defineApi({
       runtime.db.db,
       { workspaceId: auth.workspace.id, connectionId: auth.connection.id },
       await parseBrevoInput(BrevoListEmailsQuery, queryOf(request), 'query'),
+      { timeZone: auth.workspace.timezone },
     ),
 })
 
@@ -39,6 +40,7 @@ export const getBrevoBlockedContacts = defineApi({
       runtime.db.db,
       auth.workspace.id,
       await parseBrevoInput(BrevoBlockedContactsQuery, queryOf(request), 'query'),
+      { timeZone: auth.workspace.timezone },
     ),
 })
 

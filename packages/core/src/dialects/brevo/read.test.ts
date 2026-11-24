@@ -84,6 +84,18 @@ describeDb('Brevo dialect: read routes', (ctx) => {
       endDate: '2026-01-10',
     })
     expect(jan.transactionalEmails.map((e) => e.subject)).toEqual(['Old'])
+    // 2026-01-10T12:00Z is already 2026-01-11 in Kiritimati (UTC+14, D284).
+    const kiritimati = await listBrevoEmails(
+      ctx.db,
+      { workspaceId: target.workspaceId, connectionId: target.connectionId ?? '' },
+      BrevoListEmailsQuery.parse({
+        email: 'jane@acme.test',
+        startDate: '2026-01-11',
+        endDate: '2026-01-11',
+      }),
+      { timeZone: 'Pacific/Kiritimati' },
+    )
+    expect(kiritimati.transactionalEmails.map((e) => e.subject)).toEqual(['Old'])
     expect(await list({ templateId: 9 })).toEqual({ count: 0, transactionalEmails: [] })
   })
 
@@ -120,6 +132,24 @@ describeDb('Brevo dialect: read routes', (ctx) => {
     expect((await blocked({ startDate: '2026-01-01', endDate: '2026-01-31' })).contacts).toEqual([
       expect.objectContaining({ reason: { code: 'adminBlocked', message: 'Admin blocked' } }),
     ])
+    // Days of the workspace timezone (D284): 2026-01-05T00:00Z is 2026-01-04 in New York.
+    const day = BrevoBlockedContactsQuery.parse({ startDate: '2026-01-04', endDate: '2026-01-04' })
+    expect((await listBrevoBlockedContacts(ctx.db, ws, day)).count).toBe(0)
+    const newYork = await listBrevoBlockedContacts(ctx.db, ws, day, {
+      timeZone: 'America/New_York',
+    })
+    expect(newYork.contacts.map((c) => c.email)).toEqual(['admin@acme.test'])
+    const late = { now: new Date('2026-11-24T23:30:00Z') }
+    const tomorrow = BrevoBlockedContactsQuery.parse({
+      startDate: '2026-11-25',
+      endDate: '2026-11-25',
+    })
+    await expect(listBrevoBlockedContacts(ctx.db, ws, tomorrow, late)).rejects.toMatchObject({
+      code: 'validation_error',
+    })
+    await expect(
+      listBrevoBlockedContacts(ctx.db, ws, tomorrow, { ...late, timeZone: 'Europe/Paris' }),
+    ).resolves.toMatchObject({ count: 0 })
     expect(await blocked({ sort: 'asc', limit: 1, offset: 1 })).toMatchObject({
       count: 3,
       contacts: [{ email: 'spam@acme.test' }],

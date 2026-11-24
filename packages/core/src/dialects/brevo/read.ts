@@ -15,8 +15,10 @@ import {
   type SuppressionPageRow,
 } from '@mailsink/db'
 import { DomainError } from '../../errors'
+import { zonedDayRange, zonedToday } from './days'
 
-// Brevo read routes of a `brevo` connection (#149, D275, D276).
+// Brevo read routes of a `brevo` connection (#149, D275, D276). Calendar days are those of
+// the workspace timezone (D23, D284).
 
 const DAY_MS = 86_400_000
 /** Window of `GET /v3/smtp/emails` without dates: the past 30 days, as Brevo. */
@@ -25,11 +27,10 @@ const DEFAULT_WINDOW_DAYS = 30
 /** ISO 8601 to the second, as Brevo's examples (`2019-05-25T11:53:26Z`). */
 export const brevoTimestamp = (date: Date): string => date.toISOString().replace(/\.\d{3}Z$/, 'Z')
 
-const dayStart = (day: string) => new Date(`${day}T00:00:00Z`)
-
-/** `[since, until)` of an inclusive calendar day range (UTC). */
-function dayRange(startDate: string, endDate: string) {
-  return { since: dayStart(startDate), until: new Date(dayStart(endDate).getTime() + DAY_MS) }
+/** Where a read runs: its workspace (and timezone) and the clock. */
+export interface BrevoReadOptions {
+  timeZone?: string
+  now?: Date
 }
 
 /** Brevo message ids carry angle brackets; a bare id is accepted too. */
@@ -58,11 +59,11 @@ export async function listBrevoEmails(
   db: Executor,
   scope: { workspaceId: string; connectionId: string },
   query: BrevoListEmailsQuery,
-  now: Date = new Date(),
+  { timeZone = 'UTC', now = new Date() }: BrevoReadOptions = {},
 ): Promise<BrevoListEmailsResponse> {
   const range =
     query.startDate && query.endDate
-      ? dayRange(query.startDate, query.endDate)
+      ? zonedDayRange(query.startDate, query.endDate, timeZone)
       : { since: new Date(now.getTime() - DEFAULT_WINDOW_DAYS * DAY_MS), until: now }
   const { rows, total } = await listConnectionCopies(db, {
     ...scope,
@@ -91,8 +92,14 @@ export async function listBrevoBlockedContacts(
   db: Executor,
   workspaceId: string,
   query: BrevoBlockedContactsQuery,
+  { timeZone = 'UTC', now = new Date() }: BrevoReadOptions = {},
 ): Promise<BrevoBlockedContactsResponse> {
-  const range = query.startDate && query.endDate ? dayRange(query.startDate, query.endDate) : {}
+  const today = zonedToday(now, timeZone)
+  if ((query.startDate ?? '') > today || (query.endDate ?? '') > today) {
+    throw new DomainError('validation_error', 'Dates cannot be in the future')
+  }
+  const range =
+    query.startDate && query.endDate ? zonedDayRange(query.startDate, query.endDate, timeZone) : {}
   const { rows, total } = await listSuppressionPage(db, {
     workspaceId,
     ...range,

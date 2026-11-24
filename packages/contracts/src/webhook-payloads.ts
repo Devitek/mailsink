@@ -72,7 +72,8 @@ export const BrevoWebhookPayload = z.object({
     'click',
     'deferred',
     'blocked',
-    'invalid_email', // canonical email.failed (proposition D277)
+    'invalid_email', // canonical email.invalid (D277)
+    'error', // canonical email.failed (D277)
   ]),
   email: z.string(), // the recipient
   id: z.number().int(), // webhook id = endpoint numericId

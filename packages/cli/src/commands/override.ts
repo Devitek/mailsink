@@ -14,6 +14,7 @@ export const RATE_FLAGS = {
   'hard-bounce': 'hard_bounce',
   complained: 'complained',
   failed: 'failed',
+  invalid: 'invalid',
 } as const
 
 type RateFlag = keyof typeof RATE_FLAGS

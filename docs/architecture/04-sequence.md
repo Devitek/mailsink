@@ -1,7 +1,11 @@
 # 4. End-to-end sequence
 
 Ingestion (API/SMTP) -> activity & TTL -> rate limit -> override/default resolution ->
-status & storage -> signed webhook -> SSE / TanStack Query / MCP.
+status & storage -> signed webhook -> SSE / TanStack Query / MCP. The flow is drawn in four
+diagrams that follow each other: ingestion, delivery simulation, webhook delivery, then the
+live views and manual actions.
+
+### Ingestion
 
 ```mermaid
 sequenceDiagram
@@ -13,10 +17,7 @@ sequenceDiagram
   participant S as Settings resolver
   participant P as Ingestion pipeline
   participant DB as Postgres / PGlite
-  participant Q as Job worker
-  participant W as Webhook dispatcher
   participant B as Event bus
-  participant U as UI (SSE + Query) / MCP / wait=true
 
   C->>R: POST /emails (Resend) | /v3/smtp/email (Brevo) | /v1/emails | SMTP MAIL FROM
   R->>A: resolve credential (msk_ sha256 | SMTP AUTH, scrypt cache)
@@ -49,14 +50,37 @@ sequenceDiagram
   R-->>C: 200 {id} | 201 {messageId} | 250 queued as msg_…
   R--)DB: api_logs / smtp_sessions (async: headers redacted, attachments stripped,<br/>bodies truncated, transcript capped, D145 to D147)
   R--)B: publish log.api | log.smtp (derived, no SSE id)
+```
+
+### Delivery simulation
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Q as Job worker
+  participant S as Settings resolver
+  participant DB as Postgres / PGlite
+  participant B as Event bus
 
   Note over Q: polls jobs FOR UPDATE SKIP LOCKED
   Q->>DB: claim simulate_delivery
   Q->>S: first run: effective settings (overrides active now), per recipient<br/>rule match first, else weighted draw, then status + delay (D70, D71)
   Q->>DB: TX (message locked): queued -> event sent, decisions in messages.simulation,<br/>aggregate message.status, follow-up job at the earliest pending decision,<br/>webhook_deliveries rows + deliver_webhook jobs of the run's events (D152)
   Note over Q: follow-up run, once a delay is over
-  Q->>DB: TX: event + final status per due recipient,<br/>hard_bounce/complained -> suppressions upsert,<br/>deferred -> decided again 1 s + delay later (4th: soft_bounce, D72),<br/>next follow-up job if a decision is pending,<br/>automatic opened / clicked of the delivered recipients (D143),<br/>webhook_deliveries rows + deliver_webhook jobs (D152)
+  Q->>DB: TX: event + final status per due recipient,<br/>hard_bounce/complained -> suppressions upsert (invalid is not listed, D283),<br/>deferred -> decided again 1 s + delay later (4th: soft_bounce, D72),<br/>next follow-up job if a decision is pending,<br/>automatic opened / clicked of the delivered recipients (D143),<br/>webhook_deliveries rows + deliver_webhook jobs (D152)
   Q->>B: after commit: message.event per written row, then message.status (D95),<br/>then the engagement events and one webhook.delivery per delivery (D144)
+```
+
+### Webhook delivery
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Q as Job worker
+  participant W as Webhook dispatcher
+  participant E as Endpoint (client)
+  participant DB as Postgres / PGlite
+  participant B as Event bus
 
   Note over Q,W: fan-out at status time: endpoints whose scope matches (connection or<br/>workspace) and whose canonical events include it. Formatter chosen by the<br/>endpoint payloadFormat, never by the ingestion channel (D20). Body serialized once.
   Q->>W: claim deliver_webhook
@@ -64,13 +88,24 @@ sequenceDiagram
   opt MAILSINK_WEBHOOK_BLOCK_PRIVATE=true
     W->>W: resolve the URL host: a private, loopback or link-local address<br/>is a final failed attempt, nothing sent (D150, D155)
   end
-  W->>C: POST endpoint URL (10 s timeout, redirects not followed)
+  W->>E: POST endpoint URL (10 s timeout, redirects not followed)
   alt 2xx
     W->>DB: TX: attempt (exact headers sent) + delivery succeeded
   else error / non-2xx
     W->>DB: TX: attempt + retrying + next deliver_webhook job (backoff, 8 attempts, D138)
   end
   W->>B: publish webhook.delivery
+```
+
+### Live views and manual actions
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant B as Event bus
+  participant U as UI (SSE + Query) / MCP / wait=true
+  participant R as Server route
+  participant DB as Postgres / PGlite
 
   B-->>U: SSE event (id = evt_… for message events, none for derived frames)
   U->>U: Query: setQueryData(inbox) / invalidate(message, logs)
@@ -107,7 +142,7 @@ sequenceDiagram
   to the final status through follow-up jobs (D70), what providers do. Chaos is the only
   knob that slows or fails the request itself (`chaos.slowMs` can be added later).
 - **Simulation files** (`packages/core/src/simulation/`): `simulate-delivery.ts` is one
-  run (steps above); `settings-planner.ts` is the default `DeliveryPlanner`
+  run (« Delivery simulation » above); `settings-planner.ts` is the default `DeliveryPlanner`
   (`planner.ts`), it loads the four layers (`load-settings.ts`, `settings-resolver.ts`)
   and decides each recipient (`decide.ts`: `rules.ts` globs, then `draw.ts` with the
   `rng.ts` generator); `recorder.ts` writes statuses, events and suppressions;

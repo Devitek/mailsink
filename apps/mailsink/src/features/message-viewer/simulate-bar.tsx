@@ -7,8 +7,8 @@ import { useSimulate } from './use-simulate'
 const action = 'h-[26px] px-3.5 font-mono text-[11.5px]'
 
 // « Simulate » bar of the prototype (B1-1): Opened, Clicked (a link of the message or a
-// custom URL) and a forced Hard Bounce. Each records events per recipient, updates the
-// status and fans out webhooks like the Capture API.
+// custom URL), a forced Hard Bounce and a forced Invalid address (D282). Each records
+// events per recipient, updates the status and fans out webhooks like the Capture API.
 export function SimulateBar({ slug, message }: Readonly<{ slug: string; message: ViewerMessage }>) {
   const { t } = useLingui()
   const { simulate, pending, feedback, failed } = useSimulate(slug, message.id)
@@ -88,6 +88,14 @@ export function SimulateBar({ slug, message }: Readonly<{ slug: string; message:
         onClick={() => simulate({ type: 'status', status: 'hard_bounce' })}
       >
         Hard Bounce
+      </Button>
+      <Button
+        size="sm"
+        className={action}
+        disabled={pending}
+        onClick={() => simulate({ type: 'status', status: 'invalid' })}
+      >
+        Invalid
       </Button>
       <output
         aria-live="polite"

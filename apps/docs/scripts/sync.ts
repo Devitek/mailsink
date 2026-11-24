@@ -84,7 +84,7 @@ for (const page of PAGES) {
   if (count > 0) diagrams[page.slug] = count
 }
 write(join(generated, 'diagrams.json'), `${JSON.stringify(diagrams, null, 2)}\n`)
-// The release the site is compared to in its banner (src/route-data.ts, D271).
+// The release the site is compared to in its banner (src/banner.ts, D271).
 const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
   version: string
 }

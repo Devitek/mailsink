@@ -58,6 +58,8 @@ describe('drawStatus', () => {
     expect(drawStatus(rates, fixed(0.3))).toBe('delivered')
     expect(drawStatus({ delivered: 10 }, fixed(0.99))).toBe('delivered')
     expect(drawStatus({ failed: 100 }, fixed(0.9999))).toBe('failed')
+    expect(drawStatus({ invalid: 100 }, fixed(0.9999))).toBe('invalid')
+    expect(drawStatus({ failed: 10, invalid: 10 }, fixed(0.15))).toBe('invalid')
   })
 
   it('follows the rates over many seeded draws', () => {

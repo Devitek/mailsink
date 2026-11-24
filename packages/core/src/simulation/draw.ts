@@ -8,6 +8,7 @@ const DRAWN: readonly Exclude<SimulatedStatus, 'delivered'>[] = [
   'hard_bounce',
   'complained',
   'failed',
+  'invalid',
 ]
 
 /**

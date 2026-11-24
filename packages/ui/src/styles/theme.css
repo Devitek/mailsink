@@ -71,6 +71,7 @@
   --color-ms-status-complained: var(--ms-status-complained);
   --color-ms-status-deferred: var(--ms-status-deferred);
   --color-ms-status-failed: var(--ms-status-failed);
+  --color-ms-status-invalid: var(--ms-status-invalid);
   --color-ms-status-suppressed: var(--ms-status-suppressed);
   --color-ms-conn-resend: var(--ms-conn-resend);
   --color-ms-conn-brevo: var(--ms-conn-brevo);
