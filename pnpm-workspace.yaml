@@ -4,3 +4,5 @@ packages:
 
 allowBuilds:
   esbuild: true
+  # Jest's watcher ships prebuilt binaries; its install script only rebuilds from source.
+  "@parcel/watcher": false

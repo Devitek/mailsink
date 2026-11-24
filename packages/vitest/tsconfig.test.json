@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The tests reuse the SDK harness, which reaches the app's test helpers by path
+    // (see packages/sdk/vitest.config.ts), not by a package dependency.
+    "paths": { "@mailsink/app/testing": ["../../apps/mailsink/src/testing.ts"] }
+  },
+  "include": ["src", "test", "tsdown.config.ts", "vitest.config.ts"]
+}
