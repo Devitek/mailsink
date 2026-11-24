@@ -1,3 +1,5 @@
+// Shared by the SDK (`mailsink.now()`, `waitFor`) and the web UI (ephemeral banner).
+
 /**
  * Estimate of the server clock from the `Date` header of its answers (D261). The header
  * has a one second precision and is written somewhere between the request and the answer,

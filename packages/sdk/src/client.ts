@@ -1,3 +1,4 @@
+import { createServerClock, type ServerClock } from '@mailsink/contracts'
 import { type ConnectionsApi, connectionsApi } from './admin/connections'
 import { type TemplatesApi, templatesApi } from './admin/templates'
 import { type WorkspacesApi, workspacesApi } from './admin/workspaces'
@@ -6,7 +7,6 @@ import { type MessagesApi, messagesApi } from './capture/messages'
 import { type OverridesApi, overridesApi } from './capture/overrides'
 import { type SuppressionsApi, suppressionsApi } from './capture/suppressions'
 import { type WebhooksApi, webhooksApi } from './capture/webhooks'
-import { createServerClock, type ServerClock } from './clock'
 import { createTransport, type MailsinkOptions } from './http'
 import {
   type StreamHandler,

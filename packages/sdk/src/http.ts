@@ -1,5 +1,5 @@
+import { createServerClock, type ServerClock } from '@mailsink/contracts'
 import type { z } from 'zod'
-import { createServerClock, type ServerClock } from './clock'
 import { codeForStatus, MailsinkError } from './errors'
 import { type QueryValue, toSearchParams } from './query'
 
