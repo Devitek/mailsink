@@ -12,7 +12,7 @@ const BY_CODE: Record<ErrorCode, BrevoErrorCode> = {
   validation_error: 'invalid_parameter', // refined by validationCode()
   not_found: 'document_not_found',
   conflict: 'duplicate_parameter',
-  idempotency_mismatch: 'duplicate_request',
+  idempotency_mismatch: 'duplicate_parameter', // 400, Brevo's documented reuse error (D279)
   rate_limited: 'too_many_requests',
   payload_too_large: 'out_of_range',
   chaos_injected: 'chaos_injected',
@@ -28,7 +28,7 @@ function validationCode(issue: ValidationIssue | undefined): BrevoErrorCode {
   if (!issue) return 'invalid_parameter'
   const stable = issue.params?.code
   if (stable?.endsWith('_required')) return 'missing_parameter'
-  if (stable === 'too_many_recipients') return 'out_of_range'
+  if (stable === 'too_many_recipients' || stable === 'date_range_too_long') return 'out_of_range'
   if (issue.code === 'invalid_type' && /received undefined/.test(issue.message)) {
     return 'missing_parameter'
   }
@@ -50,12 +50,15 @@ export function toBrevoError(error: ApiError): BrevoError {
 
 export const brevoErrorBody: ErrorFormatter = (error) => toBrevoError(error)
 
-/** Brevo answers every invalid body with 400, never 422. */
+/** Codes Brevo answers with 400: every invalid input (never 422) and a reused idempotency key. */
+const AS_400 = new Set<ErrorCode>(['validation_error', 'idempotency_mismatch'])
+
+/** Brevo answers every invalid input and a reused idempotency key with 400. */
 export function asBrevoStatus(error: unknown): unknown {
-  if (!isDomainError(error) || error.code !== 'validation_error' || error.status === 400) {
+  if (!isDomainError(error) || !AS_400.has(error.code) || error.status === 400) {
     return error
   }
-  return new DomainError('validation_error', error.message, {
+  return new DomainError(error.code, error.message, {
     status: 400,
     details: error.details,
     headers: error.headers,

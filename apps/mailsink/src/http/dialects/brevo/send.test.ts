@@ -129,14 +129,14 @@ describeDb('Brevo route POST /v3/smtp/email', (ctx) => {
     expect(admin.status).toBe(403)
   })
 
-  it('replays the IdempotencyKey of the Brevo headers field', async () => {
-    const body = { ...email, headers: { IdempotencyKey: 'brevo-42' } }
+  it('replays the idempotencyKey of the Brevo headers field, 400 duplicate_parameter on another body', async () => {
+    const body = { ...email, headers: { idempotencyKey: 'brevo-42' } }
     const first = await send(body)
     const again = await send(body)
     expect(again.headers.get('idempotent-replayed')).toBe('true')
     expect(await again.json()).toEqual(await first.json())
     const other = await send({ ...body, subject: 'Other' })
-    expect(other.status).toBe(409)
-    expect((await other.json()).code).toBe('duplicate_request')
+    expect(other.status).toBe(400)
+    expect((await other.json()).code).toBe('duplicate_parameter')
   })
 })
