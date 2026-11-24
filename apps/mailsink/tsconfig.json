@@ -1,7 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node", "vite/client"]
+    "types": ["node", "vite/client"],
+    // vitest.config.ts imports ../../vitest.shared.ts with its extension (Vite native loader).
+    "allowImportingTsExtensions": true
   },
   "include": [
     "src",
