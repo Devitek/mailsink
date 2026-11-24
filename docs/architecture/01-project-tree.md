@@ -478,7 +478,6 @@ mailsink/
 │            workflows/release-image.yml  # GHCR multi-arch publication of a tag (D222)
 │            workflows/release-npm.yml    # npm publication of the @devitek packages (D255, D256)
 │            workflows/release-openapi.yml  # openapi.json attached to the release (D257)
-│            workflows/docs.yml           # documentation site: build on PR, GitHub Pages on main (D268)
 │            scripts/                     # public-packages.mjs (what is published),
 │            │                            # pack-public.sh + check-pack.mjs (build, pack, check),
 │            │                            # sdk-smoke.mjs (packed SDK on every Node version)
