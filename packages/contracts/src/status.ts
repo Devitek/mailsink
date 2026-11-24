@@ -11,6 +11,7 @@ export const DeliveryStatus = z.enum([
   'hard_bounce',
   'complained',
   'failed',
+  'invalid',
   'suppressed',
 ])
 
@@ -29,6 +30,7 @@ export const CanonicalEvent = z.enum([
   'email.clicked',
   'email.suppressed',
   'email.failed',
+  'email.invalid',
 ])
 
 export const ConnectionKind = z.enum(['resend', 'brevo', 'smtp'])
@@ -42,6 +44,7 @@ export const EventType = z.enum([
   'hard_bounce',
   'complained',
   'failed',
+  'invalid',
   'suppressed',
   'opened',
   'clicked',

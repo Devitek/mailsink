@@ -61,12 +61,12 @@ describeDb('Brevo webhooks end to end', (ctx) => {
     await new Promise((resolve) => server.close(resolve))
   })
 
-  it('delivers X-Mailin-custom and invalid_email with the URL credentials as basic auth', async () => {
+  it('delivers X-Mailin-custom, invalid_email and error with URL credentials as basic auth', async () => {
     const created = await createWebhookApi({
       request: capture('/capture/webhooks', {
         connectionId: seed.brevoConnectionId,
         url: `http://acme:s%40cret@${base}/brevo?token=t1`,
-        events: ['delivered', 'invalid'],
+        events: ['delivered', 'invalid', 'error'],
       }),
     })
     expect(created.status).toBe(201)
@@ -123,18 +123,21 @@ describeDb('Brevo webhooks end to end', (ctx) => {
       'X-Mailin-custom': 'order:42',
     })
 
-    const failedId = await status('failed')
-    const invalid = await deliver(failedId)
+    const invalidId = await status('invalid')
+    const invalid = await deliver(invalidId)
     expect(invalid?.body).toMatchObject({
       event: 'invalid_email',
       email: 'jane@acme.test',
       'X-Mailin-custom': 'order:42',
     })
+    // A failed send is Brevo `error` (D280).
+    const failed = await deliver(await status('failed'))
+    expect(failed?.body).toMatchObject({ event: 'error', email: 'jane@acme.test' })
 
     for (const mode of ['exact', 'resign']) {
       const replay = await replayDeliveryApi({
-        request: capture(`/capture/webhooks/deliveries/${failedId}/replay`, { mode }),
-        params: { id: failedId },
+        request: capture(`/capture/webhooks/deliveries/${invalidId}/replay`, { mode }),
+        params: { id: invalidId },
       })
       const replayed = await deliver((await replay.json()).id)
       expect(replayed?.headers.authorization).toBe(basic)

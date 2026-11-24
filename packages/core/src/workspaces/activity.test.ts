@@ -1,7 +1,7 @@
 import { workspaces } from '@mailsink/db'
 import { createTestWorkspace, describeDb } from '@mailsink/db/testing'
 import { eq } from 'drizzle-orm'
-import { expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createActivityTracker } from './activity'
 
 const T0 = Date.now() - 3_600_000
@@ -41,17 +41,22 @@ describeDb('workspace activity tracking (D16)', (ctx) => {
     await tracker.stop()
   })
 
+  // The window closes on a real timer; the clock is injected so the trailing time differs
+  // from the leading one, and the read waits for the timer's write instead of sleeping a
+  // fixed delay that a loaded runner could outlast (#153).
   it('writes the trailing touch when the window closes', async () => {
     const ws = await ephemeral()
-    const tracker = createActivityTracker({ db: ctx.db, throttleMs: 40 })
+    const c = clock(T0 + 1_000)
+    const tracker = createActivityTracker({ db: ctx.db, throttleMs: 40, now: c.now })
     await tracker.touch(ws.id)
-    const first = (await read(ws.id)).last ?? 0
-    await new Promise((r) => setTimeout(r, 5))
+    c.t = T0 + 1_005
     await tracker.touch(ws.id)
-    await new Promise((r) => setTimeout(r, 120))
-    const after = await read(ws.id)
-    expect(after.last).toBeGreaterThan(first)
-    expect(after.expires).toBe((after.last ?? 0) + TTL * 1000)
+    expect((await read(ws.id)).last).toBe(T0 + 1_000) // throttled until the window closes
+    await vi.waitFor(async () => expect((await read(ws.id)).last).toBe(T0 + 1_005), {
+      timeout: 5_000,
+      interval: 20,
+    })
+    expect((await read(ws.id)).expires).toBe(T0 + 1_005 + TTL * 1000)
     await tracker.stop()
   })
 
@@ -79,5 +84,45 @@ describeDb('workspace activity tracking (D16)', (ctx) => {
     await expect(tracker.touch('ws_x')).resolves.toBeUndefined()
     expect(warn[0]).toContain('ws_x')
     await tracker.stop()
+  })
+})
+
+describe('workspace activity tracking, shutdown', () => {
+  const clock = (start: number) => {
+    const c = { t: start, now: () => c.t }
+    return c
+  }
+
+  it('waits on stop for a trailing write already running', async () => {
+    const writes: { at: Date; done: () => void }[] = []
+    const slow = {
+      update: () => ({
+        set: (values: { lastActivityAt: Date }) => ({
+          where: () => ({
+            returning: () =>
+              new Promise<unknown[]>((resolve) => {
+                writes.push({ at: values.lastActivityAt, done: () => resolve([]) })
+              }),
+          }),
+        }),
+      }),
+    } as never
+    const c = clock(T0)
+    const tracker = createActivityTracker({ db: slow, throttleMs: 10, now: c.now })
+    const leading = tracker.touch('ws_x')
+    writes[0]?.done()
+    await leading
+    c.t = T0 + 5
+    await tracker.touch('ws_x')
+    await vi.waitFor(() => expect(writes).toHaveLength(2)) // the timer started the write
+    let stopped = false
+    const stopping = tracker.stop().then(() => {
+      stopped = true
+    })
+    await new Promise((r) => setTimeout(r, 20))
+    expect(stopped).toBe(false)
+    writes[1]?.done()
+    await stopping
+    expect(writes.map((w) => w.at.getTime())).toEqual([T0, T0 + 5])
   })
 })

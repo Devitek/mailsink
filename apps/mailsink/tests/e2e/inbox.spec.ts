@@ -110,6 +110,19 @@ test('the viewer simulates events and shows every part of the message', async ({
   await expect(page.getByRole('status').filter({ hasText: 'SSE Live' })).toBeVisible()
 })
 
+test('the viewer forces an invalid recipient address', async ({ page, inbox }) => {
+  const ws = await inbox()
+  const id = await ws.send(booking)
+  await signIn(page)
+  await gotoHydrated(page, `/w/${ws.slug}?m=${id}`)
+  await expect(page.getByRole('heading', { name: booking.subject })).toBeVisible()
+  await page.getByRole('button', { name: 'Invalid', exact: true }).click()
+  await expect(page.getByText(/Events recorded: 1\./)).toBeVisible()
+  await expect(page.locator('[data-status="invalid"]').first()).toBeVisible()
+  await page.getByRole('tab', { name: /History/ }).click()
+  await expect(page.getByText('invalid', { exact: true }).first()).toBeVisible()
+})
+
 test('purging the inbox asks for confirmation', async ({ page, inbox }) => {
   const ws = await inbox()
   await ws.send(booking)

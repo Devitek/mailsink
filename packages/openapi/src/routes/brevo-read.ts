@@ -18,7 +18,7 @@ export const BREVO_READ_ROUTES: RouteSpec[] = [
     path: '/v3/smtp/emails',
     summary: 'Brevo: the transactional emails sent by the connection',
     description:
-      'One item per message and recipient. `email`, `templateId` or `messageId` is required; `startDate` and `endDate` (YYYY-MM-DD, UTC) go together and span at most one month, the past 30 days by default.',
+      'One item per message and recipient. `email`, `templateId` or `messageId` is required; `startDate` and `endDate` (YYYY-MM-DD, days of the workspace timezone) go together and span at most one month, the past 30 days by default.',
     query: BrevoListEmailsQuery,
     success: [{ status: 200, description: 'A page.', schema: BrevoListEmailsResponse }],
   },
@@ -28,6 +28,8 @@ export const BREVO_READ_ROUTES: RouteSpec[] = [
     method: 'get',
     path: '/v3/smtp/blockedContacts',
     summary: 'Brevo: the suppression list of the workspace as blocked contacts',
+    description:
+      '`startDate` and `endDate` (YYYY-MM-DD, days of the workspace timezone) go together and cannot be after today in that timezone.',
     query: BrevoBlockedContactsQuery,
     success: [{ status: 200, description: 'A page.', schema: BrevoBlockedContactsResponse }],
   },

@@ -19,7 +19,8 @@ export function registerActionTools(server: McpServer, ctx: McpContext): void {
       description:
         'Records an event on a captured email, origin mcp: opened, clicked (url required) or ' +
         'a forced simulated status (delivered, deferred, soft_bounce, hard_bounce, ' +
-        'complained, failed). Updates statuses and the suppression list and fires webhooks.',
+        'complained, failed, invalid). Updates statuses and the suppression list and fires ' +
+        'webhooks.',
       inputSchema: TriggerEmailEventInput,
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },

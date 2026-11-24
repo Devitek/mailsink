@@ -22,13 +22,19 @@ describe('brevo formatter', () => {
     expect(brevoDate(now, 'Not/AZone')).toBe('2026-11-23 10:00:00')
   })
 
-  it('emits a failed send as invalid_email, without a reason (Brevo payload)', () => {
-    expect(brevoFormatter.eventName('email.failed')).toBe('invalid_email')
-    const payload = BrevoWebhookPayload.parse(
-      JSON.parse(brevoFormatter.serialize(ctx('email.failed'))),
-    )
-    expect(payload.event).toBe('invalid_email')
-    expect(payload.reason).toBeUndefined()
+  it('emits an invalid address as invalid_email and a failed send as error (D280)', () => {
+    expect(brevoFormatter.eventName('email.invalid')).toBe('invalid_email')
+    expect(brevoFormatter.eventName('email.failed')).toBe('error')
+    for (const [canonical, event] of [
+      ['email.invalid', 'invalid_email'],
+      ['email.failed', 'error'],
+    ] as const) {
+      const payload = BrevoWebhookPayload.parse(
+        JSON.parse(brevoFormatter.serialize(ctx(canonical))),
+      )
+      expect(payload.event).toBe(event)
+      expect(payload.reason).toBeUndefined()
+    }
   })
 
   it('reads X-Mailin-custom from the message headers, whatever its case', () => {

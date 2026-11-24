@@ -14,8 +14,12 @@ describe('webhook event mapping', () => {
     expect(toDialect('resend', 'email.suppressed')).toBeNull()
     expect(toDialect('brevo', 'email.hard_bounced')).toBe('hard_bounce')
     expect(toDialect('brevo', 'email.complained')).toBe('spam')
-    expect(toDialect('brevo', 'email.failed')).toBe('invalid_email')
+    expect(toDialect('brevo', 'email.failed')).toBe('error')
+    expect(toDialect('brevo', 'email.invalid')).toBe('invalid_email')
+    expect(toDialect('resend', 'email.failed')).toBe('email.failed')
+    expect(toDialect('resend', 'email.invalid')).toBe('email.failed')
     expect(toDialect('unified', 'email.failed')).toBe('email.failed')
+    expect(toDialect('unified', 'email.invalid')).toBe('email.invalid')
   })
 
   it('expands dialect subscription names to canonical events (many-to-one)', () => {
@@ -28,14 +32,20 @@ describe('webhook event mapping', () => {
     expect(toCanonical('brevo', 'sent')).toEqual(['email.sent'])
     expect(toCanonical('brevo', 'request')).toEqual(['email.sent'])
     expect(toCanonical('brevo', 'email.failed')).toEqual(['email.failed'])
-    expect(toCanonical('brevo', 'invalid')).toEqual(['email.failed'])
-    expect(toCanonical('brevo', 'invalid_email')).toEqual(['email.failed'])
+    expect(toCanonical('brevo', 'error')).toEqual(['email.failed'])
+    expect(toCanonical('brevo', 'email.invalid')).toEqual(['email.invalid'])
+    expect(toCanonical('brevo', 'invalid')).toEqual(['email.invalid'])
+    expect(toCanonical('brevo', 'invalid_email')).toEqual(['email.invalid'])
+    expect(toCanonical('resend', 'email.failed')).toEqual(['email.failed', 'email.invalid'])
+    expect(toCanonical('unified', 'email.invalid')).toEqual(['email.invalid'])
+    expect(toCanonical('unified', 'invalid')).toEqual([])
     expect(toCanonical('unified', 'email.bounced')).toEqual([])
     expect(toCanonical('resend', 'nope')).toEqual([])
   })
 
   it('reports names and unsupported events of a stored subscription', () => {
     const stored = [
+      'email.invalid',
       'email.failed',
       'email.deferred',
       'email.soft_bounced',
@@ -52,7 +62,16 @@ describe('webhook event mapping', () => {
       'deferred',
       'softBounce',
       'blocked',
+      'error',
       'invalid',
+    ])
+    expect(dialectNames('unified', stored)).toEqual([
+      'email.sent',
+      'email.deferred',
+      'email.soft_bounced',
+      'email.suppressed',
+      'email.failed',
+      'email.invalid',
     ])
     expect(unsupportedEvents('brevo', stored)).toEqual([])
     expect(unsupportedEvents('resend', stored)).toEqual(['email.suppressed'])
@@ -62,6 +81,8 @@ describe('webhook event mapping', () => {
   it('maps message event types to canonical events', () => {
     expect(canonicalOfEventType('hard_bounce')).toBe('email.hard_bounced')
     expect(canonicalOfEventType('clicked')).toBe('email.clicked')
+    expect(canonicalOfEventType('failed')).toBe('email.failed')
+    expect(canonicalOfEventType('invalid')).toBe('email.invalid')
     expect(canonicalOfEventType('accepted')).toBeNull()
   })
 })

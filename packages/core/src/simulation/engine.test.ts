@@ -94,11 +94,14 @@ describeDb('simulation engine (settings planner)', (ctx) => {
         { match: 'hb@*', status: 'hard_bounce' },
         { match: 'cp@*', status: 'complained' },
         { match: 'sb@*', status: 'soft_bounce' },
+        { match: '*+invalid@*', status: 'invalid' },
       ],
     })
-    const id = await send(['hb@x.io', 'cp@x.io', 'sb@x.io'])
+    const id = await send(['hb@x.io', 'cp@x.io', 'sb@x.io', 'jo+invalid@x.io'])
     const result = await simulateDelivery(ctx.db, id, { now: at(0) })
+    // An invalid address is not listed, as Brevo blocks only hard bounces and spam (D283).
     expect(result).toMatchObject({ suppressed: ['hb@x.io', 'cp@x.io'] })
+    expect((await recipientStatuses(id))['jo+invalid@x.io']).toBe('invalid')
     const rows = await ctx.db
       .select({
         email: suppressions.email,

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { DeliveryStatus } from '@mailsink/contracts'
 import { describe, expect, it } from 'vitest'
 import { contrastRatio } from './contrast'
 import { declarationsBySelector, referencedVariables } from './css-declarations'
@@ -37,6 +38,30 @@ describe('tokens.css', () => {
       // Still a step below muted text.
       const muted = palette?.['--ms-text-muted'] ?? ''
       expect(contrastRatio(faint, bg)).toBeLessThan(contrastRatio(muted, bg))
+    }
+  })
+})
+
+describe('status tokens', () => {
+  it('colours every delivery status in both themes and maps it for Tailwind', () => {
+    const base = declarationsBySelector(bundled)
+    const ext = declarationsBySelector(extension)
+    const light = {
+      ...ext[':root'],
+      ...base[':root,[data-theme="light"]'],
+      ...ext[':root:not([data-theme="dark"])'],
+    }
+    const dark = {
+      ...ext[':root'],
+      ...base['[data-theme="dark"]'],
+      ...ext[':root[data-theme="dark"]'],
+    }
+    const used = referencedVariables(theme)
+    for (const status of DeliveryStatus.options) {
+      const token = `--ms-status-${status.replace(/_/g, '-')}`
+      expect(light[token], token).toBeTruthy()
+      expect(dark[token] ?? ext[':root']?.[token], token).toBeTruthy()
+      expect(used.has(token), token).toBe(true)
     }
   })
 })

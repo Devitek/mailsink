@@ -101,7 +101,7 @@ mailsink override reset
 ```
 
 Rates are percentages of the messages: `--delivered`, `--deferred`, `--soft-bounce`,
-`--hard-bounce`, `--complained`, `--failed`. `--latency <min>-<max>` (ms, or one value),
+`--hard-bounce`, `--complained`, `--failed`, `--invalid`. `--latency <min>-<max>` (ms, or one value),
 `--error-rate` (requests refused before ingestion), `--rule '<glob>=<status>'` (repeats).
 `--config '<json>'` sets any other `OverrideConfig` field; the flags are merged over it.
 `--ttl` resets the override automatically, `--connection <id>` limits it to one

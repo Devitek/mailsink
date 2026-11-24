@@ -27,7 +27,9 @@ transcript lines).
   race. The built CLI ships a copy of the folder in `dist/migrations`. A generated migration
   may get hand-written data statements appended (backfills); each journal `when` must be
   strictly greater than the previous one, or the migrator skips the migration (checked by
-  `test/journal.test.ts`).
+  `test/journal.test.ts`). Pending migrations run in one transaction, where a value added
+  to an existing enum (`ALTER TYPE … ADD VALUE`) cannot be used yet: a migration that writes
+  the new value recreates the type instead (migration 0004, `webhook_event`).
 - `describeDb()` from `@mailsink/db/testing` declares each suite twice: `[pglite]` on a
   fresh in-memory instance, `[postgres]` on a throwaway database created on
   `TEST_DATABASE_URL` (skipped when unset). Every suite owns its database, so test files
@@ -74,11 +76,11 @@ export const connectionKind = pgEnum('connection_kind', ['resend', 'brevo', 'smt
 export const messageSource = pgEnum('message_source', ['native', 'resend', 'brevo', 'smtp'])
 export const deliveryStatus = pgEnum('delivery_status', [
   'queued', 'sent', 'delivered', 'deferred', 'soft_bounce', 'hard_bounce',
-  'complained', 'failed', 'suppressed',
+  'complained', 'failed', 'invalid', 'suppressed',
 ])
 export const eventType = pgEnum('event_type', [
   'accepted', 'sent', 'delivered', 'deferred', 'soft_bounce', 'hard_bounce',
-  'complained', 'failed', 'suppressed', 'opened', 'clicked',
+  'complained', 'failed', 'invalid', 'suppressed', 'opened', 'clicked',
 ])
 export const eventOrigin = pgEnum('event_origin', ['simulation', 'api', 'ui', 'mcp'])
 export const recipientKind = pgEnum('recipient_kind', ['to', 'cc', 'bcc'])
@@ -91,7 +93,7 @@ export const payloadFormat = pgEnum('payload_format', ['unified', 'resend', 'bre
 export const webhookEvent = pgEnum('webhook_event', [
   'email.sent', 'email.delivered', 'email.deferred', 'email.soft_bounced',
   'email.hard_bounced', 'email.complained', 'email.opened', 'email.clicked',
-  'email.suppressed', 'email.failed',
+  'email.suppressed', 'email.failed', 'email.invalid',
 ])
 export const brevoAuthType = pgEnum('brevo_auth_type', ['none', 'bearer', 'basic'])
 export const replayMode = pgEnum('replay_mode', ['exact', 'resign'])
@@ -455,6 +457,13 @@ How the webhook tables are written (#32, #33, D135 to D144, D152 to D155, no mig
   brevo format `secret` holds the bearer token or `user:password` (null with
   `brevo_auth = 'none'`); leaving brevo writes a fresh `whsec_` secret, so the
   `webhook_secret_required` check always holds.
+- Migration 0004 (#153): adds the `invalid` status and event type and `email.invalid`;
+  subscribes the Resend endpoints that receive `email.failed` to `email.invalid` too
+  (emitted under that name, D280); moves credentials written in the URL of a brevo
+  endpoint with `brevo_auth = 'none'` (stored before D278) to `brevo_auth = 'basic'`,
+  percent-decoded, a part that does not decode kept as written (D281). Other rows with
+  credentials in their URL (other formats, explicit bearer or basic) keep the send-time
+  fallback of D278.
 - A delivery row is inserted with its serialized `body` in the same transaction as its
   first `deliver_webhook` job (`payload = { deliveryId, attemptNo: 1 }`). Each attempt
   inserts one `webhook_attempts` row (id `wha_…`) and updates the delivery

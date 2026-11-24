@@ -4,7 +4,8 @@ import { TemplateExternalId } from './templates'
 
 // Brevo read routes of a `brevo` connection (#149, D275, D276), checked against
 // developers.brevo.com on 24/11/2026: `GET /v3/smtp/emails`, `GET /v3/smtp/blockedContacts`
-// and `DELETE /v3/smtp/blockedContacts/{email}`. Dates are calendar days (YYYY-MM-DD, UTC).
+// and `DELETE /v3/smtp/blockedContacts/{email}`. Dates are calendar days (YYYY-MM-DD) of the
+// workspace timezone (D23, D284).
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -79,7 +80,10 @@ const Senders = z.union([z.string(), z.array(z.string())]).transform((v) => [
   ),
 ])
 
-const notInFuture = (d: string | undefined) => !d || d <= new Date().toISOString().slice(0, 10)
+/** Coarse check without the workspace timezone: past today at UTC+14, the furthest zone
+ * (core checks the day of the workspace timezone, D284). */
+const notInFuture = (d: string | undefined) =>
+  !d || d <= new Date(Date.now() + 14 * 3_600_000).toISOString().slice(0, 10)
 
 export const BrevoBlockedContactsQuery = z
   .object({

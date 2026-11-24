@@ -15,7 +15,7 @@ interface Route {
 }
 
 // The HTTP API only: UI pages and the MCP endpoint are not the SDK's business.
-const API_FILE = /^(admin|capture|v1)\..*\.ts$/
+const API_FILE = /^(admin|capture|v1|v3)\..*\.ts$/
 
 /** `capture.messages.$id.raw.ts` -> `/capture/messages/:id/raw` (`[x]` escapes a segment). */
 async function loadRoutes(): Promise<Route[]> {

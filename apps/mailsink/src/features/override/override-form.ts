@@ -20,6 +20,7 @@ export const RATE_STATUSES = [
   'complained',
   'deferred',
   'failed',
+  'invalid',
 ] as const satisfies readonly SimulatedStatus[]
 export type RateStatus = (typeof RATE_STATUSES)[number]
 

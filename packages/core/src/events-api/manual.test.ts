@@ -37,7 +37,7 @@ describeDb('manual message events', (ctx) => {
       WebhookEndpointInput.parse({
         connectionId: null,
         url: 'http://127.0.0.1:9/hook',
-        events: ['email.opened', 'email.clicked', 'email.hard_bounced'],
+        events: ['email.opened', 'email.clicked', 'email.hard_bounced', 'email.invalid'],
       }),
     )
   })
@@ -103,6 +103,25 @@ describeDb('manual message events', (ctx) => {
       type: 'hard_bounce',
       data: { reason: 'forced' },
     })
+  })
+
+  it('forces an invalid address: email.invalid, never the suppression list (D283)', async () => {
+    const msg = await message()
+    const result = await trigger(msg.id, {
+      type: 'status',
+      status: 'invalid',
+      recipient: 'r1@x.io',
+    })
+    expect(result.events).toMatchObject([{ type: 'invalid', recipientEmail: 'r1@x.io' }])
+    expect(result.deliveries).toHaveLength(1)
+    const [delivery] = await ctx.db
+      .select()
+      .from(webhookDeliveries)
+      .where(eq(webhookDeliveries.workspaceId, ws))
+    expect(delivery?.canonicalEvent).toBe('email.invalid')
+    expect(result.messageStatus).toBe('invalid')
+    const listed = await ctx.db.select().from(suppressions).where(eq(suppressions.workspaceId, ws))
+    expect(listed).toEqual([])
   })
 
   it('answers 404 for unknown messages or recipients and 409 for suppressed ones', async () => {

@@ -2,7 +2,14 @@ import { z } from 'zod'
 import { AddressOut } from './address'
 import { IsoDateTime, issue, Page, PageLimit, QueryBool, Tag } from './common'
 import { AttachmentId, ConnectionId, EventId, MessageId } from './ids'
-import { DeliveryStatus, EventOrigin, EventType, MessageSource, RecipientKind } from './status'
+import {
+  DeliveryStatus,
+  EventOrigin,
+  EventType,
+  MessageSource,
+  RecipientKind,
+  SimulatedStatus,
+} from './status'
 import { WebhookDeliveryView } from './webhook-delivery'
 
 export const WAIT_TIMEOUT_MAX_MS = 30_000
@@ -110,10 +117,10 @@ export const TriggerEventRequest = z.discriminatedUnion('type', [
     userAgent: z.string().optional(),
   }),
   // Forced simulated status (B1-1): recipient status, message aggregate, suppression list
-  // (hard_bounce, complained) and webhooks, like a drawn status.
+  // (hard_bounce, complained) and webhooks, like a drawn status. `invalid` is never listed.
   z.object({
     type: z.literal('status'),
-    status: z.enum(['delivered', 'deferred', 'soft_bounce', 'hard_bounce', 'complained', 'failed']),
+    status: SimulatedStatus,
     recipient: z.email().optional(),
     reason: z.string().max(500).optional(),
   }),

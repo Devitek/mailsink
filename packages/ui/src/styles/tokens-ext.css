@@ -25,11 +25,17 @@
  * (section labels, reassurance line, instance block, placeholders). Same hue, darkened in
  * light and lightened in dark just enough for 4.5:1 on --ms-bg, --ms-panel and --ms-raised
  * (the charter criterion of IMPLEMENTATION.md); still a step below --ms-text-muted.
- * Specificity (0,2,0) wins over tokens.css whatever the theme attribute. */
+ * Specificity (0,2,0) wins over tokens.css whatever the theme attribute.
+ *
+ * Invalid recipient address (#153, D282): no colour in the delivery. A teal of the
+ * lightness and chroma of the delivered statuses, away from the reds of failed and
+ * hard_bounce. */
 :root:not([data-theme="dark"]) {
   --ms-text-faint: #6e7075;
+  --ms-status-invalid: oklch(0.52 0.1 200);
 }
 
 :root[data-theme="dark"] {
   --ms-text-faint: #7b808a;
+  --ms-status-invalid: oklch(0.76 0.1 200);
 }

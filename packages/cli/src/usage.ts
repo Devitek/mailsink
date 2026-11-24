@@ -14,8 +14,9 @@ Piloting (HTTP API, for CI and shell scripts):
                 [--connection <id>] [--since <iso|now|5m>] [--timeout 10s] [--link <s>]
                                     Wait for a matching message (exit code 3 on timeout)
   mailsink override set [--hard-bounce 20] [--soft-bounce 5] [--deferred 5] [--complained 1]
-                        [--failed 1] [--delivered 50] [--latency 100-500] [--error-rate 10]
-                        [--rule '<glob>=<status>']... [--config <json>] [--ttl 10m]
+                        [--failed 1] [--invalid 1] [--delivered 50] [--latency 100-500]
+                        [--error-rate 10] [--rule '<glob>=<status>']... [--config <json>]
+                        [--ttl 10m]
                         [--connection <id>]
                                     Activate a simulation override (rates in %, latency in ms)
   mailsink override reset [--connection <id>]

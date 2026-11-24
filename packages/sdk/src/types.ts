@@ -37,6 +37,7 @@ export type CreateWorkspaceInput = {
               delivered?: number | undefined
               failed?: number | undefined
               hard_bounce?: number | undefined
+              invalid?: number | undefined
               soft_bounce?: number | undefined
             }
           | undefined
@@ -49,6 +50,7 @@ export type CreateWorkspaceInput = {
                 | 'delivered'
                 | 'failed'
                 | 'hard_bounce'
+                | 'invalid'
                 | 'soft_bounce'
                 | undefined
               delayMs?: number | undefined
@@ -92,6 +94,7 @@ export type CreateWorkspaceInput = {
                         delivered?: number | undefined
                         failed?: number | undefined
                         hard_bounce?: number | undefined
+                        invalid?: number | undefined
                         soft_bounce?: number | undefined
                       }
                     | undefined
@@ -104,6 +107,7 @@ export type CreateWorkspaceInput = {
                           | 'delivered'
                           | 'failed'
                           | 'hard_bounce'
+                          | 'invalid'
                           | 'soft_bounce'
                           | undefined
                         delayMs?: number | undefined
@@ -142,6 +146,7 @@ export type CreateWorkspaceInput = {
                         delivered?: number | undefined
                         failed?: number | undefined
                         hard_bounce?: number | undefined
+                        invalid?: number | undefined
                         soft_bounce?: number | undefined
                       }
                     | undefined
@@ -154,6 +159,7 @@ export type CreateWorkspaceInput = {
                           | 'delivered'
                           | 'failed'
                           | 'hard_bounce'
+                          | 'invalid'
                           | 'soft_bounce'
                           | undefined
                         delayMs?: number | undefined
@@ -192,6 +198,7 @@ export type CreateWorkspaceInput = {
                         delivered?: number | undefined
                         failed?: number | undefined
                         hard_bounce?: number | undefined
+                        invalid?: number | undefined
                         soft_bounce?: number | undefined
                       }
                     | undefined
@@ -204,6 +211,7 @@ export type CreateWorkspaceInput = {
                           | 'delivered'
                           | 'failed'
                           | 'hard_bounce'
+                          | 'invalid'
                           | 'soft_bounce'
                           | undefined
                         delayMs?: number | undefined
@@ -269,6 +277,7 @@ export type CreateWorkspaceResult = {
         delivered?: number | undefined
         failed?: number | undefined
         hard_bounce?: number | undefined
+        invalid?: number | undefined
         soft_bounce?: number | undefined
       }
       rules: {
@@ -279,6 +288,7 @@ export type CreateWorkspaceResult = {
           | 'delivered'
           | 'failed'
           | 'hard_bounce'
+          | 'invalid'
           | 'soft_bounce'
           | undefined
         delayMs?: number | undefined
@@ -322,6 +332,7 @@ export type CreateWorkspaceResult = {
             delivered?: number | undefined
             failed?: number | undefined
             hard_bounce?: number | undefined
+            invalid?: number | undefined
             soft_bounce?: number | undefined
           }
         | undefined
@@ -334,6 +345,7 @@ export type CreateWorkspaceResult = {
               | 'delivered'
               | 'failed'
               | 'hard_bounce'
+              | 'invalid'
               | 'soft_bounce'
               | undefined
             delayMs?: number | undefined
@@ -402,6 +414,7 @@ export type WorkspacePage = {
         delivered?: number | undefined
         failed?: number | undefined
         hard_bounce?: number | undefined
+        invalid?: number | undefined
         soft_bounce?: number | undefined
       }
       rules: {
@@ -412,6 +425,7 @@ export type WorkspacePage = {
           | 'delivered'
           | 'failed'
           | 'hard_bounce'
+          | 'invalid'
           | 'soft_bounce'
           | undefined
         delayMs?: number | undefined
@@ -459,6 +473,7 @@ export type Workspace = {
       delivered?: number | undefined
       failed?: number | undefined
       hard_bounce?: number | undefined
+      invalid?: number | undefined
       soft_bounce?: number | undefined
     }
     rules: {
@@ -469,6 +484,7 @@ export type Workspace = {
         | 'delivered'
         | 'failed'
         | 'hard_bounce'
+        | 'invalid'
         | 'soft_bounce'
         | undefined
       delayMs?: number | undefined
@@ -514,6 +530,7 @@ export type WorkspaceDetail = {
       delivered?: number | undefined
       failed?: number | undefined
       hard_bounce?: number | undefined
+      invalid?: number | undefined
       soft_bounce?: number | undefined
     }
     rules: {
@@ -524,6 +541,7 @@ export type WorkspaceDetail = {
         | 'delivered'
         | 'failed'
         | 'hard_bounce'
+        | 'invalid'
         | 'soft_bounce'
         | undefined
       delayMs?: number | undefined
@@ -565,6 +583,7 @@ export type WorkspaceDetail = {
             delivered?: number | undefined
             failed?: number | undefined
             hard_bounce?: number | undefined
+            invalid?: number | undefined
             soft_bounce?: number | undefined
           }
         | undefined
@@ -577,6 +596,7 @@ export type WorkspaceDetail = {
               | 'delivered'
               | 'failed'
               | 'hard_bounce'
+              | 'invalid'
               | 'soft_bounce'
               | undefined
             delayMs?: number | undefined
@@ -618,6 +638,7 @@ export type UpdateWorkspaceInput = {
               delivered?: number | undefined
               failed?: number | undefined
               hard_bounce?: number | undefined
+              invalid?: number | undefined
               soft_bounce?: number | undefined
             }
           | undefined
@@ -630,6 +651,7 @@ export type UpdateWorkspaceInput = {
                 | 'delivered'
                 | 'failed'
                 | 'hard_bounce'
+                | 'invalid'
                 | 'soft_bounce'
                 | undefined
               delayMs?: number | undefined
@@ -672,6 +694,7 @@ export type ConnectionInput =
                   delivered?: number | undefined
                   failed?: number | undefined
                   hard_bounce?: number | undefined
+                  invalid?: number | undefined
                   soft_bounce?: number | undefined
                 }
               | undefined
@@ -684,6 +707,7 @@ export type ConnectionInput =
                     | 'delivered'
                     | 'failed'
                     | 'hard_bounce'
+                    | 'invalid'
                     | 'soft_bounce'
                     | undefined
                   delayMs?: number | undefined
@@ -722,6 +746,7 @@ export type ConnectionInput =
                   delivered?: number | undefined
                   failed?: number | undefined
                   hard_bounce?: number | undefined
+                  invalid?: number | undefined
                   soft_bounce?: number | undefined
                 }
               | undefined
@@ -734,6 +759,7 @@ export type ConnectionInput =
                     | 'delivered'
                     | 'failed'
                     | 'hard_bounce'
+                    | 'invalid'
                     | 'soft_bounce'
                     | undefined
                   delayMs?: number | undefined
@@ -772,6 +798,7 @@ export type ConnectionInput =
                   delivered?: number | undefined
                   failed?: number | undefined
                   hard_bounce?: number | undefined
+                  invalid?: number | undefined
                   soft_bounce?: number | undefined
                 }
               | undefined
@@ -784,6 +811,7 @@ export type ConnectionInput =
                     | 'delivered'
                     | 'failed'
                     | 'hard_bounce'
+                    | 'invalid'
                     | 'soft_bounce'
                     | undefined
                   delayMs?: number | undefined
@@ -823,6 +851,7 @@ export type Connection = {
           delivered?: number | undefined
           failed?: number | undefined
           hard_bounce?: number | undefined
+          invalid?: number | undefined
           soft_bounce?: number | undefined
         }
       | undefined
@@ -835,6 +864,7 @@ export type Connection = {
             | 'delivered'
             | 'failed'
             | 'hard_bounce'
+            | 'invalid'
             | 'soft_bounce'
             | undefined
           delayMs?: number | undefined
@@ -873,6 +903,7 @@ export type CreatedConnection = {
           delivered?: number | undefined
           failed?: number | undefined
           hard_bounce?: number | undefined
+          invalid?: number | undefined
           soft_bounce?: number | undefined
         }
       | undefined
@@ -885,6 +916,7 @@ export type CreatedConnection = {
             | 'delivered'
             | 'failed'
             | 'hard_bounce'
+            | 'invalid'
             | 'soft_bounce'
             | undefined
           delayMs?: number | undefined
@@ -1004,6 +1036,7 @@ export type ListMessagesParams = {
         | 'delivered'
         | 'failed'
         | 'hard_bounce'
+        | 'invalid'
         | 'queued'
         | 'sent'
         | 'soft_bounce'
@@ -1037,6 +1070,7 @@ export type MessagePage = {
       | 'delivered'
       | 'failed'
       | 'hard_bounce'
+      | 'invalid'
       | 'queued'
       | 'sent'
       | 'soft_bounce'
@@ -1069,6 +1103,7 @@ export type MessageSummary = {
     | 'delivered'
     | 'failed'
     | 'hard_bounce'
+    | 'invalid'
     | 'queued'
     | 'sent'
     | 'soft_bounce'
@@ -1099,6 +1134,7 @@ export type MessageDetail = {
     | 'delivered'
     | 'failed'
     | 'hard_bounce'
+    | 'invalid'
     | 'queued'
     | 'sent'
     | 'soft_bounce'
@@ -1152,6 +1188,7 @@ export type MessageDetail = {
       | 'delivered'
       | 'failed'
       | 'hard_bounce'
+      | 'invalid'
       | 'queued'
       | 'sent'
       | 'soft_bounce'
@@ -1168,6 +1205,7 @@ export type MessageDetail = {
       | 'delivered'
       | 'failed'
       | 'hard_bounce'
+      | 'invalid'
       | 'opened'
       | 'sent'
       | 'soft_bounce'
@@ -1199,6 +1237,7 @@ export type MessageDetail = {
       | 'email.delivered'
       | 'email.failed'
       | 'email.hard_bounced'
+      | 'email.invalid'
       | 'email.opened'
       | 'email.sent'
       | 'email.soft_bounced'
@@ -1228,6 +1267,7 @@ export type MessageEvent = {
     | 'delivered'
     | 'failed'
     | 'hard_bounce'
+    | 'invalid'
     | 'opened'
     | 'sent'
     | 'soft_bounce'
@@ -1256,7 +1296,14 @@ export type TriggerEventInput =
     }
   | {
       type: 'status'
-      status: 'complained' | 'deferred' | 'delivered' | 'failed' | 'hard_bounce' | 'soft_bounce'
+      status:
+        | 'complained'
+        | 'deferred'
+        | 'delivered'
+        | 'failed'
+        | 'hard_bounce'
+        | 'invalid'
+        | 'soft_bounce'
       recipient?: string | undefined
       reason?: string | undefined
     }
@@ -1271,6 +1318,7 @@ export type TriggerEventResult = {
       | 'delivered'
       | 'failed'
       | 'hard_bounce'
+      | 'invalid'
       | 'opened'
       | 'sent'
       | 'soft_bounce'
@@ -1312,6 +1360,7 @@ export type DeliveryStatus =
   | 'delivered'
   | 'failed'
   | 'hard_bounce'
+  | 'invalid'
   | 'queued'
   | 'sent'
   | 'soft_bounce'
@@ -1324,6 +1373,7 @@ export type OverrideConfig = {
         delivered?: number | undefined
         failed?: number | undefined
         hard_bounce?: number | undefined
+        invalid?: number | undefined
         soft_bounce?: number | undefined
       }
     | undefined
@@ -1336,6 +1386,7 @@ export type OverrideConfig = {
           | 'delivered'
           | 'failed'
           | 'hard_bounce'
+          | 'invalid'
           | 'soft_bounce'
           | undefined
         delayMs?: number | undefined
@@ -1373,6 +1424,7 @@ export type ActivateOverrideInput = {
           delivered?: number | undefined
           failed?: number | undefined
           hard_bounce?: number | undefined
+          invalid?: number | undefined
           soft_bounce?: number | undefined
         }
       | undefined
@@ -1385,6 +1437,7 @@ export type ActivateOverrideInput = {
             | 'delivered'
             | 'failed'
             | 'hard_bounce'
+            | 'invalid'
             | 'soft_bounce'
             | undefined
           delayMs?: number | undefined
@@ -1426,6 +1479,7 @@ export type OverrideState = {
             delivered?: number | undefined
             failed?: number | undefined
             hard_bounce?: number | undefined
+            invalid?: number | undefined
             soft_bounce?: number | undefined
           }
         | undefined
@@ -1438,6 +1492,7 @@ export type OverrideState = {
               | 'delivered'
               | 'failed'
               | 'hard_bounce'
+              | 'invalid'
               | 'soft_bounce'
               | undefined
             delayMs?: number | undefined
@@ -1480,6 +1535,7 @@ export type OverrideState = {
             delivered?: number | undefined
             failed?: number | undefined
             hard_bounce?: number | undefined
+            invalid?: number | undefined
             soft_bounce?: number | undefined
           }
         | undefined
@@ -1492,6 +1548,7 @@ export type OverrideState = {
               | 'delivered'
               | 'failed'
               | 'hard_bounce'
+              | 'invalid'
               | 'soft_bounce'
               | undefined
             delayMs?: number | undefined
@@ -1531,6 +1588,7 @@ export type OverrideState = {
         delivered?: number | undefined
         failed?: number | undefined
         hard_bounce?: number | undefined
+        invalid?: number | undefined
         soft_bounce?: number | undefined
       }
       rules: {
@@ -1541,6 +1599,7 @@ export type OverrideState = {
           | 'delivered'
           | 'failed'
           | 'hard_bounce'
+          | 'invalid'
           | 'soft_bounce'
           | undefined
         delayMs?: number | undefined
@@ -1647,6 +1706,7 @@ export type WebhookEndpoint = {
     | 'email.delivered'
     | 'email.failed'
     | 'email.hard_bounced'
+    | 'email.invalid'
     | 'email.opened'
     | 'email.sent'
     | 'email.soft_bounced'
@@ -1659,6 +1719,7 @@ export type WebhookEndpoint = {
     | 'email.delivered'
     | 'email.failed'
     | 'email.hard_bounced'
+    | 'email.invalid'
     | 'email.opened'
     | 'email.sent'
     | 'email.soft_bounced'
@@ -1692,6 +1753,7 @@ export type WebhookEndpointWithSecret = {
     | 'email.delivered'
     | 'email.failed'
     | 'email.hard_bounced'
+    | 'email.invalid'
     | 'email.opened'
     | 'email.sent'
     | 'email.soft_bounced'
@@ -1704,6 +1766,7 @@ export type WebhookEndpointWithSecret = {
     | 'email.delivered'
     | 'email.failed'
     | 'email.hard_bounced'
+    | 'email.invalid'
     | 'email.opened'
     | 'email.sent'
     | 'email.soft_bounced'
@@ -1742,6 +1805,7 @@ export type WebhookEndpointPage = {
       | 'email.delivered'
       | 'email.failed'
       | 'email.hard_bounced'
+      | 'email.invalid'
       | 'email.opened'
       | 'email.sent'
       | 'email.soft_bounced'
@@ -1754,6 +1818,7 @@ export type WebhookEndpointPage = {
       | 'email.delivered'
       | 'email.failed'
       | 'email.hard_bounced'
+      | 'email.invalid'
       | 'email.opened'
       | 'email.sent'
       | 'email.soft_bounced'
@@ -1812,6 +1877,7 @@ export type WebhookDeliveryPage = {
       | 'email.delivered'
       | 'email.failed'
       | 'email.hard_bounced'
+      | 'email.invalid'
       | 'email.opened'
       | 'email.sent'
       | 'email.soft_bounced'
@@ -1846,6 +1912,7 @@ export type WebhookDelivery = {
     | 'email.delivered'
     | 'email.failed'
     | 'email.hard_bounced'
+    | 'email.invalid'
     | 'email.opened'
     | 'email.sent'
     | 'email.soft_bounced'
@@ -1877,6 +1944,7 @@ export type WebhookDeliveryDetail = {
     | 'email.delivered'
     | 'email.failed'
     | 'email.hard_bounced'
+    | 'email.invalid'
     | 'email.opened'
     | 'email.sent'
     | 'email.soft_bounced'
@@ -2043,6 +2111,7 @@ export type StreamEvent =
           | 'delivered'
           | 'failed'
           | 'hard_bounce'
+          | 'invalid'
           | 'queued'
           | 'sent'
           | 'soft_bounce'
@@ -2064,6 +2133,7 @@ export type StreamEvent =
         | 'delivered'
         | 'failed'
         | 'hard_bounce'
+        | 'invalid'
         | 'queued'
         | 'sent'
         | 'soft_bounce'
@@ -2083,6 +2153,7 @@ export type StreamEvent =
           | 'delivered'
           | 'failed'
           | 'hard_bounce'
+          | 'invalid'
           | 'opened'
           | 'sent'
           | 'soft_bounce'
@@ -2113,6 +2184,7 @@ export type StreamEvent =
           | 'email.delivered'
           | 'email.failed'
           | 'email.hard_bounced'
+          | 'email.invalid'
           | 'email.opened'
           | 'email.sent'
           | 'email.soft_bounced'
@@ -2177,6 +2249,7 @@ export type StreamEvent =
                   delivered?: number | undefined
                   failed?: number | undefined
                   hard_bounce?: number | undefined
+                  invalid?: number | undefined
                   soft_bounce?: number | undefined
                 }
               | undefined
@@ -2189,6 +2262,7 @@ export type StreamEvent =
                     | 'delivered'
                     | 'failed'
                     | 'hard_bounce'
+                    | 'invalid'
                     | 'soft_bounce'
                     | undefined
                   delayMs?: number | undefined
@@ -2231,6 +2305,7 @@ export type StreamEvent =
                   delivered?: number | undefined
                   failed?: number | undefined
                   hard_bounce?: number | undefined
+                  invalid?: number | undefined
                   soft_bounce?: number | undefined
                 }
               | undefined
@@ -2243,6 +2318,7 @@ export type StreamEvent =
                     | 'delivered'
                     | 'failed'
                     | 'hard_bounce'
+                    | 'invalid'
                     | 'soft_bounce'
                     | undefined
                   delayMs?: number | undefined
@@ -2282,6 +2358,7 @@ export type StreamEvent =
               delivered?: number | undefined
               failed?: number | undefined
               hard_bounce?: number | undefined
+              invalid?: number | undefined
               soft_bounce?: number | undefined
             }
             rules: {
@@ -2292,6 +2369,7 @@ export type StreamEvent =
                 | 'delivered'
                 | 'failed'
                 | 'hard_bounce'
+                | 'invalid'
                 | 'soft_bounce'
                 | undefined
               delayMs?: number | undefined

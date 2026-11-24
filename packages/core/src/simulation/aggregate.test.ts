@@ -18,6 +18,8 @@ describe('aggregateStatus', () => {
     expect(aggregateStatus(['delivered', 'complained'])).toBe('complained')
     expect(aggregateStatus(['soft_bounce', 'hard_bounce', 'delivered'])).toBe('hard_bounce')
     expect(aggregateStatus(['hard_bounce', 'failed'])).toBe('failed')
+    expect(aggregateStatus(['hard_bounce', 'invalid'])).toBe('invalid')
+    expect(aggregateStatus(['invalid', 'failed'])).toBe('failed')
   })
 
   it('has nothing to aggregate without recipients', () => {

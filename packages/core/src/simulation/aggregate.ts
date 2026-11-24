@@ -5,6 +5,7 @@ const IN_FLIGHT: readonly DeliveryStatus[] = ['queued', 'deferred', 'sent']
 /** Final statuses, most severe first. */
 const FINAL: readonly DeliveryStatus[] = [
   'failed',
+  'invalid',
   'hard_bounce',
   'soft_bounce',
   'complained',

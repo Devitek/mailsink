@@ -55,7 +55,7 @@ export function isBlockedAddress(address: string): boolean {
  * Guard refusing URLs whose host is, or resolves to, a blocked address (any of them). A
  * host that does not resolve is let through: the request itself will fail. The check
  * runs at creation and before each attempt; a DNS answer changing between the check and
- * the request (rebinding) is not covered (D155, proposition).
+ * the request (rebinding) is not covered (D155).
  */
 export function privateAddressGuard(lookup: HostLookup = defaultLookup): UrlGuard {
   return async (url) => {

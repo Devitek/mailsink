@@ -1,48 +1,15 @@
 // Real answers of a representative set of routes checked against the OpenAPI registry
 // (`@mailsink/openapi`): the status is one the document declares for the operation, and a
 // JSON body matches the declared schema exactly (no undocumented field, D262).
-import { ApiErrorBody } from '@mailsink/contracts'
 import { describeDb } from '@mailsink/db/testing'
-import { createOpenApiDocument, ROUTES, type RouteSpec } from '@mailsink/openapi'
 import { expect, it } from 'vitest'
 import { createMailsink, type Mailsink } from '../src'
 import { useHarness } from './harness'
-
-interface Exchange {
-  method: string
-  path: string
-  status: number
-  body: unknown
-}
-
-/** Most specific first: `/capture/webhooks/deliveries` before `/capture/webhooks/{id}`. */
-const MATCHERS = ROUTES.map((route) => ({
-  route,
-  params: route.path.split('{').length - 1,
-  pattern: new RegExp(`^${route.path.replace(/\{\w+\}/g, '[^/]+')}$`),
-})).sort((a, b) => a.params - b.params)
-
-function routeOf(method: string, path: string): RouteSpec {
-  const found = MATCHERS.find((m) => m.route.method === method && m.pattern.test(path))
-  if (!found) throw new Error(`${method} ${path}: not in the registry`)
-  return found.route
-}
+import { checkExchanges, type Exchange, recordingFetch, routeOf } from './openapi-check'
 
 /** A client of the same options whose answers are recorded in `log`. */
 function recording(client: Mailsink, log: Exchange[]): Mailsink {
-  const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const response = await globalThis.fetch(input, init)
-    const url = new URL(String(input))
-    const json = response.headers.get('content-type')?.includes('application/json')
-    log.push({
-      method: (init?.method ?? 'GET').toLowerCase(),
-      path: url.pathname,
-      status: response.status,
-      body: json ? await response.clone().json() : undefined,
-    })
-    return response
-  }
-  return createMailsink({ ...client.options, fetch })
+  return createMailsink({ ...client.options, fetch: recordingFetch(log) })
 }
 
 describeDb('OpenAPI response schemas', (ctx) => {
@@ -91,37 +58,10 @@ describeDb('OpenAPI response schemas', (ctx) => {
     await admin.admin.workspaces.create({ name: '' }).catch(() => undefined)
     await sink.messages.purge()
 
-    const document = createOpenApiDocument()
-    const failures: string[] = []
-    for (const exchange of log) {
-      const route = routeOf(exchange.method, exchange.path)
-      const name = `${exchange.method.toUpperCase()} ${route.path} ${exchange.status}`
-      const declared = document.paths?.[route.path]?.[route.method]?.responses ?? {}
-      if (!(String(exchange.status) in declared)) failures.push(`${name}: status not declared`)
-      const success = route.success.find((s) => s.status === exchange.status)
-      const schema = exchange.status >= 400 ? ApiErrorBody : success?.schema
-      if (!schema || exchange.body === undefined) continue
-      const parsed = schema.safeParse(exchange.body)
-      if (!parsed.success) failures.push(`${name}: ${parsed.error.message}`)
-      else if (JSON.stringify(sorted(parsed.data)) !== JSON.stringify(sorted(exchange.body)))
-        failures.push(`${name}: fields outside the declared schema`)
-    }
+    const failures = checkExchanges(log)
     expect(failures).toEqual([])
     const covered = new Set(log.map((e) => `${e.method} ${routeOf(e.method, e.path).path}`))
     expect(covered.size).toBeGreaterThanOrEqual(25)
     expect(log.some((e) => e.status === 404) && log.some((e) => e.status === 422)).toBe(true)
   })
 })
-
-/** Same value with object keys sorted, so key order does not count. */
-function sorted(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sorted)
-  if (value && typeof value === 'object')
-    return Object.fromEntries(
-      Object.entries(value)
-        .filter(([, v]) => v !== undefined)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => [k, sorted(v)]),
-    )
-  return value
-}

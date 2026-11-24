@@ -41,7 +41,14 @@ site to https://mailsink.devitek.fr.
 Mermaid diagrams (```` ```mermaid ```` blocks) render on GitHub as usual and in the reader's
 browser on the site, in the light or dark theme of its selector, with `docs:dev` as with
 `docs:build`; no browser is needed to build the site. The build fails on a diagram that does
-not parse: a `;` inside a message ends the statement for Mermaid, write `,` instead.
+not parse: a `;` inside a message ends the statement for Mermaid, write `,` instead. Keep a
+sequence diagram to a handful of participants: split a long flow into several diagrams
+rather than one wide one (`docs/architecture/04-sequence.md`).
+
+`docs:build` prints a `[DEP0169] url.parse()` deprecation warning while it renders the API
+reference: it comes from `httpsnippet` 3.0.10 (its latest release), which
+`starlight-openapi` uses for the request samples. It is harmless and expected until
+`httpsnippet` moves to the WHATWG URL API (D273).
 
 `pnpm install` builds native helpers only for the packages listed under `allowBuilds` in
 `pnpm-workspace.yaml` (today `esbuild`, needed by Vite and drizzle-kit): pnpm 11 refuses

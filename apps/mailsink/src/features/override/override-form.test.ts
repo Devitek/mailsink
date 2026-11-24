@@ -99,6 +99,7 @@ describe('activation request', () => {
           complained: 0,
           deferred: 0,
           failed: 0,
+          invalid: 0,
         },
         rateLimit: { limit: 2, windowSeconds: 1 },
       },
