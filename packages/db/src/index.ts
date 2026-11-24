@@ -27,6 +27,15 @@ export {
   type StoredBlob,
 } from './repositories/blobs'
 export {
+  type ConnectionCopyFilter,
+  type ConnectionCopyRow,
+  listConnectionCopies,
+  listSuppressionPage,
+  type OffsetPage,
+  type SuppressionPageFilter,
+  type SuppressionPageRow,
+} from './repositories/brevo-read'
+export {
   type Connection,
   insertConnections,
   listConnections,

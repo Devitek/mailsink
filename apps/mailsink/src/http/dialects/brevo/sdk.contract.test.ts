@@ -5,26 +5,16 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { stopRuntime } from '../../../runtime/boot'
 import { installTestRuntime } from '../../test-fixtures'
-import { postBrevoEmail } from './send'
-import { provisionBrevo } from './testing'
+import { BREVO_TEST_BASE_URL, brevoFetch, provisionBrevo } from './testing'
 
 // Contract test with the official Brevo Node SDK (`@getbrevo/brevo` 6.x): the client is
-// pointed at `<public url>/v3` and its fetch is routed to the in-process route handler.
-
-const BASE_URL = 'http://mailsink.test/v3'
-
-const inProcessFetch: typeof fetch = async (input, init) => {
-  const req = new Request(input, init)
-  const { pathname } = new URL(req.url)
-  if (pathname !== '/v3/smtp/email') return new Response('not found', { status: 404 })
-  return postBrevoEmail({ request: req })
-}
+// pointed at `<public url>/v3` and its fetch is routed to the in-process route handlers.
 
 describeDb('Brevo SDK contract', (ctx) => {
   let client: BrevoClient
   let seed: Awaited<ReturnType<typeof provisionBrevo>>
   const sdk = (apiKey: string) =>
-    new BrevoClient({ apiKey, baseUrl: BASE_URL, fetch: inProcessFetch, maxRetries: 0 })
+    new BrevoClient({ apiKey, baseUrl: BREVO_TEST_BASE_URL, fetch: brevoFetch, maxRetries: 0 })
   const stored = async (messageId: string | undefined) => {
     const [row] = await ctx.db
       .select()
@@ -109,6 +99,22 @@ describeDb('Brevo SDK contract', (ctx) => {
       code: 'missing_parameter',
       message: 'sender: sender is required when templateId is absent',
     })
+  })
+
+  it('refuses a reused idempotencyKey as Brevo.BadRequestError duplicate_parameter (D279)', async () => {
+    const request = {
+      sender: { email: 'hello@example.com' },
+      to: [{ email: 'jane@x.io' }],
+      subject: 'Once',
+      textContent: 'x',
+      headers: { idempotencyKey: 'd4e5f6a7-b8c9-4d4e-9f5a-6b7c8d9e0f1a' },
+    }
+    expect((await client.transactionalEmails.sendTransacEmail(request)).messageId).toBeDefined()
+    const error = await client.transactionalEmails
+      .sendTransacEmail(request)
+      .catch((e: unknown) => e)
+    expect(error).toBeInstanceOf(Brevo.BadRequestError)
+    expect((error as BrevoError).body).toMatchObject({ code: 'duplicate_parameter' })
   })
 
   it('surfaces an unknown key as a 401 BrevoError', async () => {

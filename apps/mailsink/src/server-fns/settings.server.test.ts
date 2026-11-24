@@ -20,7 +20,7 @@ describe('eventCatalog', () => {
     expect(catalog.brevo.find((c) => c.name === 'hardBounce')?.events).toEqual([
       'email.hard_bounced',
     ])
-    expect(catalog.brevo.some((c) => c.events.includes('email.failed'))).toBe(false)
+    expect(catalog.brevo.find((c) => c.name === 'invalid')?.events).toEqual(['email.failed'])
   })
 })
 

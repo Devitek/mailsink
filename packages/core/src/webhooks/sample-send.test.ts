@@ -33,8 +33,10 @@ describeDb('webhook preview and test send', (ctx) => {
       event: 'hard_bounce',
       reason: expect.any(String),
     })
+    const invalid = await previewWebhook(ctx.db, ws, { payloadFormat: 'brevo', event: 'invalid' })
+    expect(JSON.parse(invalid.body)).toMatchObject({ event: 'invalid_email' })
     await expect(
-      previewWebhook(ctx.db, ws, { payloadFormat: 'brevo', event: 'email.failed' }),
+      previewWebhook(ctx.db, ws, { payloadFormat: 'resend', event: 'email.suppressed' }),
     ).rejects.toMatchObject({ code: 'validation_error' })
   })
 

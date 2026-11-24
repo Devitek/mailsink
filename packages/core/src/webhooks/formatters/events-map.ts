@@ -31,7 +31,8 @@ const MAP: Record<CanonicalEvent, Row> = {
   'email.opened': { resend: 'email.opened', brevo: 'opened', brevoSubscription: 'opened' },
   'email.clicked': { resend: 'email.clicked', brevo: 'click', brevoSubscription: 'click' },
   'email.suppressed': { resend: null, brevo: 'blocked', brevoSubscription: 'blocked' },
-  'email.failed': { resend: 'email.failed', brevo: null, brevoSubscription: null },
+  // Brevo's only failure event is an invalid address (proposition D277): `invalid_email`.
+  'email.failed': { resend: 'email.failed', brevo: 'invalid_email', brevoSubscription: 'invalid' },
 }
 
 const CANONICAL = CanonicalEvent.options
@@ -41,6 +42,7 @@ const BREVO_ALIASES: Record<string, CanonicalEvent> = {
   sent: 'email.sent',
   soft_bounce: 'email.soft_bounced',
   hard_bounce: 'email.hard_bounced',
+  invalid_email: 'email.failed',
 }
 
 /** Emitted name of `canonical` in `format`, or null when the format has no equivalent. */

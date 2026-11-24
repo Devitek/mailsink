@@ -20,7 +20,27 @@ describe('brevo formatter', () => {
     })
     expect(payload['message-id']).toMatch(/^<.+@smtp-relay\.mailin\.fr>$/)
     expect(brevoDate(now, 'Not/AZone')).toBe('2026-11-23 10:00:00')
-    expect(brevoFormatter.eventName('email.failed')).toBeNull()
+  })
+
+  it('emits a failed send as invalid_email, without a reason (Brevo payload)', () => {
+    expect(brevoFormatter.eventName('email.failed')).toBe('invalid_email')
+    const payload = BrevoWebhookPayload.parse(
+      JSON.parse(brevoFormatter.serialize(ctx('email.failed'))),
+    )
+    expect(payload.event).toBe('invalid_email')
+    expect(payload.reason).toBeUndefined()
+  })
+
+  it('reads X-Mailin-custom from the message headers, whatever its case', () => {
+    const base = ctx('email.delivered')
+    const withHeader = (headers: Record<string, string>, metadata = {}) =>
+      JSON.parse(
+        brevoFormatter.serialize({ ...base, message: { ...base.message, headers, metadata } }),
+      )
+    expect(withHeader({ 'X-Mailin-custom': 'order:42' })['X-Mailin-custom']).toBe('order:42')
+    expect(withHeader({ 'x-mailin-custom': 'smtp' })['X-Mailin-custom']).toBe('smtp')
+    expect(withHeader({}, { 'X-Mailin-custom': 'legacy' })['X-Mailin-custom']).toBe('legacy')
+    expect(withHeader({})).not.toHaveProperty('X-Mailin-custom')
   })
 
   it('authenticates with bearer or basic auth and custom headers, never a signature', () => {

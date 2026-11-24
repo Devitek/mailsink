@@ -8,6 +8,7 @@ import type {
 import type { WebhookAttempt, WebhookDelivery, WebhookEndpoint } from '@mailsink/db'
 import { dialectNames, sortCanonical, unsupportedEvents } from './formatters/events-map'
 import { webhookSecretPreview } from './secret'
+import { redactUrl } from './url-credentials'
 
 export function toEndpointView(row: WebhookEndpoint): WebhookEndpointView {
   const canonical = sortCanonical(row.events as CanonicalEvent[])
@@ -17,7 +18,7 @@ export function toEndpointView(row: WebhookEndpoint): WebhookEndpointView {
     id: row.id,
     numericId: row.numericId,
     connectionId: row.connectionId,
-    url: row.url,
+    url: redactUrl(row.url), // a row stored before D278 may hold credentials
     payloadFormat: row.payloadFormat,
     events: dialectNames(row.payloadFormat, canonical),
     canonicalEvents: canonical,
@@ -60,7 +61,7 @@ export function toDeliveryView(
     lastStatusCode: row.lastStatusCode,
     replayOf: row.replayOf,
     replayMode: row.replayMode,
-    endpointUrl: facts.endpointUrl,
+    endpointUrl: facts.endpointUrl === null ? null : redactUrl(facts.endpointUrl),
     durationMs: facts.durationMs,
     createdAt: row.createdAt.toISOString(),
   }

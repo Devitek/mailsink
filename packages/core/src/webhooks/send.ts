@@ -1,4 +1,5 @@
 import { WEBHOOK_RESPONSE_MAX_CHARS, WEBHOOK_TIMEOUT_MS } from './retry'
+import { basicAuthorization, splitUrlCredentials } from './url-credentials'
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>
 
@@ -8,6 +9,20 @@ export interface SendResult {
   durationMs: number
   /** Network failure, timeout, TLS…: no HTTP status. */
   error: string | null
+}
+
+/**
+ * Credentials left in a URL stored before D278 (`fetch` refuses them): sent as the
+ * `Authorization` header unless the attempt already has one.
+ */
+function withoutUrlCredentials(url: string, headers: Record<string, string>) {
+  const { url: bare, basic } = splitUrlCredentials(url)
+  if (!basic) return { url, headers }
+  const hasAuth = Object.keys(headers).some((k) => k.toLowerCase() === 'authorization')
+  return {
+    url: bare,
+    headers: hasAuth ? headers : { ...headers, Authorization: basicAuthorization(basic) },
+  }
 }
 
 /**
@@ -23,10 +38,11 @@ export async function sendWebhook(
   const doFetch = options.fetch ?? fetch
   const started = performance.now()
   const elapsed = () => Math.round(performance.now() - started)
+  const target = withoutUrlCredentials(url, headers)
   try {
-    const response = await doFetch(url, {
+    const response = await doFetch(target.url, {
       method: 'POST',
-      headers,
+      headers: target.headers,
       body,
       redirect: 'manual',
       signal: AbortSignal.timeout(options.timeoutMs ?? WEBHOOK_TIMEOUT_MS),

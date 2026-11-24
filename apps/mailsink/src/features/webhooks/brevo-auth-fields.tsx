@@ -38,6 +38,12 @@ export function BrevoAuthFields({ values, onChange, errors, stored }: BrevoAuthF
         value={values.brevoAuthType}
         onValueChange={(type) => onChange('brevoAuthType', type)}
       />
+      <p className="m-0 text-xs text-ms-text-muted">
+        <Trans>
+          Credentials written in the URL (<code>https://user:password@host/…</code>) become Basic
+          auth when saved, as Brevo accepts them.
+        </Trans>
+      </p>
       {values.brevoAuthType === 'bearer' && (
         <TextField
           label={<Trans>Token</Trans>}

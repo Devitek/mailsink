@@ -11,6 +11,8 @@ export interface MessageForWebhook {
   to: string[]
   subject: string
   tags: { name: string; value: string }[]
+  /** Headers kept at ingestion (`X-Mailin-custom` of the Brevo format). */
+  headers: Record<string, string>
   metadata: Record<string, unknown>
   templateId: number | null
   createdAt: Date

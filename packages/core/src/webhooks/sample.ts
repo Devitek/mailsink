@@ -15,6 +15,7 @@ export function sampleMessage(now: Date): MessageForWebhook {
     to: ['jane@example.com'],
     subject: 'Mailsink test event',
     tags: [{ name: 'category', value: 'test' }],
+    headers: {},
     metadata: {},
     templateId: null,
     createdAt: now,

@@ -35,7 +35,7 @@ accepts.
 | Scheme | Header | Routes |
 | --- | --- | --- |
 | `connectionKey` | `Authorization: Bearer msk_…` | Ingestion (`/v1`, `/emails`, `/v3`); the Capture API too |
-| `brevoApiKey` | `api-key: msk_…` | Brevo drop-in (`POST /v3/smtp/email`) |
+| `brevoApiKey` | `api-key: msk_…` | Brevo drop-in (`/v3/smtp/*`) |
 | `workspaceKey` | `Authorization: Bearer mskw_…` | Capture API |
 | `adminKey` | `Authorization: Bearer <MAILSINK_ADMIN_KEY>` | Admin API |
 | `adminKey` + `workspaceHeader` | Admin key and `X-Mailsink-Workspace: <id or slug>` | Capture API, any workspace |

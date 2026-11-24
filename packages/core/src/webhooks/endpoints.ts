@@ -25,6 +25,7 @@ import {
   checkCustomHeaders,
   checkEndpointUrl,
   normalizeEvents,
+  urlAuth,
 } from './endpoint-input'
 import { generateWebhookSecret } from './secret'
 import type { UrlGuard } from './url-guard'
@@ -63,17 +64,18 @@ export async function createWebhookEndpoint(
   const payloadFormat = input.payloadFormat ?? defaultPayloadFormat(scope)
   const events = normalizeEvents(payloadFormat, input.events)
   checkBrevoAuth(payloadFormat, input.brevoAuth)
+  const { url, brevoAuth } = urlAuth(payloadFormat, input.url, input.brevoAuth)
   checkCustomHeaders(input.customHeaders ?? [])
-  await checkEndpointUrl(options.urlGuard, input.url)
+  await checkEndpointUrl(options.urlGuard, url)
   const auth =
     payloadFormat === 'brevo'
-      ? brevoSecret(input.brevoAuth)
+      ? brevoSecret(brevoAuth)
       : { brevoAuth: 'none' as const, secret: generateWebhookSecret() }
   const row = await insertWebhookEndpoint(db, {
     id: newId('whe'),
     workspaceId,
     connectionId: input.connectionId,
-    url: input.url,
+    url,
     payloadFormat,
     events,
     ...auth,
@@ -117,14 +119,16 @@ export async function patchWebhookEndpoint(
   if (patch.connectionId !== undefined) await scopeOf(db, workspaceId, patch.connectionId)
   const format = patch.payloadFormat ?? row.payloadFormat
   checkBrevoAuth(format, patch.brevoAuth)
+  const fromUrl = patch.url === undefined ? undefined : urlAuth(format, patch.url, patch.brevoAuth)
+  const brevoAuth = fromUrl ? fromUrl.brevoAuth : patch.brevoAuth
   if (patch.customHeaders) checkCustomHeaders(patch.customHeaders)
-  if (patch.url !== undefined) await checkEndpointUrl(options.urlGuard, patch.url)
+  if (fromUrl) await checkEndpointUrl(options.urlGuard, fromUrl.url)
   if (patch.rotateSecret && format === 'brevo') {
     throw new DomainError('validation_error', 'Brevo endpoints have no signing secret')
   }
   const set: WebhookEndpointUpdate = {
     connectionId: patch.connectionId,
-    url: patch.url,
+    url: fromUrl?.url,
     payloadFormat: patch.payloadFormat,
     events: patch.events ? normalizeEvents(format, patch.events) : undefined,
     description: patch.description,
@@ -133,7 +137,7 @@ export async function patchWebhookEndpoint(
   }
   let secret: string | null = null
   if (format === 'brevo') {
-    if (patch.brevoAuth) Object.assign(set, brevoSecret(patch.brevoAuth))
+    if (brevoAuth) Object.assign(set, brevoSecret(brevoAuth))
     else if (row.payloadFormat !== 'brevo') Object.assign(set, brevoSecret(undefined))
   } else if (row.payloadFormat === 'brevo' || patch.rotateSecret) {
     secret = generateWebhookSecret()

@@ -14,7 +14,7 @@ describe('webhook event mapping', () => {
     expect(toDialect('resend', 'email.suppressed')).toBeNull()
     expect(toDialect('brevo', 'email.hard_bounced')).toBe('hard_bounce')
     expect(toDialect('brevo', 'email.complained')).toBe('spam')
-    expect(toDialect('brevo', 'email.failed')).toBeNull()
+    expect(toDialect('brevo', 'email.failed')).toBe('invalid_email')
     expect(toDialect('unified', 'email.failed')).toBe('email.failed')
   })
 
@@ -28,19 +28,34 @@ describe('webhook event mapping', () => {
     expect(toCanonical('brevo', 'sent')).toEqual(['email.sent'])
     expect(toCanonical('brevo', 'request')).toEqual(['email.sent'])
     expect(toCanonical('brevo', 'email.failed')).toEqual(['email.failed'])
+    expect(toCanonical('brevo', 'invalid')).toEqual(['email.failed'])
+    expect(toCanonical('brevo', 'invalid_email')).toEqual(['email.failed'])
     expect(toCanonical('unified', 'email.bounced')).toEqual([])
     expect(toCanonical('resend', 'nope')).toEqual([])
   })
 
   it('reports names and unsupported events of a stored subscription', () => {
-    const stored = ['email.failed', 'email.deferred', 'email.soft_bounced', 'email.sent'] as const
+    const stored = [
+      'email.failed',
+      'email.deferred',
+      'email.soft_bounced',
+      'email.sent',
+      'email.suppressed',
+    ] as const
     expect(dialectNames('resend', stored)).toEqual([
       'email.sent',
       'email.delivery_delayed',
       'email.failed',
     ])
-    expect(dialectNames('brevo', stored)).toEqual(['request', 'deferred', 'softBounce'])
-    expect(unsupportedEvents('brevo', stored)).toEqual(['email.failed'])
+    expect(dialectNames('brevo', stored)).toEqual([
+      'request',
+      'deferred',
+      'softBounce',
+      'blocked',
+      'invalid',
+    ])
+    expect(unsupportedEvents('brevo', stored)).toEqual([])
+    expect(unsupportedEvents('resend', stored)).toEqual(['email.suppressed'])
     expect(unsupportedEvents('unified', stored)).toEqual([])
   })
 

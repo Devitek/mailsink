@@ -46,6 +46,7 @@ function codesOf(route: RouteSpec): ErrorCode[] {
 function statusesOf(code: ErrorCode, route: RouteSpec): number[] {
   const dialect = route.errorDialect ?? 'native'
   if (code === 'chaos_injected') return CHAOS_STATUSES
+  if (dialect === 'brevo' && code === 'idempotency_mismatch') return [400] // D279
   if (code === 'validation_error') {
     if (dialect === 'brevo') return [400]
     // 400: an unreadable JSON body, or the Admin key without X-Mailsink-Workspace.
