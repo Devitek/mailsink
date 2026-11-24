@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   checkDist,
+  countFigures,
   countMermaidBlocks,
   hasRawMermaid,
   internalTargets,
@@ -19,13 +20,19 @@ function site(files: Record<string, string>): string {
   return dir
 }
 
-const figure = '<figure class="ms-mermaid"><div></div></figure>'
+const figure =
+  '<figure class="ms-mermaid"><pre class="ms-mermaid-source">graph TD\n  A --&gt; B</pre></figure>'
 
 describe('raw mermaid detection', () => {
   it('spots a block highlighted as code by Expressive Code or Shiki', () => {
     expect(hasRawMermaid('<pre data-language="mermaid"><code>graph</code></pre>')).toBe(true)
     expect(hasRawMermaid('<pre><code class="language-mermaid">graph</code></pre>')).toBe(true)
     expect(hasRawMermaid(`${figure}<pre data-language="ts"></pre>`)).toBe(false)
+  })
+
+  it('counts only figures holding a diagram source the browser can render', () => {
+    const empty = '<figure class="ms-mermaid"><pre class="ms-mermaid-source"> \n</pre></figure>'
+    expect(countFigures(`${figure}${empty}<figure class="ms-mermaid"></figure>${figure}`)).toBe(2)
   })
 
   it('counts the mermaid fences of a source, tildes and longer fences included', () => {
@@ -70,7 +77,7 @@ describe('checkDist', () => {
     expect(checkDist({ dir, diagrams: new Map([['architecture/sequence', 2]]) })).toEqual([
       'architecture/sequence/index.html: mermaid block left as code',
       'index.html: broken link to /api/operations/gone/',
-      'architecture/sequence/index.html: 1 rendered diagrams, 2 in the source',
+      'architecture/sequence/index.html: 1 renderable diagrams, 2 in the source',
     ])
   })
 })

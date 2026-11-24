@@ -38,12 +38,10 @@ with relative links between them as usual (they work on GitHub and are rewritten
 site). A new page is declared in `apps/docs/scripts/pages.ts`. Pushes to `main` publish the
 site to https://mailsink.devitek.fr.
 
-Mermaid diagrams (```` ```mermaid ```` blocks) render on GitHub as usual and as SVG on the
-site: `docs:build` runs Mermaid in the Playwright Chromium, so install it once with
-`pnpm --filter @mailsink/docs exec playwright install chromium`, or build in the Playwright
-image on a host without its system libraries. `docs:dev` works without the browser and
-leaves the diagrams as code. The build fails on a diagram that does not parse: a `;` inside
-a message ends the statement for Mermaid, write `,` instead.
+Mermaid diagrams (```` ```mermaid ```` blocks) render on GitHub as usual and in the reader's
+browser on the site, in the light or dark theme of its selector, with `docs:dev` as with
+`docs:build`; no browser is needed to build the site. The build fails on a diagram that does
+not parse: a `;` inside a message ends the statement for Mermaid, write `,` instead.
 
 `pnpm install` builds native helpers only for the packages listed under `allowBuilds` in
 `pnpm-workspace.yaml` (today `esbuild`, needed by Vite and drizzle-kit): pnpm 11 refuses

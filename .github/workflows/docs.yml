@@ -39,23 +39,10 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Mermaid diagrams are rendered to SVG at build in a headless Chromium (D270). Browser
-      # binaries are cached per Playwright version; their system libraries are not.
-      - name: Playwright version
-        id: playwright
-        run: echo "version=$(pnpm --filter @mailsink/docs exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v6
-        id: browsers
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-      - if: steps.browsers.outputs.cache-hit != 'true'
-        run: pnpm --filter @mailsink/docs exec playwright install --with-deps --only-shell chromium
-      - if: steps.browsers.outputs.cache-hit == 'true'
-        run: pnpm --filter @mailsink/docs exec playwright install-deps chromium
       # Syncs the repository Markdown and the OpenAPI document, builds the site and fails on
-      # a broken internal link (starlight-links-validator, D269), a diagram left as code or a
-      # link to a missing file of the built site, API reference included (D270, D272).
+      # a broken internal link (starlight-links-validator, D269), a Mermaid diagram that does
+      # not parse or is not emitted for the browser to render, or a link to a missing file of
+      # the built site, API reference included (D270, D272). No browser needed.
       - run: pnpm --filter @mailsink/docs build
         env:
           ASTRO_TELEMETRY_DISABLED: 1

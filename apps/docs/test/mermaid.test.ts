@@ -1,14 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { markdownToHtml } from 'satteri'
 import { describe, expect, it, vi } from 'vitest'
+import { exposeWidth, themeOf } from '../src/mermaid/client'
+import { parseDiagram } from '../src/mermaid/parse'
 import { FIGURE_CLASS, type MermaidPluginOptions, mermaidPlugin } from '../src/mermaid/plugin'
-import { exposeWidth } from '../src/mermaid/render'
 import { readColors, themeVariables } from '../src/mermaid/theme'
 
 const page = [
   '```mermaid',
   'sequenceDiagram',
-  '  A->>B: hi',
+  '  A->>B: a < b & c',
   '```',
   '',
   '```ts',
@@ -20,9 +21,6 @@ const page = [
   '> ```',
 ].join('\n')
 
-const fake: MermaidPluginOptions['render'] = async (diagram, theme, id) =>
-  `<svg id="${id}" data-theme="${theme}">${diagram.split('\n')[0]}</svg>`
-
 async function html(options: MermaidPluginOptions): Promise<string> {
   const result = await markdownToHtml(page, {
     mdastPlugins: [mermaidPlugin(options)],
@@ -31,36 +29,56 @@ async function html(options: MermaidPluginOptions): Promise<string> {
   return result.html
 }
 
+const valid = () => Promise.resolve()
+
 describe('mermaidPlugin', () => {
-  it('replaces every mermaid block, nested ones included, by a light and a dark SVG', async () => {
-    const out = await html({ render: fake })
+  it('turns every mermaid block, nested ones included, into a figure holding its source', async () => {
+    const out = await html({ parse: valid })
     expect(out.match(new RegExp(`<figure class="${FIGURE_CLASS}">`, 'g'))).toHaveLength(2)
-    expect(out).toMatch(
-      new RegExp(
-        `<div class="${FIGURE_CLASS}-light"><svg id="mermaid-light-[0-9a-f]{10}" data-theme="light">sequenceDiagram</svg></div><div class="${FIGURE_CLASS}-dark"><svg id="mermaid-dark-[0-9a-f]{10}" data-theme="dark">`,
-      ),
+    expect(out).toContain(
+      `<figure class="${FIGURE_CLASS}"><pre class="${FIGURE_CLASS}-source">sequenceDiagram\n  A-&gt;&gt;B: a &lt; b &amp; c</pre></figure>`,
     )
     expect(out).toContain('<blockquote>')
     expect(out).toContain('language-ts')
     expect(out).not.toContain('language-mermaid')
   })
 
-  it('gives each diagram its own id, so the styles Mermaid scopes by id never collide', async () => {
-    const out = await html({ render: fake })
-    const ids = [...out.matchAll(/id="(mermaid-[a-z]+-[0-9a-f]+)"/g)].map((match) => match[1])
-    expect(new Set(ids).size).toBe(4)
+  it('fails the build when a diagram does not parse, naming the page', async () => {
+    const parse = () => Promise.reject(new Error('Parse error on line 2'))
+    await expect(html({ parse })).rejects.toThrow(/\/docs\/x\.md: mermaid diagram does not parse/)
   })
 
-  it('fails the build when a diagram does not render, naming the page', async () => {
-    const render = () => Promise.reject(new Error('Parse error on line 2'))
-    await expect(html({ render })).rejects.toThrow(/\/docs\/x\.md: mermaid rendering failed/)
-  })
-
-  it('leaves the blocks as code and reports when an error handler is given (dev server)', async () => {
+  it('reports and keeps the figure when an error handler is given (dev server)', async () => {
     const onError = vi.fn()
-    const out = await html({ render: () => Promise.reject(new Error('no browser')), onError })
+    const out = await html({ parse: () => Promise.reject(new Error('bad')), onError })
     expect(onError).toHaveBeenCalledWith(expect.any(Error), '/docs/x.md')
-    expect(out).toContain('language-mermaid')
+    expect(out.match(new RegExp(`<figure class="${FIGURE_CLASS}">`, 'g'))).toHaveLength(2)
+  })
+})
+
+describe('parseDiagram', () => {
+  it('parses with Mermaid in Node, without a browser', async () => {
+    await expect(parseDiagram('sequenceDiagram\n  A->>B: hi, there')).resolves.toBeTruthy()
+  })
+
+  it('rejects a broken diagram, such as a `;` inside a message', async () => {
+    await expect(parseDiagram('sequenceDiagram\n  A->>B: hi; there')).rejects.toThrow(/Parse/)
+  })
+})
+
+describe('client helpers', () => {
+  it('follows the Starlight theme, light unless dark', () => {
+    expect(themeOf('dark')).toBe('dark')
+    expect(themeOf('light')).toBe('light')
+    expect(themeOf(undefined)).toBe('light')
+  })
+
+  it('hands the diagram width to the stylesheet through a CSS variable on the root SVG', () => {
+    const svg = '<svg id="m" width="100%" style="max-width: 4693.6px;"><g style="x"></g></svg>'
+    expect(exposeWidth(svg)).toBe(
+      '<svg id="m" width="100%" style="--mermaid-width: 4694px; max-width: 4693.6px;"><g style="x"></g></svg>',
+    )
+    expect(exposeWidth('<svg id="m"></svg>')).toBe('<svg id="m"></svg>')
   })
 })
 
@@ -93,14 +111,5 @@ describe('themeVariables', () => {
 
   it('fails when a token it needs has no hex value', () => {
     expect(() => themeVariables(css, 'dark')).toThrow(/--ms-panel/)
-  })
-})
-
-describe('exposeWidth', () => {
-  it('hands the diagram width to the stylesheet through a CSS variable on the root SVG', () => {
-    const svg = '<svg id="m" width="100%" style="max-width: 4694px;"><g style="x"></g></svg>'
-    expect(exposeWidth(svg, 4693.6)).toBe(
-      '<svg id="m" width="100%" style="--mermaid-width: 4694px; max-width: 4694px;"><g style="x"></g></svg>',
-    )
   })
 })

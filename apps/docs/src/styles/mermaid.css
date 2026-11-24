@@ -1,7 +1,7 @@
-/* Mermaid figures (src/mermaid/remark.ts, D270): each diagram is rendered once per theme;
- * the one matching `data-theme` on <html> shows. A diagram fits the column down to 70 % of
- * its own size (`--mermaid-width`, set by src/mermaid/render.ts), then scrolls, so the text
- * of a wide one stays readable. */
+/* Mermaid figures (src/mermaid/plugin.ts, D270): the source shows until the browser has
+ * drawn the diagram (src/mermaid/client.ts), then gives way to it. A diagram fits the column
+ * down to 70 % of its own size (`--mermaid-width`, set by the client), then scrolls, so the
+ * text of a wide one stays readable. */
 .ms-mermaid {
   margin-inline: 0;
   padding: var(--ms-space-4);
@@ -11,18 +11,20 @@
   border-radius: var(--ms-radius-md);
 }
 
+.ms-mermaid-source {
+  margin: 0;
+  font-family: var(--ms-font-mono);
+  color: var(--ms-text-muted);
+  white-space: pre;
+}
+
+.ms-mermaid[data-rendered] .ms-mermaid-source {
+  display: none;
+}
+
 .ms-mermaid svg {
   display: block;
   width: max(100%, calc(var(--mermaid-width) * 0.7));
   height: auto;
   margin-inline: auto;
-}
-
-.ms-mermaid-dark,
-[data-theme="dark"] .ms-mermaid-light {
-  display: none;
-}
-
-[data-theme="dark"] .ms-mermaid-dark {
-  display: block;
 }
