@@ -1,0 +1,91 @@
+{
+  "name": "@devitek/mailsink-vitest",
+  "version": "0.1.0",
+  "description": "Vitest and Jest helpers for Mailsink: an ephemeral workspace per test file or worker, and matchers for received emails, statuses and links",
+  "keywords": [
+    "mailsink",
+    "email",
+    "testing",
+    "vitest",
+    "jest",
+    "matchers"
+  ],
+  "license": "MIT",
+  "author": "Devitek",
+  "homepage": "https://github.com/Devitek/mailsink/tree/main/packages/vitest#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Devitek/mailsink.git",
+    "directory": "packages/vitest"
+  },
+  "bugs": "https://github.com/Devitek/mailsink/issues",
+  "type": "module",
+  "sideEffects": [
+    "./src/setup.ts",
+    "./dist/setup.js"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./setup": "./src/setup.ts",
+    "./global-setup": "./src/global-setup.ts",
+    "./jest": "./src/jest.ts",
+    "./matchers": "./src/matchers/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./setup": {
+        "types": "./dist/setup.d.ts",
+        "import": "./dist/setup.js"
+      },
+      "./global-setup": {
+        "types": "./dist/global-setup.d.ts",
+        "import": "./dist/global-setup.js"
+      },
+      "./jest": {
+        "types": "./dist/jest.d.ts",
+        "import": "./dist/jest.js"
+      },
+      "./matchers": {
+        "types": "./dist/matchers.d.ts",
+        "import": "./dist/matchers.js"
+      },
+      "./package.json": "./package.json"
+    },
+    "types": "./dist/index.d.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "@devitek/mailsink": "workspace:*"
+  },
+  "peerDependencies": {
+    "vitest": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@mailsink/contracts": "workspace:*",
+    "@mailsink/core": "workspace:*",
+    "@mailsink/db": "workspace:*",
+    "jest": "^30.5.2",
+    "tsdown": "^0.23.7",
+    "vitest": "^5.1.1"
+  }
+}
