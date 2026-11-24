@@ -381,7 +381,8 @@ mailsink/
 │   │       │                 demo set through persistEmails, per-message rules (D210, D211)
 │   │       ├── dialects/     native.ts smtp.ts resend.ts (to NormalizedEmail)
 │   │       │                 resend-ingest.ts resend-read.ts (POST /emails, GET /emails/:id)
-│   │       │                 brevo/{normalize,send,read}.ts (read: #149)
+│   │       │                 brevo/{normalize,send,read,days}.ts (read: #149; days:
+│   │       │                 calendar days of the workspace timezone, D284)
 │   │       ├── templates/    render.ts service.ts views.ts         # Brevo {{ params.x }}, #30
 │   │       ├── events-api/   manual.ts (POST …/events, #34) engagement.ts (opened / clicked)
 │   │       │                 publish-trigger.ts (triggerAndPublishEvent, D180)
@@ -446,7 +447,9 @@ mailsink/
 │   │   ├── scripts/generate-types.ts      # `generate:types`: writes types.ts and
 │   │   │                                  # test/types-fidelity.ts (D260)
 │   │   ├── test/                          # Vitest on the real routes (@mailsink/app/testing),
-│   │   │                                  # openapi-responses.test.ts (answers vs registry, D262)
+│   │   │                                  # openapi-responses.test.ts and
+│   │   │                                  # openapi-brevo-responses.test.ts (answers vs
+│   │   │                                  # registry, D262, through openapi-check.ts)
 │   │   └── tsdown.config.ts               # dist/index.js (contracts bundled) + index.d.ts
 │   ├── playwright/                        # npm @devitek/mailsink-playwright (#126, D240 to D244)
 │   │   ├── src/                           # fixtures.ts (mailsinkWorkspace per worker,
