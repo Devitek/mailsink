@@ -1,0 +1,65 @@
+/* Starlight theme on the Mailsink tokens (docs/design/brand-1/tokens/tokens.css, loaded
+ * before this file). Both use `data-theme` on <html>, so each --ms-* value already follows
+ * the light or dark theme and one mapping serves both (D267). */
+:root,
+::backdrop {
+  --sl-font: var(--ms-font-sans);
+  --sl-font-mono: var(--ms-font-mono);
+
+  /* Starlight's gray scale runs from the strongest text (white) to the page (black). */
+  --sl-color-white: var(--ms-text);
+  --sl-color-gray-1: var(--ms-text);
+  --sl-color-gray-2: var(--ms-text);
+  --sl-color-gray-3: var(--ms-text-muted);
+  --sl-color-gray-4: var(--ms-text-faint);
+  --sl-color-gray-5: var(--ms-border-strong);
+  --sl-color-gray-6: var(--ms-border);
+  --sl-color-gray-7: var(--ms-raised);
+  --sl-color-black: var(--ms-bg);
+
+  --sl-color-accent-low: var(--ms-hover);
+  --sl-color-accent: var(--ms-accent);
+  --sl-color-accent-high: var(--ms-accent-text);
+
+  --sl-color-text: var(--ms-text);
+  --sl-color-text-accent: var(--ms-accent-text);
+  --sl-color-text-invert: var(--ms-on-accent);
+  --sl-color-bg: var(--ms-bg);
+  --sl-color-bg-nav: var(--ms-panel);
+  --sl-color-bg-sidebar: var(--ms-panel);
+  --sl-color-bg-inline-code: var(--ms-hover);
+  --sl-color-bg-accent: var(--ms-accent);
+  --sl-color-hairline-light: var(--ms-border);
+  --sl-color-hairline: var(--ms-border);
+  --sl-color-hairline-shade: var(--ms-border-strong);
+}
+
+/* The wordmark: lowercase, semibold, tight tracking (BRAND.md). */
+.site-title {
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: var(--ms-text);
+}
+
+/* Accent fills carry their own text color: the current page in the sidebar and the
+ * primary call to action are yellow with ink text in both themes. */
+.sidebar-content a[aria-current="page"],
+.sl-link-button.primary {
+  background-color: var(--ms-accent);
+  border-color: var(--ms-accent);
+  color: var(--ms-on-accent);
+}
+
+.sl-link-button {
+  border-radius: var(--ms-radius-md);
+}
+
+.hero .tagline {
+  color: var(--ms-text-muted);
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}

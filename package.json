@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "pnpm --filter @mailsink/app dev",
-    "build": "pnpm -r build",
+    "build": "pnpm -r --filter '!@mailsink/docs' build",
+    "docs:dev": "pnpm --filter @mailsink/docs dev",
+    "docs:build": "pnpm --filter @mailsink/docs build",
     "start": "pnpm --filter @mailsink/app start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

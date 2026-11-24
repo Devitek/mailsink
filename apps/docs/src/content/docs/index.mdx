@@ -1,0 +1,60 @@
+---
+title: mailsink
+description: Every email caught. None delivered. The sandbox for your transactional email.
+template: splash
+hero:
+  tagline: Every email caught. None delivered. The sandbox for your transactional email.
+  image:
+    file: ../../../../../docs/design/brand-1/logo/svg/mark.svg
+    alt: ''
+  actions:
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+    - text: API reference
+      link: /api/
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/Devitek/mailsink
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components'
+import QuickStart from '../../generated/quick-start.md'
+
+{/* Introduction and quick start come from README.md (`scripts/sync.ts`). */}
+
+<QuickStart />
+
+Then open http://localhost:3000 and sign in with the admin key. The
+[getting started page](/getting-started/) covers PostgreSQL, ports, STARTTLS and a first
+captured email.
+
+## What it does
+
+<CardGrid>
+  <Card title="Drop-in for provider SDKs" icon="rocket">
+    Resend and Brevo SDKs or any SMTP client send to Mailsink with a base URL or host
+    change.
+  </Card>
+  <Card title="Ephemeral workspaces for CI" icon="puzzle">
+    One isolated, self-expiring workspace per test worker, reset between tests.
+  </Card>
+  <Card title="Failure simulation" icon="warning">
+    Force bounces, latency, rate limits and chaos errors through temporary overrides.
+  </Card>
+  <Card title="Assert over HTTP or MCP" icon="approve-check">
+    Wait for an email, extract links and codes, check signed webhooks, from tests or AI
+    agents.
+  </Card>
+</CardGrid>
+
+## Next steps
+
+<CardGrid>
+  <LinkCard title="End-to-end testing" href="/guides/e2e/" description="Playwright fixtures, one workspace per worker." />
+  <LinkCard title="TypeScript SDK" href="/guides/sdk/" description="waitFor, links and codes, overrides, webhooks." />
+  <LinkCard title="AI agents (MCP)" href="/guides/mcp/" description="Claude Code, Claude Desktop or Cursor on a workspace." />
+  <LinkCard title="Architecture" href="/architecture/" description="Design, schema, contracts and the decision log." />
+</CardGrid>
