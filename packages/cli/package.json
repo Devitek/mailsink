@@ -22,7 +22,7 @@
   "bugs": "https://github.com/Devitek/mailsink/issues",
   "type": "module",
   "bin": {
-    "mailsink": "./dist/bin.mjs"
+    "mailsink": "dist/bin.mjs"
   },
   "files": [
     "dist"
