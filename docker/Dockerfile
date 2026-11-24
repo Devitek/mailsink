@@ -46,15 +46,17 @@ RUN pnpm fetch --frozen-lockfile
 FROM deps AS build
 COPY . .
 RUN pnpm install --offline --frozen-lockfile && pnpm build
-# The CLI bin keeps drizzle-orm, pg and PGlite external (packages/cli/tsdown.config.ts):
-# deploy it with its production dependencies installed next to dist/. Not --offline: pnpm
+# The CLI bin keeps its dependencies external (packages/cli/tsdown.config.ts): deploy it
+# with its production dependencies next to dist/, plus @mailsink/db for the drivers of
+# `migrate` (optional peers of the npm CLI, D251). Not --offline: pnpm
 # checks the deploy lockfile against its supply-chain policies, which needs registry
 # metadata (publish dates) that `pnpm fetch` does not cache; the packages themselves come
 # from the store filled by `pnpm fetch` (#114). Selected by folder, not by name: the CLI is
 # published to npm as `@devitek/mailsink-cli` (#128).
-RUN pnpm --filter ./packages/cli deploy --prod /deploy/cli
+RUN pnpm --filter ./packages/cli deploy --prod /deploy/cli \
+    && pnpm --filter @mailsink/db deploy --prod /deploy/db
 # Guard of the build platform stages: no native addon may reach the runtime from here.
-RUN if find apps/mailsink/.output /deploy/cli -name '*.node' | grep .; then \
+RUN if find apps/mailsink/.output /deploy/cli /deploy/db/node_modules -name '*.node' | grep .; then \
       echo 'native addon in the build output: install it in the runtime stage' >&2; exit 1; fi
 
 FROM node:24-slim AS runtime
@@ -69,6 +71,9 @@ RUN groupadd --system --gid 1001 mailsink \
     && mkdir /app/data && chown mailsink:mailsink /app/data
 COPY --from=build --chown=root:root /repo/apps/mailsink/.output ./.output
 COPY --from=build --chown=root:root /deploy/cli ./packages/cli
+# The database drivers of `mailsink migrate` (drizzle-orm, pg, PGlite) are optional peers
+# of the npm CLI (D251); the image ships them, resolved from /app/node_modules.
+COPY --from=build --chown=root:root /deploy/db/node_modules ./node_modules
 RUN ln -s /app/packages/cli/dist/bin.mjs /usr/local/bin/mailsink \
     && chmod +x /app/packages/cli/dist/bin.mjs
 USER mailsink

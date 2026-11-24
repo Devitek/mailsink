@@ -6,6 +6,8 @@ own ephemeral workspace, the application sends as it does in production, the tes
 the captured email, opens its links in the page, forces bounces with an override, and
 everything is cleaned up. The helpers are built on the TypeScript SDK
 ([`@devitek/mailsink`](sdk.md)); another runner can use the SDK directly, the same way.
+Outside a test runner (shell steps of a CI pipeline), the [command line](cli.md) does the
+same: `mailsink workspace create --ephemeral`, `mailsink wait`, `mailsink override set`.
 
 The recipe is executable: `apps/mailsink/tests/e2e/recipe/` in this repository runs it in
 CI against the production build (see [Running the example](#running-the-example)).

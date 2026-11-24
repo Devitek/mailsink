@@ -4,7 +4,7 @@
 import { createInterface } from 'node:readline'
 import type { Readable, Writable } from 'node:stream'
 import { type FetchLike, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
-import type { Io } from '../index'
+import type { Io } from '../output'
 
 export interface McpProxyOptions {
   /** Base URL of the instance (`MAILSINK_URL`) or its `/mcp` endpoint. */

@@ -25,7 +25,7 @@ describe('mailsink cli', () => {
 
   it('fails on an unknown command', async () => {
     const { lines, io } = capture()
-    expect(await run(['nope'], {}, io)).toBe(1)
+    expect(await run(['nope'], {}, io)).toBe(2)
     expect(lines.join('\n')).toMatch(/Unknown command "nope"/)
   })
 

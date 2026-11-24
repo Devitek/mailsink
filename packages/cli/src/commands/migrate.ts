@@ -1,6 +1,6 @@
 import { createDb, DEFAULT_DATABASE_URL, migrate } from '@mailsink/db'
-import type { Io } from '../index'
 import { bundledMigrationsFolder } from '../migrations-folder'
+import type { Io } from '../output'
 
 export interface MigrateCommandOptions {
   databaseUrl?: string
