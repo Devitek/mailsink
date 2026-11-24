@@ -5,6 +5,8 @@ document, generated from the same Zod contracts the server validates with: nativ
 (`/v1`), the Resend and Brevo drop-ins, the Admin API, the Capture API (messages, events,
 override, suppressions, webhooks, logs, demo data, stream) and the public routes. Use it to
 browse the API, to generate a client in another language, or to check your own client.
+The documentation website renders it as the
+[API reference](https://mailsink.devitek.fr/api/), one page per operation.
 
 ## 1. Get the document
 

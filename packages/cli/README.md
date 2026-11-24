@@ -46,7 +46,8 @@ Settings come from flags or from `MAILSINK_URL`, `MAILSINK_ADMIN_KEY`, `MAILSINK
 `MAILSINK_WORKSPACE`. Exit codes: `0` success, `1` failure, `2` invalid command line, `3`
 `wait` timed out.
 
-Full guide: [docs/guides/cli.md](https://github.com/Devitek/mailsink/blob/main/docs/guides/cli.md).
+Full guide: [command line](https://mailsink.devitek.fr/guides/cli/) in the
+[Mailsink documentation](https://mailsink.devitek.fr).
 
 ## License
 

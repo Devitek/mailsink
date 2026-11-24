@@ -5,7 +5,7 @@
 worker gets its own ephemeral workspace, every test waits for the emails your application
 sends, opens their links in the page, reads their one-time codes and forces bounces.
 
-- Built on the TypeScript SDK [`@devitek/mailsink`](../sdk/README.md): the `mailsink`
+- Built on the TypeScript SDK [`@devitek/mailsink`](https://mailsink.devitek.fr/guides/sdk/): the `mailsink`
   fixture is an SDK client.
 - One ephemeral workspace per worker, created through the Admin API, reset before each test,
   deleted when the worker ends, with an idle TTL as safety net for killed runs.
@@ -139,6 +139,11 @@ test.describe('a failing provider', () => {
 
 `withOverride(config, fn)` only lasts for `fn`. Before each test, every override of the
 workspace is reset anyway.
+
+## Documentation
+
+The [end-to-end testing guide](https://mailsink.devitek.fr/guides/e2e/) of the
+[Mailsink documentation](https://mailsink.devitek.fr) walks through a complete suite.
 
 ## License
 

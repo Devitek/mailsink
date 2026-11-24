@@ -16,7 +16,7 @@
   <a href="#installation">Installation</a> ·
   <a href="#usage">Usage</a> ·
   <a href="#npm-packages">npm packages</a> ·
-  <a href="#documentation">Documentation</a> ·
+  <a href="https://mailsink.devitek.fr">Documentation</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -168,6 +168,10 @@ any instance, or the `openapi.json` attached to each
 - Web UI in English and French.
 
 ## Documentation
+
+The documentation website, [mailsink.devitek.fr](https://mailsink.devitek.fr), renders
+the guides, the API reference (OpenAPI) and the architecture notes below. Its sources are
+the Markdown files of this repository.
 
 - [Architecture overview and decision log](docs/architecture/README.md)
 - [Project tree](docs/architecture/01-project-tree.md) ·
