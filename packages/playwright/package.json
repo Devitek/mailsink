@@ -1,6 +1,6 @@
 {
   "name": "@devitek/mailsink-playwright",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Playwright fixtures and matchers for Mailsink: one ephemeral workspace per worker, expectEmail, links, one-time codes and overrides",
   "keywords": [
     "mailsink",

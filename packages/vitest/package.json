@@ -1,6 +1,6 @@
 {
   "name": "@devitek/mailsink-vitest",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Vitest and Jest helpers for Mailsink: an ephemeral workspace per test file or worker, and matchers for received emails, statuses and links",
   "keywords": [
     "mailsink",

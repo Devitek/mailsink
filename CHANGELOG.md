@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0](https://github.com/Devitek/mailsink/compare/v0.2.0...v0.3.0) (2026-11-24)
+
+
+### Features
+
+* **docs:** rend les diagrammes Mermaid du site et solde les suivis du site et de la Phase 5 ([#150](https://github.com/Devitek/mailsink/issues/150)) ([#151](https://github.com/Devitek/mailsink/issues/151)) ([c7ec886](https://github.com/Devitek/mailsink/commit/c7ec886adf428553ae58ffef81991035ba2741b3))
+* **ingestion:** complète le dialecte Brevo, lecture des envois, contacts bloqués et webhooks ([#149](https://github.com/Devitek/mailsink/issues/149)) ([#152](https://github.com/Devitek/mailsink/issues/152)) ([27b9617](https://github.com/Devitek/mailsink/commit/27b961726ad08cdc520ad08caa6d78e042b4cdb1))
+* **simulation:** ajoute l'adresse invalide email.invalid et solde les suivis de la vague 0.3 ([#153](https://github.com/Devitek/mailsink/issues/153)) ([#158](https://github.com/Devitek/mailsink/issues/158)) ([da6f15a](https://github.com/Devitek/mailsink/commit/da6f15a6f1b86a1e9de8c62132064cf60e8e5ddd))
+
 ## [0.2.0](https://github.com/Devitek/mailsink/compare/v0.1.0...v0.2.0) (2026-11-24)
 
 

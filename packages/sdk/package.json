@@ -1,6 +1,6 @@
 {
   "name": "@devitek/mailsink",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "TypeScript SDK for Mailsink, the email sink for staging and CI: admin, capture, overrides, webhooks, logs and the live stream",
   "keywords": [
     "mailsink",
