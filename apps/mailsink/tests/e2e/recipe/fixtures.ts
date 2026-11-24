@@ -10,7 +10,7 @@ import { ADMIN_KEY, BASE_URL } from '../web-server'
 export const mailsinkOptions: MailsinkWorkspaceOptions = { url: BASE_URL, adminKey: ADMIN_KEY }
 
 export interface SentEmail {
-  to: string
+  to: string | string[]
   subject: string
   html?: string
   text?: string

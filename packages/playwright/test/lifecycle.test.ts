@@ -77,6 +77,13 @@ describeDb('Playwright helpers: workspace and session', (ctx) => {
       // Answered right after storage: the simulation delivers it a moment later.
       const status = await mailsinkMatchers.toHaveStatus.call(state(), email, 'delivered')
       expect(status.pass).toBe(true)
+      const recipient = { recipient: 'JANE@example.com' }
+      const jane = await mailsinkMatchers.toHaveStatus.call(state(), email, 'delivered', recipient)
+      expect(jane.pass).toBe(true)
+      const nobody = { recipient: 'nobody@example.com', timeout: 300 }
+      const missing = await mailsinkMatchers.toHaveStatus.call(state(), email, 'sent', nobody)
+      expect(missing.pass).toBe(false)
+      expect(missing.message()).toContain('Received: (no recipient nobody@example.com)')
 
       const error = await client
         .expectEmail({ subject: 'Never' }, { timeout: 300 })
