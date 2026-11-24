@@ -15,6 +15,7 @@
 <p align="center">
   <a href="#installation">Installation</a> ·
   <a href="#usage">Usage</a> ·
+  <a href="#npm-packages">npm packages</a> ·
   <a href="#documentation">Documentation</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
@@ -134,6 +135,27 @@ test worker, reset between tests, forced bounces through overrides. The
 [MCP guide](docs/guides/mcp.md) connects Claude Code, Claude Desktop or Cursor to a
 workspace.
 
+## npm packages
+
+Test tooling for Node, published under the `@devitek` scope with the version of the
+server (SDK `x.y.z` matches server `x.y.z`):
+
+| Package | What it does | Guide |
+| --- | --- | --- |
+| [`@devitek/mailsink`](packages/sdk) | TypeScript SDK: workspaces, `waitFor`, links and codes, overrides, webhooks, live stream | [SDK guide](docs/guides/sdk.md) |
+| [`@devitek/mailsink-playwright`](packages/playwright) | Playwright fixtures: one ephemeral workspace per worker | [E2E guide](docs/guides/e2e.md) |
+| [`@devitek/mailsink-vitest`](packages/vitest) | Vitest and Jest helpers and matchers | [Vitest and Jest guide](docs/guides/vitest-jest.md) |
+| [`@devitek/mailsink-cli`](packages/cli) | `mailsink` command for CI scripts and the MCP stdio proxy | [CLI guide](docs/guides/cli.md) |
+
+```sh
+npm install --save-dev @devitek/mailsink
+```
+
+Other languages generate a client from the OpenAPI 3.1 document: `GET /openapi.json` on
+any instance, or the `openapi.json` attached to each
+[GitHub release](https://github.com/Devitek/mailsink/releases) (see the
+[HTTP API guide](docs/guides/api.md)).
+
 ## Features
 
 - Workspaces: persistent for staging, ephemeral with an idle TTL for CI.
@@ -154,6 +176,10 @@ workspace.
   [Sequence](docs/architecture/04-sequence.md) ·
   [Roadmap](docs/architecture/05-roadmap.md)
 - [Design deliveries and brand](docs/design/README.md)
+- [HTTP API and OpenAPI document](docs/guides/api.md)
+- [TypeScript SDK](docs/guides/sdk.md) ·
+  [Vitest and Jest helpers](docs/guides/vitest-jest.md) ·
+  [CLI](docs/guides/cli.md)
 - [Testing your app with Mailsink (E2E guide)](docs/guides/e2e.md)
 - [Driving Mailsink from an AI agent (MCP guide)](docs/guides/mcp.md)
 - [Translating the web UI](docs/contributing/translations.md)

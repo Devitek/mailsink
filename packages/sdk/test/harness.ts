@@ -1,11 +1,10 @@
 // Shared setup of the SDK integration tests: the app runtime on the test database (both
 // drivers through describeDb), its HTTP routes on a loopback port, an admin client and a
 // fresh workspace with one Resend connection.
+import { ADMIN_KEY, installTestRuntime, stopRuntime } from '@mailsink/app/testing'
 import { createJobRunner, simulateDeliveryHandler, startWorker, type Worker } from '@mailsink/core'
 import type { DbTestContext } from '@mailsink/db/testing'
 import { afterAll, beforeAll } from 'vitest'
-import { ADMIN_KEY, installTestRuntime } from '../../../apps/mailsink/src/http/test-fixtures'
-import { stopRuntime } from '../../../apps/mailsink/src/runtime/boot'
 import { createMailsink, type Mailsink } from '../src'
 import { startTestServer, type TestServer } from './server'
 

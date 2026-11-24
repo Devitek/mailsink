@@ -5,6 +5,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import type { AddressInfo, Socket } from 'node:net'
 import { Readable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
+import { routesDir } from '@mailsink/app/testing'
 
 type Handler = (input: { request: Request; params: Record<string, string> }) => Promise<Response>
 interface Route {
@@ -13,7 +14,6 @@ interface Route {
   handlers: Record<string, Handler>
 }
 
-const routesDir = new URL('../../../apps/mailsink/src/routes/', import.meta.url)
 // The HTTP API only: UI pages and the MCP endpoint are not the SDK's business.
 const API_FILE = /^(admin|capture|v1)\..*\.ts$/
 
