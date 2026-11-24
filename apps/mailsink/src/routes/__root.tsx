@@ -1,7 +1,7 @@
 import { I18nProvider } from '@lingui/react'
 import { ToastProvider } from '@mailsink/ui'
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
-import { type ReactNode, useMemo } from 'react'
+import { type ReactNode, useEffect, useMemo } from 'react'
 import { createI18n, loadCatalog } from '../i18n/lingui'
 import { getRequestLocale } from '../i18n/locale-fns'
 import type { Locale } from '../i18n/locales'
@@ -68,6 +68,11 @@ function RootComponent() {
 
 function RootDocument({ locale, children }: Readonly<{ locale: Locale; children: ReactNode }>) {
   const { theme } = useTheme()
+  // `data-hydrated` on <html> once React owns the page: before that, a click lands on the
+  // inert server HTML and is lost. The e2e helper `gotoHydrated` waits for it (D263).
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = ''
+  }, [])
   return (
     <html lang={locale} data-theme={theme}>
       <head>
