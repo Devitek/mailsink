@@ -78,10 +78,16 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: .github/scripts/pack-public.sh "$RUNNER_TEMP/npm"
+      # npm refuses a dry run over a version already on the registry: between releases the
+      # current version is published, so the dry run runs under a CI-only prerelease version.
       - name: npm publish --dry-run
         run: |
           for tarball in "$RUNNER_TEMP"/npm/*.tgz; do
-            npm publish --dry-run --provenance=false "$tarball"
+            dir=$(mktemp -d)
+            tar -xzf "$tarball" -C "$dir"
+            (cd "$dir/package" \
+              && npm version --no-git-tag-version "$(node -p "require('./package.json').version")-ci.${GITHUB_RUN_ID}" >/dev/null \
+              && npm publish --dry-run --provenance=false --tag ci)
           done
       - uses: actions/upload-artifact@v7
         with:
