@@ -10,7 +10,7 @@ import { toSummary } from '../capture/views'
 import type { StreamFrame } from './bus'
 
 // One `message_events` row gives exactly one frame with the row id, live and on replay
-// (proposition D80): `accepted` -> `message.created`, any other type -> `message.event`.
+// (D80): `accepted` -> `message.created`, any other type -> `message.event`.
 
 export function toEventView(row: MessageEventRow): MessageEventView {
   return {

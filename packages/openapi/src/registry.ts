@@ -29,7 +29,7 @@ const UI_SESSION = 'Web UI only: session cookie of the signed-in browser, not a 
 const MCP = 'MCP Streamable HTTP (JSON-RPC), described by MCP itself: docs/guides/mcp.md.'
 
 /**
- * Server routes deliberately left out of the document (proposition D232). The coverage
+ * Server routes deliberately left out of the document (D232). The coverage
  * test fails on a route that is in neither list, and on an entry here that no longer exists.
  */
 export const UNDOCUMENTED_ROUTES: readonly UndocumentedRoute[] = [

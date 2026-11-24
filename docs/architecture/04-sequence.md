@@ -52,7 +52,7 @@ sequenceDiagram
 
   Note over Q: polls jobs FOR UPDATE SKIP LOCKED
   Q->>DB: claim simulate_delivery
-  Q->>S: first run: effective settings (overrides active now), per recipient<br/>rule match first, else weighted draw; status + delay (D70, D71)
+  Q->>S: first run: effective settings (overrides active now), per recipient<br/>rule match first, else weighted draw, then status + delay (D70, D71)
   Q->>DB: TX (message locked): queued -> event sent, decisions in messages.simulation,<br/>aggregate message.status, follow-up job at the earliest pending decision,<br/>webhook_deliveries rows + deliver_webhook jobs of the run's events (D152)
   Note over Q: follow-up run, once a delay is over
   Q->>DB: TX: event + final status per due recipient,<br/>hard_bounce/complained -> suppressions upsert,<br/>deferred -> decided again 1 s + delay later (4th: soft_bounce, D72),<br/>next follow-up job if a decision is pending,<br/>automatic opened / clicked of the delivered recipients (D143),<br/>webhook_deliveries rows + deliver_webhook jobs (D152)
@@ -62,7 +62,7 @@ sequenceDiagram
   Q->>W: claim deliver_webhook
   W->>W: formatters[payloadFormat].sign(stored body, attempt timestamp)<br/>unified: X-Mailsink-* · resend: svix-* · brevo: Authorization / custom headers
   opt MAILSINK_WEBHOOK_BLOCK_PRIVATE=true
-    W->>W: resolve the URL host; a private, loopback or link-local address<br/>is a final failed attempt, nothing sent (D150, D155)
+    W->>W: resolve the URL host: a private, loopback or link-local address<br/>is a final failed attempt, nothing sent (D150, D155)
   end
   W->>C: POST endpoint URL (10 s timeout, redirects not followed)
   alt 2xx
@@ -72,7 +72,7 @@ sequenceDiagram
   end
   W->>B: publish webhook.delivery
 
-  B-->>U: SSE event (id = evt_… for message events; none for derived frames)
+  B-->>U: SSE event (id = evt_… for message events, none for derived frames)
   U->>U: Query: setQueryData(inbox) / invalidate(message, logs)
   U->>U: wait=true and MCP wait_for_email resolve on match
 
@@ -84,7 +84,7 @@ sequenceDiagram
 
   opt Webhook test send and replay
     U->>R: POST /capture/webhooks/:id/test | POST /capture/webhooks/deliveries/:id/replay
-    R->>DB: delivery (test: sample body, one attempt sent at once, D140;<br/>replay: deliver_webhook job, exact or resign, D139)
+    R->>DB: delivery (test: sample body, one attempt sent at once, D140<br/>or replay: deliver_webhook job, exact or resign, D139)
     R->>B: publish webhook.delivery
   end
 
@@ -198,7 +198,7 @@ sequenceDiagram
   R-->>Br: data: StreamEvent
   Br->>Q: applyStreamEvent: prepend message.created to matching lists, write statuses
   Br->>Q: invalidate only what the frame names (message.event and webhook.delivery:
-  Note over Br,Q: the viewer of their messageId; log.*: facets), coalesced over 250 ms
+  Note over Br,Q: the viewer of their messageId, log.*: facets), coalesced over 250 ms
   Q->>F: refetch the observed queries, previews of new rows in one batch
 ```
 

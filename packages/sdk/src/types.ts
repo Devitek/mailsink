@@ -231,6 +231,7 @@ export type CreateWorkspaceInput = {
         subject: string
         html?: string | null | undefined
         text?: string | null | undefined
+        /** Default sender of the emails sent with this template, unless the request sets one. */
         sender?:
           | string
           | {
@@ -239,6 +240,7 @@ export type CreateWorkspaceInput = {
             }
           | null
           | undefined
+        /** Brevo `templateId`; the next free id of the workspace when absent. */
         externalId?: unknown
       }[]
     | undefined
@@ -372,6 +374,7 @@ export type CreateWorkspaceResult = {
 }
 export type ListWorkspacesParams = {
   includeEphemeral?: boolean | undefined
+  /** Keyset cursor: the `nextCursor` of the previous page, the id of its last workspace. */
   cursor?: string | undefined
   limit?: number | undefined
 }
@@ -928,6 +931,7 @@ export type TemplateInput = {
   subject: string
   html?: string | null | undefined
   text?: string | null | undefined
+  /** Default sender of the emails sent with this template, unless the request sets one. */
   sender?:
     | string
     | {
@@ -936,6 +940,7 @@ export type TemplateInput = {
       }
     | null
     | undefined
+  /** Brevo `templateId`; the next free id of the workspace when absent. */
   externalId?: unknown
 }
 export type TemplatePatch = {
@@ -1206,7 +1211,9 @@ export type MessageDetail = {
     lastStatusCode: number | null
     replayOf: string | null
     replayMode: 'exact' | 'resign' | null
+    /** Current URL of the endpoint; null when the endpoint is unknown to the producer. */
     endpointUrl: string | null
+    /** Duration of the last attempt; null before the first attempt. */
     durationMs: number | null
     createdAt: string
   }[]
@@ -1296,6 +1303,7 @@ export type SeedDemoInput = {
 }
 export type SeedDemoResult = {
   count: number
+  /** Ids of the stored messages, oldest first. */
   messageIds: string[]
 }
 export type DeliveryStatus =
@@ -1558,6 +1566,7 @@ export type SuppressionPage = {
     email: string
     reason: 'complained' | 'hard_bounce' | 'manual'
     messageId: string | null
+    /** Connection of the message that put the address on the list; null without one. */
     connectionId: string | null
     createdAt: string
   }[]
@@ -1786,6 +1795,7 @@ export type ListWebhookDeliveriesParams = {
   status?: 'failed' | 'pending' | 'retrying' | 'succeeded' | undefined
   limit?: number | undefined
   cursor?: string | undefined
+  /** Page number (pages of `limit`); when given, `cursor` is ignored (UI pager, #112). */
   page?: number | undefined
 }
 export type WebhookDeliveryPage = {
@@ -1814,7 +1824,9 @@ export type WebhookDeliveryPage = {
     lastStatusCode: number | null
     replayOf: string | null
     replayMode: 'exact' | 'resign' | null
+    /** Current URL of the endpoint; null when the endpoint is unknown to the producer. */
     endpointUrl: string | null
+    /** Duration of the last attempt; null before the first attempt. */
     durationMs: number | null
     createdAt: string
   }[]
@@ -1846,7 +1858,9 @@ export type WebhookDelivery = {
   lastStatusCode: number | null
   replayOf: string | null
   replayMode: 'exact' | 'resign' | null
+  /** Current URL of the endpoint; null when the endpoint is unknown to the producer. */
   endpointUrl: string | null
+  /** Duration of the last attempt; null before the first attempt. */
   durationMs: number | null
   createdAt: string
 }
@@ -1875,7 +1889,9 @@ export type WebhookDeliveryDetail = {
   lastStatusCode: number | null
   replayOf: string | null
   replayMode: 'exact' | 'resign' | null
+  /** Current URL of the endpoint; null when the endpoint is unknown to the producer. */
   endpointUrl: string | null
+  /** Duration of the last attempt; null before the first attempt. */
   durationMs: number | null
   createdAt: string
   body: string
@@ -1951,6 +1967,7 @@ export type ApiLogDetail = {
     [x: string]: string
   }
   requestBody: unknown
+  /** Headers of the answer (rate limit, request id…); empty for calls logged before #112. */
   responseHeaders: {
     [x: string]: string
   }
@@ -2108,7 +2125,9 @@ export type StreamEvent =
         lastStatusCode: number | null
         replayOf: string | null
         replayMode: 'exact' | 'resign' | null
+        /** Current URL of the endpoint; null when the endpoint is unknown to the producer. */
         endpointUrl: string | null
+        /** Duration of the last attempt; null before the first attempt. */
         durationMs: number | null
         createdAt: string
       }

@@ -14,3 +14,7 @@ data
 playwright-report
 test-results
 docker/docker-compose.yml
+# Documentation site: built by docs.yml, never in the image; the manifest keeps the
+# workspace consistent with the lockfile (docker/Dockerfile).
+apps/docs/*
+!apps/docs/package.json

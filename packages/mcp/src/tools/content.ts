@@ -1,4 +1,4 @@
-// Content tools (proposition D180): get_email_source (raw MIME, the EML of
+// Content tools (D180): get_email_source (raw MIME, the EML of
 // `GET /capture/messages/:id/raw`) and get_email_attachment (`GET
 // /capture/messages/:id/attachments/:attId`). Both answer an embedded resource whose URI is
 // the absolute download URL, plus a JSON summary for clients that skip resources.

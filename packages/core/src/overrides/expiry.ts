@@ -1,7 +1,7 @@
 import { closeExpiredOverrides, type Database, type Override } from '@mailsink/db'
 import { startWorker, type Worker } from '../jobs/worker'
 
-/** Proposition D74: overrides past their TTL are closed within 5 s. */
+/** D74: overrides past their TTL are closed within 5 s. */
 export const OVERRIDE_EXPIRY_INTERVAL_MS = 5_000
 
 /**
