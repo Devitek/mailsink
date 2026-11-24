@@ -1,3 +1,4 @@
+import { gotoHydrated } from './goto-hydrated'
 import { booking, expect, test } from './inbox-fixtures'
 import { signIn } from './ui/fixtures'
 import { BASE_URL } from './web-server'
@@ -7,7 +8,7 @@ import { BASE_URL } from './web-server'
 test('a message sent while the inbox is open appears without reload', async ({ page, inbox }) => {
   const ws = await inbox()
   await signIn(page)
-  await page.goto(`/w/${ws.slug}`)
+  await gotoHydrated(page, `/w/${ws.slug}`)
   await expect(page.getByRole('heading', { name: `Empty inbox for ${ws.slug}` })).toBeVisible()
   await expect(page.getByRole('status').filter({ hasText: 'SSE Live' })).toBeVisible()
 
@@ -40,7 +41,7 @@ test('filters live in the URL and survive a reload', async ({ page, inbox }) => 
     tags: [],
   })
   await signIn(page)
-  await page.goto(`/w/${ws.slug}`)
+  await gotoHydrated(page, `/w/${ws.slug}`)
   const list = page.getByRole('list', { name: 'Messages' })
   await expect(list.getByRole('link')).toHaveCount(2)
 
@@ -70,7 +71,7 @@ test('the viewer simulates events and shows every part of the message', async ({
   const ws = await inbox()
   const id = await ws.send(booking)
   await signIn(page)
-  await page.goto(`/w/${ws.slug}?m=${id}`)
+  await gotoHydrated(page, `/w/${ws.slug}?m=${id}`)
   await expect(page.getByRole('heading', { name: booking.subject })).toBeVisible()
 
   // Preview: sandboxed without any allowance, the captured script never runs.
@@ -113,7 +114,7 @@ test('purging the inbox asks for confirmation', async ({ page, inbox }) => {
   const ws = await inbox()
   await ws.send(booking)
   await signIn(page)
-  await page.goto(`/w/${ws.slug}`)
+  await gotoHydrated(page, `/w/${ws.slug}`)
   await page.getByRole('button', { name: 'Purge the inbox' }).click()
   await page.getByRole('button', { name: 'Confirm the purge (1)' }).click()
   await expect(page.getByRole('heading', { name: `Empty inbox for ${ws.slug}` })).toBeVisible()
@@ -142,7 +143,7 @@ test('screenshots of the inbox', async ({ page, inbox }) => {
   await signIn(page)
   for (const theme of ['light', 'dark']) {
     await page.context().addCookies([{ name: 'mailsink_theme', value: theme, url: BASE_URL }])
-    await page.goto(`/w/${ws.slug}?m=${id}`)
+    await gotoHydrated(page, `/w/${ws.slug}?m=${id}`)
     await expect(page.getByRole('heading', { name: booking.subject })).toBeVisible()
     await expect(page.getByRole('list', { name: 'Messages' }).getByText('delivered')).toHaveCount(3)
     await expect(page.getByRole('status').filter({ hasText: 'SSE Live' })).toBeVisible()

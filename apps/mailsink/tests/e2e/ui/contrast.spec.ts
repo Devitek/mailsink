@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test'
+import { gotoHydrated } from '../goto-hydrated'
 import { BASE_URL } from '../web-server'
 import { expect, signIn, test } from './fixtures'
 
@@ -38,7 +39,7 @@ for (const theme of ['light', 'dark'] as const) {
   test(`accent text and errors are readable in the ${theme} theme`, async ({ page, context }) => {
     await context.addCookies([{ name: 'mailsink_theme', value: theme, url: BASE_URL }])
     await signIn(page)
-    await page.goto('/w/no-such-workspace')
+    await gotoHydrated(page, '/w/no-such-workspace')
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
 
     const pairs: [string, string][] = [

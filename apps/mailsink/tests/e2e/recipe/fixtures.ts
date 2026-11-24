@@ -43,5 +43,3 @@ export const test = base.extend<{ app: App }>({
 })
 
 export { expect, getCode, getLink, openLink } from '@devitek/mailsink-playwright'
-// Kept for the UI scenarios that create their own workspaces.
-export { adminContext, createWorkspace, deleteWorkspace, type E2eWorkspace } from './api-context'

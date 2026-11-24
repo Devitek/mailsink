@@ -1,3 +1,4 @@
+import { gotoHydrated } from './goto-hydrated'
 import { expect, signIn, test } from './ui/fixtures'
 import { BASE_URL } from './web-server'
 
@@ -13,7 +14,7 @@ for (const theme of ['light', 'dark'] as const) {
     const ws = await workspace()
     await context.addCookies([{ name: 'mailsink_theme', value: theme, url: BASE_URL }])
     await signIn(page)
-    await page.goto(`/w/${ws.slug}/connections`)
+    await gotoHydrated(page, `/w/${ws.slug}/connections`)
     await page.getByLabel('Name', { exact: true }).fill('resend-transactional')
     await page.getByRole('button', { name: 'Create the connection' }).click()
     await expect(page.getByTestId('secret-value')).toContainText('msk_')
@@ -28,7 +29,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByTestId('env-snippet')).toContainText('RESEND_API_KEY=msk_')
     await page.screenshot({ path: `${dir}/connections-masked-${theme}.png`, fullPage: true })
 
-    await page.goto('/')
+    await gotoHydrated(page, '/')
     await page.getByRole('button', { name: 'New workspace' }).click()
     const dialog = page.getByRole('dialog', { name: 'New persistent workspace' })
     await dialog.getByLabel('Name').fill('Billing Service Staging')

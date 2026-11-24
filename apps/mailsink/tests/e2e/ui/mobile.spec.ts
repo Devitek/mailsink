@@ -1,3 +1,4 @@
+import { gotoHydrated } from '../goto-hydrated'
 import { booking, expect, test } from '../inbox-fixtures'
 import { signIn } from './fixtures'
 
@@ -12,7 +13,7 @@ test('at 390 px the tabs stay reachable and the inbox shows one pane at a time',
   const ws = await inbox()
   await ws.send(booking)
   await signIn(page)
-  await page.goto(`/w/${ws.slug}`)
+  await gotoHydrated(page, `/w/${ws.slug}`)
   await expect(page).toHaveTitle(`Inbox · ${ws.slug} · Mailsink`)
 
   const tabs = page.getByRole('navigation', { name: 'Workspace' })

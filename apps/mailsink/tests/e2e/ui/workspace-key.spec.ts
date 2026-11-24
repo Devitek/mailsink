@@ -1,3 +1,4 @@
+import { gotoHydrated } from '../goto-hydrated'
 import { expect, signIn, test } from './fixtures'
 
 // Workspace key rotation from the connections page (#106) and the copy toast.
@@ -9,7 +10,7 @@ test('rotates the mskw_ key: the new one reads the Capture API, the old one is r
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   const ws = await workspace()
   await signIn(page)
-  await page.goto(`/w/${ws.slug}/connections`)
+  await gotoHydrated(page, `/w/${ws.slug}/connections`)
 
   const card = page.getByRole('region', { name: 'Workspace key' })
   await expect(card).toContainText('mskw_')

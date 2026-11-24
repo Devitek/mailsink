@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { gotoHydrated } from './goto-hydrated'
 
 // Baseline of the sign-in screen, the first page a signed-out visitor sees (brief 2 copy).
 const TAGLINE = {
@@ -10,7 +11,7 @@ const TAGLINE = {
 test.use({ locale: 'fr-FR' })
 
 test('Accept-Language fr renders the page in French', async ({ page }) => {
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
   await expect(page.getByText(TAGLINE.fr)).toBeVisible()
   await expect(page.getByRole('heading', { name: "Connexion à l'instance" })).toBeVisible()
@@ -27,7 +28,7 @@ test('switching to English updates the page in place and is remembered', async (
   page,
   context,
 }) => {
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   await expect(page.getByText(TAGLINE.fr)).toBeVisible()
   // Typed text survives the switch: no reload, the form keeps its state.
   await page.getByLabel("Clé d'administration").fill('msk_admin_typed')

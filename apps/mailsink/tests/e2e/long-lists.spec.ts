@@ -1,7 +1,8 @@
-import type { APIRequestContext } from '@playwright/test'
-import { createWorkspace, deleteWorkspace } from './recipe/fixtures'
+import type { Mailsink } from '@devitek/mailsink'
+import { gotoHydrated } from './goto-hydrated'
 import { expect, signIn, test } from './ui/fixtures'
 import { BASE_URL } from './web-server'
+import { createWorkspace, deleteWorkspace } from './workspace-api'
 
 // Long lists (#118): the templates section past its first page of 200, the suppression
 // list past the 200 rows the DataTable renders at once (virtualised beyond), and the logs
@@ -10,14 +11,13 @@ import { BASE_URL } from './web-server'
 const ADDRESSES = 210
 
 /** Every suppressed address, in list order (newest first), through the Capture API. */
-async function suppressedAddresses(capture: APIRequestContext): Promise<string[]> {
+async function suppressedAddresses(sink: Mailsink): Promise<string[]> {
   const all: string[] = []
-  let cursor: string | null = null
+  let cursor: string | undefined
   do {
-    const query: string = cursor ? `&cursor=${cursor}` : ''
-    const page = await (await capture.get(`/capture/suppressions?limit=200${query}`)).json()
-    all.push(...page.data.map((s: { email: string }) => s.email))
-    cursor = page.nextCursor
+    const page = await sink.suppressions.list({ limit: 200, cursor })
+    all.push(...page.data.map((s) => s.email))
+    cursor = page.nextCursor ?? undefined
   } while (cursor)
   return all
 }
@@ -36,7 +36,7 @@ test('the templates section loads the templates past its first page', async ({ p
   const { workspace } = await res.json()
   try {
     await signIn(page)
-    await page.goto(`/w/${workspace.slug}/settings?section=templates`)
+    await gotoHydrated(page, `/w/${workspace.slug}/settings?section=templates`)
     await expect(page.getByRole('status').filter({ hasText: 'SSE Live' })).toBeVisible()
     const rows = page.getByTestId('template-row')
     await expect(rows).toHaveCount(200)
@@ -52,20 +52,18 @@ test('the templates section loads the templates past its first page', async ({ p
 test('the suppression list renders only the rows in view past 200', async ({
   page,
   playwright,
-  admin,
 }) => {
   test.slow()
-  const ws = await createWorkspace(playwright, admin, `long ${Date.now()}`)
+  const ws = await createWorkspace(`long ${Date.now()}`)
   const ingest = await playwright.request.newContext({
     baseURL: BASE_URL,
     extraHTTPHeaders: { authorization: `Bearer ${ws.connectionKey}` },
   })
   try {
-    const slug = (await (await admin.get(`/admin/workspaces/${ws.id}`)).json()).slug
-    const rule = await ws.capture.post('/capture/override', {
-      data: { config: { rules: [{ match: '*@bounce.test', status: 'hard_bounce' }] } },
+    const { slug } = ws
+    await ws.sink.overrides.activate({
+      rules: [{ match: '*@bounce.test', status: 'hard_bounce' }],
     })
-    expect(rule.ok(), await rule.text()).toBe(true)
     const emails = Array.from({ length: ADDRESSES }, (_, i) => ({
       from: 'app@example.test',
       to: `user${String(i).padStart(3, '0')}@bounce.test`,
@@ -77,12 +75,12 @@ test('the suppression list renders only the rows in view past 200', async ({
       expect(sent.ok(), await sent.text()).toBe(true)
     }
     await expect
-      .poll(async () => (await suppressedAddresses(ws.capture)).length, { timeout: 60_000 })
+      .poll(async () => (await suppressedAddresses(ws.sink)).length, { timeout: 60_000 })
       .toBe(ADDRESSES)
-    const ordered = await suppressedAddresses(ws.capture)
+    const ordered = await suppressedAddresses(ws.sink)
 
     await signIn(page)
-    await page.goto(`/w/${slug}/suppressions`)
+    await gotoHydrated(page, `/w/${slug}/suppressions`)
     // Hydrated (the stream only connects in the browser) before « Load more » is clicked.
     await expect(page.getByRole('status').filter({ hasText: 'SSE Live' })).toBeVisible()
     await expect(page.getByTestId('suppression-total')).toHaveText(`${ADDRESSES} addresses`)

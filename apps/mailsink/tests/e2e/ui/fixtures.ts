@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { type APIRequestContext, test as base, expect, type Page } from '@playwright/test'
 import { issueSessionToken } from '../../../src/auth/session-token'
-import { adminContext, deleteWorkspace } from '../recipe/fixtures'
 import { ADMIN_KEY, BASE_URL, SESSION_SECRET } from '../web-server'
+import { adminContext, deleteWorkspace } from '../workspace-api'
 
 // Fixtures of the web UI scenarios: workspaces created through the Admin API (deleted after
 // the test) and a signed-in browser through POST /login, as the sign-in screen does.

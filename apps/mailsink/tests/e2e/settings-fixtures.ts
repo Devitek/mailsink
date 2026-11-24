@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto'
 import { createServer, type IncomingHttpHeaders } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { Page } from '@playwright/test'
-import { deleteWorkspace } from './recipe/fixtures'
+import { gotoHydrated } from './goto-hydrated'
 import { expect, test as ui } from './ui/fixtures'
+import { deleteWorkspace } from './workspace-api'
 
 // Fixtures of the settings scenarios (#43): a workspace with a Resend and an SMTP
 // connection (deleted afterwards) and a local webhook receiver (nothing leaves the host).
@@ -35,7 +36,7 @@ export const test = ui.extend<{ settingsWorkspace: SettingsWorkspace }>({
  * lost on a loaded host left a dialog closed).
  */
 export async function openSettings(page: Page, slug: string, section: string): Promise<void> {
-  await page.goto(`/w/${slug}/settings?section=${section}`)
+  await gotoHydrated(page, `/w/${slug}/settings?section=${section}`)
   await expect(page.getByRole('status').filter({ hasText: 'SSE Live' })).toBeVisible()
 }
 

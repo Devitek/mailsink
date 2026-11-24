@@ -1,3 +1,4 @@
+import { gotoHydrated } from './goto-hydrated'
 import { expect, test } from './settings-fixtures'
 import { signIn } from './ui/fixtures'
 import { BASE_URL } from './web-server'
@@ -17,12 +18,12 @@ for (const theme of ['light', 'dark'] as const) {
       page.screenshot({ path: `${dir}/settings-${name}-${theme}.png`, fullPage: true })
 
     for (const section of ['connections', 'retention', 'simulation', 'mcp'] as const) {
-      await page.goto(`/w/${ws.slug}/settings?section=${section}`)
+      await gotoHydrated(page, `/w/${ws.slug}/settings?section=${section}`)
       await expect(page.getByRole('link', { name: 'Webhooks' })).toBeVisible()
       await shot(section)
     }
 
-    await page.goto(`/w/${ws.slug}/settings?section=webhooks`)
+    await gotoHydrated(page, `/w/${ws.slug}/settings?section=webhooks`)
     await page.getByRole('button', { name: '+ Add an endpoint' }).click()
     const dialog = page.getByRole('dialog', { name: 'New webhook endpoint' })
     await dialog.getByLabel('URL').fill('http://127.0.0.1:9/hooks')
@@ -32,7 +33,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(dialog).toBeHidden()
     await shot('webhooks')
 
-    await page.goto(`/w/${ws.slug}/settings?section=templates`)
+    await gotoHydrated(page, `/w/${ws.slug}/settings?section=templates`)
     await page.getByRole('button', { name: '+ New template' }).click()
     const editor = page.getByRole('dialog', { name: 'New Brevo template' })
     await editor.getByLabel('Name').fill('Welcome')

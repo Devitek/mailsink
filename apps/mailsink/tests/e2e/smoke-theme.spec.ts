@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { gotoHydrated } from './goto-hydrated'
 import { BASE_URL } from './web-server'
 
 // B1-4: light by default, prefers-color-scheme ignored, the choice is remembered in a
@@ -7,7 +8,7 @@ import { BASE_URL } from './web-server'
 test.use({ colorScheme: 'dark' })
 
 test('the page is light by default, even when the OS prefers dark', async ({ page }) => {
-  await page.goto('/')
+  await gotoHydrated(page, '/')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f5f5f3')
   await expect(page.locator('html')).toHaveCSS('background-color', 'rgb(245, 245, 243)')
@@ -18,7 +19,7 @@ test('the toggle switches the theme in place and the server renders the choice',
   context,
   request,
 }) => {
-  await page.goto('/')
+  await gotoHydrated(page, '/')
   await page.getByRole('button', { name: 'Toggle light / dark' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0b0c0e')
@@ -44,7 +45,7 @@ test('fonts are self-hosted', async ({ page }) => {
   page.on('request', (req) => {
     origins.add(new URL(req.url()).origin)
   })
-  await page.goto('/')
+  await gotoHydrated(page, '/')
   for (const font of ['400 13px Geist', '600 14px Geist', '500 12px "JetBrains Mono"']) {
     const faces = await page.evaluate(async (f) => (await document.fonts.load(f)).length, font)
     expect(faces, font).toBeGreaterThan(0)
@@ -57,7 +58,7 @@ test('fonts are self-hosted', async ({ page }) => {
 for (const theme of ['light', 'dark'] as const) {
   test(`faint text reads at 4.5:1 in the ${theme} theme`, async ({ page, context }) => {
     await context.addCookies([{ name: 'mailsink_theme', value: theme, url: BASE_URL }])
-    await page.goto('/login')
+    await gotoHydrated(page, '/login')
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     const ratios = await page.evaluate(() => {
       const rgb = (name: string) => {

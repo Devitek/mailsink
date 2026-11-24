@@ -1,3 +1,4 @@
+import { gotoHydrated } from '../goto-hydrated'
 import { LOGIN_LIMIT } from '../web-server'
 import { ADMIN_KEY, expect, test } from './fixtures'
 
@@ -8,7 +9,7 @@ import { ADMIN_KEY, expect, test } from './fixtures'
 test('too many attempts pause sign-in with a live countdown, then re-enable it', async ({
   page,
 }) => {
-  await page.goto('/login')
+  await gotoHydrated(page, '/login')
   const field = page.getByLabel('Admin key')
   const button = page.getByRole('button', { name: /^(Sign in|Try again in)/ })
 
