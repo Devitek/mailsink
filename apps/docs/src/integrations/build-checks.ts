@@ -1,6 +1,6 @@
 // Fails `astro build` when the built site is unsound (scripts/checks/dist.ts): a Mermaid
-// block left as code, a page with fewer diagrams than its source, or an internal link to a
-// missing file, the `/api/` reference included (D270, D272).
+// block left as code, a page with fewer renderable diagrams than its source, or an internal
+// link to a missing file, the `/api/` reference included (D270, D272).
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import type { AstroIntegration } from 'astro'

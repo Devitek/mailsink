@@ -299,13 +299,14 @@ mailsink/
 │       │                                  # collection and src/generated/ are synced at build,
 │       │                                  # git-ignored)
 │       ├── src/content/i18n/en.json       # Starlight UI string overrides
-│       ├── src/mermaid/                   # plugin.ts (Sätteri mdast plugin), render.ts
-│       │                                  # (mermaid-isomorphic), theme.ts (tokens) (D270)
-│       ├── src/integrations/              # mermaid.ts (registers the plugin), build-checks.ts
+│       ├── src/mermaid/                   # plugin.ts (Sätteri mdast plugin), parse.ts (build
+│       │                                  # syntax check), client.ts (browser rendering),
+│       │                                  # theme.ts (tokens) (D270)
+│       ├── src/integrations/              # mermaid.ts (plugin and client script), build-checks.ts
 │       │                                  # (fails the build on dist problems) (D270, D272)
 │       ├── src/route-data.ts              # version banner on every page (D271)
 │       ├── src/styles/                    # brand.css (Starlight on the --ms-* tokens, D267),
-│       │                                  # mermaid.css (one SVG per theme, D270)
+│       │                                  # mermaid.css (diagram figures, D270)
 │       ├── public/                        # CNAME (mailsink.devitek.fr); favicon.svg copied
 │       │                                  # from the brand folder by the sync (D274)
 │       └── test/                          # links, markdown, mermaid, dist, external

@@ -1,6 +1,6 @@
 // Checks of the built site (dist/), run by the `build-checks` integration once Astro has
-// written every page: no Mermaid block left as code (D270) and no internal link to a
-// missing file, the `/api/` reference included (D272).
+// written every page: every Mermaid block emitted as a figure the browser renders, none left
+// as code (D270), and no internal link to a missing file, the `/api/` reference included (D272).
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, sep } from 'node:path'
 
@@ -11,9 +11,16 @@ export function hasRawMermaid(html: string): boolean {
   return RAW_MERMAID.test(html)
 }
 
-/** Count of rendered diagrams in a page. */
+/**
+ * Count of renderable diagrams in a page: figures of src/mermaid/plugin.ts holding a
+ * non-empty source, which src/mermaid/client.ts draws in the browser.
+ */
 export function countFigures(html: string): number {
-  return html.match(/<figure class="ms-mermaid"/g)?.length ?? 0
+  return (
+    html.match(
+      /<figure class="ms-mermaid"><pre class="ms-mermaid-source">[^<]*\S[^<]*<\/pre><\/figure>/g,
+    )?.length ?? 0
+  )
 }
 
 /** Count of ```mermaid blocks in a Markdown source (the GitHub rendering). */
@@ -80,7 +87,7 @@ export function checkDist({ dir, diagrams, ignore = ['/pagefind/'] }: DistCheckO
     const html = exists(page) ? readFileSync(join(dir, page), 'utf8') : ''
     const found = countFigures(html)
     if (found !== expected)
-      errors.push(`${page}: ${found} rendered diagrams, ${expected} in the source`)
+      errors.push(`${page}: ${found} renderable diagrams, ${expected} in the source`)
   }
   return errors
 }

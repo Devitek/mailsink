@@ -14,6 +14,11 @@ export default defineConfig({
   // Custom domain at the root: no `base`, so every link is root-relative (D268).
   site: 'https://mailsink.devitek.fr',
   trailingSlash: 'always',
+  // Mermaid ships its layout engines (elk, cytoscape) and KaTeX as chunks over 500 kB; the
+  // page script loads Mermaid only where a diagram is, and Mermaid each of them only for a
+  // diagram that needs it (D270). The dev server pre-bundles Mermaid, so a page's first
+  // load does not find it outdated (504) once Vite discovers the dynamic import.
+  vite: { build: { chunkSizeWarningLimit: 2000 }, optimizeDeps: { include: ['mermaid'] } },
   integrations: [
     mermaid(path('../../docs/design/brand-1/tokens/tokens.css')),
     starlight({
