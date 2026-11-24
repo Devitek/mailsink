@@ -1,0 +1,12 @@
+{
+  // astro.config.ts, checked on its own (D273): it imports starlight-openapi, which ships
+  // TypeScript sources (no declarations) written for ES2025 iterator helpers and without
+  // strict null checks, so they fail tsconfig.json. This project relaxes exactly those two
+  // options; the files the config imports from src/ stay checked strictly by tsconfig.json.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "strictNullChecks": false
+  },
+  "include": [".astro/types.d.ts", "astro.config.ts"]
+}
