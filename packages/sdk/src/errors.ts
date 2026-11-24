@@ -1,4 +1,4 @@
-import type { ErrorCode } from '@mailsink/contracts'
+import type { ErrorCode } from './types'
 
 /**
  * Stable error codes: the server codes of D40 (`ErrorCode`), plus the client-side ones:

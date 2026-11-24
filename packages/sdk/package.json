@@ -46,7 +46,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "build": "tsdown"
+    "build": "tsdown",
+    "generate:types": "node scripts/generate-types.ts"
   },
   "dependencies": {
     "zod": "^4.6.7"
