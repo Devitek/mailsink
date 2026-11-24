@@ -1,0 +1,64 @@
+name: docs
+
+# Documentation website (apps/docs, D265): built on pull requests that touch its sources,
+# built and deployed to GitHub Pages (https://mailsink.devitek.fr) on every push to main,
+# so a change anywhere (README, guides, contracts behind the OpenAPI page) is published.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - apps/docs/**
+      - docs/**
+      - README.md
+      - CONTRIBUTING.md
+      - packages/contracts/**
+      - packages/openapi/**
+      - pnpm-lock.yaml
+      - .github/workflows/docs.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  # A deployment in progress finishes; a newer push queues behind it.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Syncs the repository Markdown and the OpenAPI document, builds the site and fails on
+      # a broken internal link (starlight-links-validator, D269).
+      - run: pnpm --filter @mailsink/docs build
+        env:
+          ASTRO_TELEMETRY_DISABLED: 1
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/docs/dist
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
