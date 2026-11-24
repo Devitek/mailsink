@@ -4,7 +4,7 @@ import type { Executor } from '../client'
 /**
  * Webhook deliveries older than the effective retention of their endpoint scope: the
  * connection's `retention_seconds` when the endpoint is scoped to a connection that sets
- * one, else the workspace's (D154, proposition). Deliveries still in flight (`pending`,
+ * one, else the workspace's (D154). Deliveries still in flight (`pending`,
  * `retrying`) are kept until they finish. Attempts go with their delivery by cascade.
  *
  * Same shape as the message purge (`repositories/retention.ts`): one range scan per

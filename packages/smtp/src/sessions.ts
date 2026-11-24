@@ -22,7 +22,7 @@ export interface SessionTrackerOptions {
 }
 
 /**
- * Outcome of a finished session (proposition D133): `accepted` once a message was stored,
+ * Outcome of a finished session (D133): `accepted` once a message was stored,
  * else `error` after a server-side failure, else `auth_failed` when AUTH failed and never
  * succeeded, else `rejected` (a refused command, or no message at all).
  */

@@ -53,7 +53,7 @@ test('fonts are self-hosted', async ({ page }) => {
   expect([...origins]).toEqual([new URL(page.url()).origin])
 })
 
-// Proposition D184: faint texts (section labels, reassurance line, instance block) at 4.5:1
+// D184: faint texts (section labels, reassurance line, instance block) at 4.5:1
 // on the page, panel and raised backgrounds, in both themes, as the browser resolves them.
 for (const theme of ['light', 'dark'] as const) {
   test(`faint text reads at 4.5:1 in the ${theme} theme`, async ({ page, context }) => {

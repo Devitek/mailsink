@@ -11,7 +11,7 @@ function socketAddress(request: ServerRequest): string | null {
 
 /**
  * Trusted proxy: the last `X-Forwarded-For` entry, the one the proxy in front of Mailsink
- * appended (proposition D182). Earlier entries come from the client and can be forged.
+ * appended (D182). Earlier entries come from the client and can be forged.
  * Without a usable header, the socket address.
  */
 export function clientIp(request: Request, trustProxy: boolean): string | null {

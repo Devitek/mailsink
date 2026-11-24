@@ -1,6 +1,6 @@
 /* Tokens added on top of the brand delivery (tokens.css stays a verbatim copy).
  * Brief 2 (docs/design/README.md): B2-5 danger alias, B2-6 sign-in control height.
- * Integration tokens (proposition, #36): values the prototype writes inline, named here so
+ * Integration tokens (D108, #36): values the prototype writes inline, named here so
  * components never hard-code a colour. */
 :root {
   --ms-danger: var(--ms-status-failed);
@@ -20,7 +20,7 @@
   --ms-shadow-popover: 0 16px 40px rgb(0 0 0 / 0.35);
 }
 
-/* Faint text at 4.5:1 (proposition D184, #99): the delivered values reach about 2.5:1 on
+/* Faint text at 4.5:1 (D184, #99): the delivered values reach about 2.5:1 on
  * --ms-bg in light and 3.2:1 in dark, under WCAG AA for the small texts that use them
  * (section labels, reassurance line, instance block, placeholders). Same hue, darkened in
  * light and lightened in dark just enough for 4.5:1 on --ms-bg, --ms-panel and --ms-raised

@@ -1,4 +1,4 @@
-// Sign-in attempts per client (B2-3, proposition D161): `maxAttempts` failures within
+// Sign-in attempts per client (B2-3, D161): `maxAttempts` failures within
 // `lockSeconds` pause that client for `lockSeconds`. The pause is never extended by the
 // refused attempts it answers, so the countdown shown on L1e stays true. In memory, like
 // the ingestion rate limiter (single process, D3). The remaining attempts are never exposed

@@ -2,7 +2,7 @@ import type { I18n, MessageDescriptor, Messages } from '@lingui/core'
 import { createI18n } from '../i18n/lingui'
 import { isLocale, type Locale } from '../i18n/locales'
 
-// Localized `<title>` per page (proposition D183). A route head() is no React component, so
+// Localized `<title>` per page (D183). A route head() is no React component, so
 // it cannot use the I18nProvider: it translates with the catalog the root loader already
 // loaded (its loaderData, visible to every head() through `matches`). The deepest title
 // wins (HeadContent keeps the last one), so the root sets the bare product name.

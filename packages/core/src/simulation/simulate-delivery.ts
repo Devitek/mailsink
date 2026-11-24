@@ -21,9 +21,9 @@ import { isPending, readSnapshot } from './snapshot'
 
 export type { RecipientTransition } from './recorder'
 
-/** Proposition D72: a deferred recipient is decided again after 1 s plus a new delay. */
+/** D72: a deferred recipient is decided again after 1 s plus a new delay. */
 export const DEFERRED_RETRY_MS = 1000
-/** Proposition D72: past 3 deferrals, a 4th `deferred` ends as a `soft_bounce`. */
+/** D72: past 3 deferrals, a 4th `deferred` ends as a `soft_bounce`. */
 export const MAX_DEFERRALS = 3
 
 export interface SimulateDeliveryOptions {
