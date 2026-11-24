@@ -32,7 +32,7 @@ const MAP: Record<CanonicalEvent, Row> = {
   'email.clicked': { resend: 'email.clicked', brevo: 'click', brevoSubscription: 'click' },
   'email.suppressed': { resend: null, brevo: 'blocked', brevoSubscription: 'blocked' },
   // Brevo `error` has no subscription name in Brevo's webhook API: Mailsink accepts `error`
-  // (proposition D280). Resend has no invalid-address event: `email.failed` covers it (D277).
+  // (D280). Resend has no invalid-address event: `email.failed` covers it (D277).
   'email.failed': { resend: 'email.failed', brevo: 'error', brevoSubscription: 'error' },
   'email.invalid': {
     resend: 'email.failed',

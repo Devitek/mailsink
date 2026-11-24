@@ -353,7 +353,8 @@ For Brevo webhooks, point the endpoint at the application like in production: th
 `X-Mailin-custom` header given in `headers` comes back in every event, a simulated
 `invalid` status (an invalid address, for instance from a rule such as
 `{ match: '*+invalid@*', status: 'invalid' }`) arrives as `invalid_email` (subscription
-`invalid`), a simulated `failed` status as `error` (subscription `error`), and basic auth credentials
+`invalid`), a simulated `failed` status as `error` (subscription `error`; the official SDK does not type
+this event name, so a TypeScript client casts it, for instance `'error' as never`), and basic auth credentials
 written in the URL (`https://user:pass@host/hook`) are sent as an `Authorization: Basic`
 header (section 13).
 
