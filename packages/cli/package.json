@@ -1,6 +1,6 @@
 {
   "name": "@devitek/mailsink-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mailsink command line for CI and shell scripts: ephemeral workspaces, wait for an email, simulation overrides, purge, MCP stdio proxy and migrations",
   "keywords": [
     "mailsink",
