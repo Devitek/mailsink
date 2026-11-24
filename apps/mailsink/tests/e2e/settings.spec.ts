@@ -58,9 +58,9 @@ test('creates a webhook endpoint, previews it, test-sends and deletes it', async
 
     // An event the chosen format cannot send is kept and reported.
     await dialog.getByRole('radio', { name: 'Unified' }).click()
-    await dialog.getByRole('button', { name: 'Event email.failed' }).click()
-    await dialog.getByRole('radio', { name: 'Brevo' }).click()
-    await expect(dialog.getByText(/never sent/)).toContainText('email.failed')
+    await dialog.getByRole('button', { name: 'Event email.suppressed' }).click()
+    await dialog.getByRole('radio', { name: 'Resend' }).click()
+    await expect(dialog.getByText(/never sent/)).toContainText('email.suppressed')
     await dialog.getByRole('radio', { name: 'Unified' }).click()
     await expect(dialog.getByTestId('preview-headers')).toContainText('X-Mailsink-Signature')
 

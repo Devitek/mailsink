@@ -1,5 +1,5 @@
 import { BrevoSendRequest, type BrevoSendRequestInput, TemplateInput } from '@mailsink/contracts'
-import { messageRecipients, messages } from '@mailsink/db'
+import { idempotencyKeys, messageRecipients, messages } from '@mailsink/db'
 import { describeDb } from '@mailsink/db/testing'
 import { eq, inArray } from 'drizzle-orm'
 import { beforeAll, expect, it } from 'vitest'
@@ -103,10 +103,25 @@ describeDb('Brevo dialect: sendBrevoEmail', (ctx) => {
     expect(messageIds.map(emailOf)).toEqual(['a@x.io', 'b@x.io'])
   })
 
-  it('replays an Idempotency-Key', async () => {
-    const first = await send(base, 'brevo-1')
-    const again = await send(base, 'brevo-1')
-    expect(again.replayed).toBe(true)
-    expect(again.response.body).toEqual(first.response.body)
+  it('refuses any reuse of an idempotencyKey for 30 minutes, then accepts it (D279)', async () => {
+    const key = 'a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d'
+    const first = await send(base, key)
+    expect(first.replayed).toBe(false)
+    for (const body of [base, { ...base, subject: 'Other' }]) {
+      await expect(send(body, key.toUpperCase())).rejects.toMatchObject({
+        code: 'idempotency_mismatch',
+        message: expect.stringContaining('Request already processed'),
+      })
+    }
+    const [record] = await ctx.db
+      .select()
+      .from(idempotencyKeys)
+      .where(eq(idempotencyKeys.workspaceId, target.workspaceId))
+    expect(record?.key).toBe(`brevo:${target.connectionId}:${key}`)
+    const ttl = (record?.expiresAt.getTime() ?? 0) - Date.now()
+    expect(ttl).toBeGreaterThan(29 * 60_000)
+    expect(ttl).toBeLessThanOrEqual(30 * 60_000)
+    await ctx.db.update(idempotencyKeys).set({ expiresAt: new Date(Date.now() - 1) })
+    expect((await send(base, key)).replayed).toBe(false)
   })
 })

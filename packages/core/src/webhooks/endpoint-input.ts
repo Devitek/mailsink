@@ -1,6 +1,7 @@
 import type { BrevoAuth, CanonicalEvent, CustomHeader, PayloadFormat } from '@mailsink/contracts'
 import { DomainError } from '../errors'
 import { sortCanonical, toCanonical } from './formatters/events-map'
+import { splitUrlCredentials } from './url-credentials'
 import type { UrlGuard } from './url-guard'
 
 // Validation of endpoint input beyond the Zod contract: the dialect of the event names
@@ -49,6 +50,35 @@ export function checkBrevoAuth(format: PayloadFormat, auth: BrevoAuth | undefine
       'brevoAuth',
     ])
   }
+}
+
+/**
+ * Basic auth written in the URL (Brevo accepts `https://user:pass@host/…`, D278): the URL is
+ * stored without it and the credentials become `brevoAuth` basic. Only the brevo format
+ * takes them, and not next to an explicit bearer or basic `brevoAuth`.
+ */
+export function urlAuth(
+  format: PayloadFormat,
+  rawUrl: string,
+  auth: BrevoAuth | undefined,
+): { url: string; brevoAuth: BrevoAuth | undefined } {
+  const { url, basic } = splitUrlCredentials(rawUrl)
+  if (!basic) return { url, brevoAuth: auth }
+  if (format !== 'brevo') {
+    throw bodyError(
+      'url_credentials_require_brevo',
+      'Credentials in the URL only apply to the brevo format',
+      ['url'],
+    )
+  }
+  if (auth && auth.type !== 'none') {
+    throw bodyError(
+      'conflicting_webhook_auth',
+      'Give the credentials either in the URL or in brevoAuth, not both',
+      ['url'],
+    )
+  }
+  return { url, brevoAuth: { type: 'basic', ...basic } }
 }
 
 /** Stored form of Brevo auth: the type and, in `secret`, the token or "user:password". */

@@ -77,6 +77,8 @@ mailsink/
 │   │   │   │   │   │                     # D158), extensions.ts (rate limit headers),
 │   │   │   │   │   │                     # test-server.ts and test-seed.ts (SDK contract tests)
 │   │   │   │   │   └── brevo/            # send.ts (POST /v3/smtp/email), errors.ts (D127),
+│   │   │   │   │                         # read.ts (GET /v3/smtp/emails, blockedContacts,
+│   │   │   │   │                         # #149), route.ts (kind check, headers, 400s),
 │   │   │   │   │                         # testing.ts (SDK contract tests)
 │   │   │   │   ├── activity.ts           # afterAuth extension: workspace activity touch (#20)
 │   │   │   │   └── capture/              # api.ts (list, wait=true, detail, purge through
@@ -134,6 +136,9 @@ mailsink/
 │   │   │   │   ├── emails.batch.ts
 │   │   │   │   ├── emails.$id.ts                     # Resend GET /emails/:id
 │   │   │   │   ├── v3.smtp.email.ts                  # Brevo dialect
+│   │   │   │   ├── v3.smtp.emails.ts                 # Brevo GET list (#149)
+│   │   │   │   ├── v3.smtp.blockedContacts.ts        # Brevo GET (suppression list)
+│   │   │   │   ├── v3.smtp.blockedContacts.$email.ts # Brevo DELETE (unblock)
 │   │   │   │   ├── capture.messages.ts               # GET (wait=true), DELETE
 │   │   │   │   ├── capture.messages.$id.ts
 │   │   │   │   ├── capture.messages.$id.events.ts
@@ -309,7 +314,7 @@ mailsink/
 │   ├── contracts/                         # Zod, shared end to end (doc 03)
 │   │   └── src/
 │   │       ├── common.ts   address.ts   status.ts   ids.ts   errors.ts (ErrorCode, ApiErrorBody)
-│   │       ├── admin.ts    native.ts    resend.ts   brevo.ts
+│   │       ├── admin.ts    native.ts    resend.ts   brevo.ts   brevo-read.ts (#149)
 │   │       ├── capture.ts  override.ts  stream.ts (SSE events, D80)  suppression.ts
 │   │       ├── logs.ts                  # API logs and SMTP sessions: queries, views (#35)
 │   │       ├── templates.ts             # Brevo templates (#30)
@@ -343,6 +348,7 @@ mailsink/
 │   │       │                            # direct-insert fixtures shared by every package (D68)
 │   │       └── repositories/            # one file per aggregate, typed queries only, re-exported
 │   │                                        # by name from index.ts (D68): api-keys, blobs,
+│   │                                        # brevo-read (offset pages of the Brevo reads),
 │   │                                        # connections, events-stream (replay reads),
 │   │                                        # idempotency, jobs, logs-api, logs-smtp,
 │   │                                        # logs-query (shared filters, sort, offset),
@@ -375,7 +381,7 @@ mailsink/
 │   │       │                 demo set through persistEmails, per-message rules (D210, D211)
 │   │       ├── dialects/     native.ts smtp.ts resend.ts (to NormalizedEmail)
 │   │       │                 resend-ingest.ts resend-read.ts (POST /emails, GET /emails/:id)
-│   │       │                 brevo/{normalize,send}.ts
+│   │       │                 brevo/{normalize,send,read}.ts (read: #149)
 │   │       ├── templates/    render.ts service.ts views.ts         # Brevo {{ params.x }}, #30
 │   │       ├── events-api/   manual.ts (POST …/events, #34) engagement.ts (opened / clicked)
 │   │       │                 publish-trigger.ts (triggerAndPublishEvent, D180)
@@ -393,6 +399,7 @@ mailsink/
 │   │       │                 fanout.ts context.ts jobs.ts attempt.ts send.ts retry.ts
 │   │       │                 deliveries.ts (log, replay) sample.ts sample-send.ts secret.ts
 │   │       │                 publish.ts (webhook.delivery frames) views.ts
+│   │       │                 url-credentials.ts (basic auth in the URL, D278)
 │   │       │   └── formatters/            # Strategy, one per payloadFormat (D20, D21)
 │   │       │       types.ts events-map.ts shared.ts unified.ts resend.ts brevo.ts index.ts
 │   │       ├── capture/      service.ts query.ts cursor.ts views.ts wait.ts inbox.ts (UI

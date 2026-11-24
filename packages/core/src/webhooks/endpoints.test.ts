@@ -126,8 +126,8 @@ describeDb('webhook endpoints', (ctx) => {
     })
     expect(toBrevo).toMatchObject({
       canonicalEvents: ['email.delivered', 'email.suppressed', 'email.failed'],
-      events: ['delivered', 'blocked'],
-      unsupportedEvents: ['email.failed'],
+      events: ['delivered', 'blocked', 'invalid'],
+      unsupportedEvents: [],
       brevoAuth: { type: 'bearer' },
       secret: null,
     })

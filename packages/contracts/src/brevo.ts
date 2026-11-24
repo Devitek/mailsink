@@ -111,8 +111,7 @@ export const BrevoErrorCode = z.enum([
   'unauthorized',
   'permission_denied',
   'document_not_found',
-  'duplicate_parameter',
-  'duplicate_request',
+  'duplicate_parameter', // also a reused idempotency key with another body (D279)
   'too_many_requests', // not in Brevo's list, which only documents the 429 status
   'chaos_injected', // Mailsink chaos (D93), whatever the drawn status
   'internal_error',

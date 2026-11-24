@@ -511,6 +511,10 @@ msgstr "créé par <0>{0}</0> via <1>POST /admin/workspaces</1> · masqué de la
 msgid "created through <0>POST /admin/workspaces</0> · hidden from the main list by default · purged automatically after inactivity."
 msgstr "créé via <0>POST /admin/workspaces</0> · masqué par défaut de la liste principale · purge automatique après inactivité."
 
+#: apps/mailsink/src/features/webhooks/brevo-auth-fields.tsx
+msgid "Credentials written in the URL (<0>https://user:password@host/…</0>) become Basic auth when saved, as Brevo accepts them."
+msgstr "Les identifiants écrits dans l'URL (<0>https://user:password@host/…</0>) deviennent une authentification Basic à l'enregistrement, comme Brevo les accepte."
+
 #: apps/mailsink/src/features/settings/connections-section.tsx
 msgid "Credentials, .env snippets, rotation and per-connection rate limits."
 msgstr "Identifiants, snippets .env, rotation et rate limits par connexion."

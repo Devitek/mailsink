@@ -90,8 +90,7 @@ export const INGESTION_ROUTES: RouteSpec[] = [
     path: '/v3/smtp/email',
     summary: 'Brevo: send a transactional email (`brevo` connection)',
     description:
-      'The idempotency key is the `Idempotency-Key` header, else the `IdempotencyKey` entry of the `headers` body field.',
-    headers: IDEMPOTENCY_KEY,
+      'Idempotency as Brevo documents it: the `idempotencyKey` entry (any case) of the `headers` body field, a UUID (else `400 invalid_parameter`), kept 30 minutes; any reuse within that window, same body or not, answers `400 duplicate_parameter` and is not processed. The `Idempotency-Key` HTTP header is ignored.',
     body: BrevoSendRequest,
     success: [{ status: 201, description: 'Accepted.', schema: BrevoSendResponse }],
   },

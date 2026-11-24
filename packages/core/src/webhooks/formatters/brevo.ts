@@ -39,6 +39,19 @@ function authorization(endpoint: EndpointSecrets): Record<string, string> {
   return { Authorization: `Basic ${Buffer.from(endpoint.secret).toString('base64')}` }
 }
 
+/**
+ * `X-Mailin-custom` of the message: the header given in `headers` of `POST /v3/smtp/email`
+ * or written by an SMTP client (any case), else a metadata entry of that name.
+ */
+function mailinCustom(message: MessageForWebhook): string | undefined {
+  const header = Object.entries(message.headers).find(
+    ([name]) => name.toLowerCase() === 'x-mailin-custom',
+  )
+  if (header) return header[1]
+  const meta = message.metadata['X-Mailin-custom']
+  return typeof meta === 'string' ? meta : undefined
+}
+
 const WITH_REASON = new Set(['soft_bounce', 'hard_bounce', 'deferred', 'blocked'])
 
 export const brevoFormatter: WebhookFormatter = {
@@ -65,8 +78,8 @@ export const brevoFormatter: WebhookFormatter = {
       payload.tags = tags
     }
     if (message.templateId !== null) payload.template_id = message.templateId
-    const custom = message.metadata['X-Mailin-custom']
-    if (typeof custom === 'string') payload['X-Mailin-custom'] = custom
+    const custom = mailinCustom(message)
+    if (custom !== undefined) payload['X-Mailin-custom'] = custom
     if (name === 'click' && event.detail.url) payload.link = event.detail.url
     if (WITH_REASON.has(name) && event.detail.reason) payload.reason = event.detail.reason
     payload.source = message.source === 'smtp' ? 'SMTP' : 'API'

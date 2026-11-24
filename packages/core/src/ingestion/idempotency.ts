@@ -17,6 +17,19 @@ export interface IdempotencyRequest {
   requestHash: string
 }
 
+/**
+ * How a live key is treated. `replay` (D53, native and Resend): the same body replays the
+ * stored response, another body is an `idempotency_mismatch`. `refuse` (Brevo, D279): any
+ * reuse within the TTL is an `idempotency_mismatch` with `reusedMessage`, never processed.
+ */
+export interface IdempotencyPolicy {
+  ttlMs: number
+  reuse: 'replay' | 'refuse'
+  reusedMessage?: string
+}
+
+export const REPLAY_POLICY: IdempotencyPolicy = { ttlMs: IDEMPOTENCY_TTL_MS, reuse: 'replay' }
+
 export interface StoredResponse {
   status: number
   body: unknown
@@ -57,9 +70,16 @@ async function replay(
   db: Executor,
   workspaceId: string,
   request: IdempotencyRequest,
+  policy: IdempotencyPolicy,
 ): Promise<StoredResponse | undefined> {
   const record = await findIdempotencyRecord(db, workspaceId, request.key)
   if (!record) return undefined
+  if (policy.reuse === 'refuse') {
+    throw new DomainError(
+      'idempotency_mismatch',
+      policy.reusedMessage ?? `${IDEMPOTENCY_HEADER} was already used`,
+    )
+  }
   if (record.requestHash !== request.requestHash) {
     throw new DomainError(
       'idempotency_mismatch',
@@ -77,7 +97,8 @@ export interface IdempotentWork<P> {
 }
 
 /**
- * Runs `work` once per key and workspace for 24 h. A known key with the
+ * Runs `work` once per key and workspace for the policy TTL (24 h by default). Under the
+ * default `replay` policy, a known key with the
  * same request replays the stored response (`replayed: true`); with another body it fails
  * with `idempotency_mismatch`. The record is written in the same transaction as the
  * messages, so a replay never sees a half-ingested request. When two requests race on a
@@ -88,12 +109,13 @@ export async function runIdempotent<P>(
   workspaceId: string,
   request: IdempotencyRequest | undefined,
   work: IdempotentWork<P>,
+  policy: IdempotencyPolicy = REPLAY_POLICY,
 ): Promise<{ response: StoredResponse; replayed: boolean }> {
   if (!request) {
     const prepared = await work.prepare()
     return { response: await db.transaction((tx) => work.persist(tx, prepared)), replayed: false }
   }
-  const known = await replay(db, workspaceId, request)
+  const known = await replay(db, workspaceId, request, policy)
   if (known) return { response: known, replayed: true }
   const prepared = await work.prepare()
   try {
@@ -108,7 +130,7 @@ export async function runIdempotent<P>(
           requestHash: request.requestHash,
           responseStatus: out.status,
           responseBody: out.body,
-          expiresAt: new Date(now.getTime() + IDEMPOTENCY_TTL_MS),
+          expiresAt: new Date(now.getTime() + policy.ttlMs),
         },
         now,
       )
@@ -116,7 +138,7 @@ export async function runIdempotent<P>(
     })
     return { response, replayed: false }
   } catch (error) {
-    const winner = await replay(db, workspaceId, request)
+    const winner = await replay(db, workspaceId, request, policy)
     if (winner) return { response: winner, replayed: true }
     throw error
   }

@@ -342,6 +342,19 @@ body), and overrides apply to the dialect like to the native API (rate limit wit
 `x-sib-ratelimit-*` headers, chaos). `tests/e2e/recipe/brevo.spec.ts` runs this flow with
 the official SDK.
 
+An application that reads back from Brevo works too (see 03-contracts, « Brevo read
+routes »): `getTransacEmailsList` lists what the connection sent (by `email`, `templateId`
+or `messageId`), `getTransacBlockedContacts` reads the suppression list of the workspace
+(hard bounces and complaints of the simulation, for instance from a recipient rule such as
+`{ match: '*+bounce@*', status: 'hard_bounce' }`) and
+`unblockOrResubscribeATransactionalContact` removes an address from it.
+
+For Brevo webhooks, point the endpoint at the application like in production: the
+`X-Mailin-custom` header given in `headers` comes back in every event, a simulated `failed`
+status arrives as `invalid_email` (subscription `invalid`), and basic auth credentials
+written in the URL (`https://user:pass@host/hook`) are sent as an `Authorization: Basic`
+header (section 13).
+
 ## 13. Webhooks
 
 To test the webhook handler of the application, register an endpoint of the workspace
@@ -373,7 +386,8 @@ const endpoint = await mailsink.webhooks.create({
   `deliveries.replay(id, { mode })` sends it again (`exact` or `resign`).
 - Signatures: the `unified` format signs `X-Mailsink-Signature` (HMAC SHA-256 of
   `<timestamp>.<body>` with the secret), `resend` signs as Svix (the `svix` package
-  verifies it), `brevo` sends the configured `Authorization`.
+  verifies it), `brevo` sends the configured `Authorization` (basic auth written in a brevo
+  endpoint URL is stored as `brevoAuth` basic and never shown in the URL again).
 
 `tests/e2e/recipe/webhooks.spec.ts` starts a receiver with `node:http`, sends a test event
 and waits for the `email.delivered` delivery of a real send.

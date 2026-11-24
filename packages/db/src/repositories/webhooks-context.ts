@@ -23,6 +23,7 @@ export interface WebhookMessageRow {
   to: string[]
   subject: string
   tags: { name: string; value: string }[]
+  headers: Record<string, string>
   metadata: Record<string, unknown>
   templateId: number | null
   /** Extracted links (automatic clicks pick one). */
@@ -70,6 +71,7 @@ export async function findWebhookMessage(
     to: to.map((r) => r.email),
     subject: m.subject,
     tags: m.tags,
+    headers: m.headers,
     metadata: m.metadata ?? {},
     templateId: m.templateRef?.templateId ?? null,
     links: m.links,

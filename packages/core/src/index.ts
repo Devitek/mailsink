@@ -43,10 +43,20 @@ export { hashApiKey, secretsEqual } from './crypto'
 export { demoMessages } from './demo/catalog'
 export { seedDemoMessages } from './demo/seed'
 export {
+  BREVO_IDEMPOTENCY_TTL_MS,
+  readBrevoIdempotencyKey,
+} from './dialects/brevo/idempotency'
+export {
   BREVO_TAG_NAME,
   brevoFieldError,
   fromBrevoRequest,
 } from './dialects/brevo/normalize'
+export {
+  brevoTimestamp,
+  listBrevoBlockedContacts,
+  listBrevoEmails,
+  unblockBrevoContact,
+} from './dialects/brevo/read'
 export { sendBrevoEmail } from './dialects/brevo/send'
 export { fromNativeRequest } from './dialects/native'
 export {
