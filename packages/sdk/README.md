@@ -32,11 +32,12 @@ console.log(message.subject, findLink(message, '/verify'))
 ```
 
 `waitFor` only matches messages created after `since`, which defaults to the moment
-`waitFor` is called. Call it before the action (and await it after), or pass the `since`
-you took before the action:
+`waitFor` is called, on the server clock (`mailsink.now()`, estimated from the `Date`
+header of the answers). Call it before the action (and await it after), or pass the
+`since` you took before the action:
 
 ```ts
-const since = new Date()
+const since = mailsink.now()
 await signUp('jane@example.com')
 const message = await mailsink.messages.waitFor({ to: 'jane@example.com' }, { since })
 ```
@@ -69,7 +70,7 @@ const custom = extractCode(await email, { pattern: /code: ([A-Z0-9-]+)/ })
 ```ts
 const rules = [{ match: 'bounce@example.com', status: 'hard_bounce' as const }]
 await mailsink.overrides.with({ rules }, async () => {
-  const since = new Date()
+  const since = mailsink.now()
   await sendInvoice('bounce@example.com')
   const bounced = await mailsink.messages.waitFor(
     { to: 'bounce@example.com', status: ['hard_bounce'] },
