@@ -124,8 +124,9 @@ test('sign-up sends a welcome email', async ({ page, expectEmail }) => {
   `mailsink.messages.raw(id)` is the MIME source.
 - **On a timeout**, the error lists the emails that did arrive since the start of the test
   (recipients, subject, status): a typo in the filter shows at once.
-- `since` comes from the runner's clock: against a remote server with a skewed clock, pass
-  a `since` of your own.
+- `since` is read on the server clock (`mailsink.now()` of the SDK, from the `Date` header
+  of the answers, D261), so a runner whose clock is off does not miss or catch stray
+  emails. It is precise to about one second: pass a `since` of your own to be stricter.
 
 ## 5. Matchers, links and codes
 

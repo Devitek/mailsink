@@ -51,7 +51,7 @@ export const test = base.extend<MailsinkTestFixtures, MailsinkWorkerFixtures>({
   mailsink: [
     async ({ mailsinkWorkspace, mailsinkReset, mailsinkOverride }, use) => {
       await resetWorkspace(mailsinkWorkspace.client, mailsinkReset)
-      const session = createTestSession(mailsinkWorkspace, new Date())
+      const session = createTestSession(mailsinkWorkspace, mailsinkWorkspace.client.now())
       const { client } = session
       const expectEmail = client.expectEmail
       // A step per wait, so reports show what each test waited for.

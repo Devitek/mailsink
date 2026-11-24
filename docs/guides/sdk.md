@@ -71,8 +71,12 @@ matching message of the page. Filters are those of `messages.list` (`to`, `from`
 
 - `since` defaults to the time of the call: a message stored before `waitFor` is called is
   not seen. Start the wait before the action and await it after, or take `since` before the
-  action. `since` comes from the client clock: against a remote server with a skewed clock,
-  pass it explicitly.
+  action with `mailsink.now()`.
+- `since` is read on the server clock. Every answer carries a `Date` header (one second
+  precision); `mailsink.now()` corrects the client clock by the skew those headers prove,
+  and only by it (D261). Before the first answer, or in a browser calling another origin
+  (the header is not exposed to cross-origin scripts), it is the client clock: against a
+  remote server with a skewed clock, make one call first (any `list`) or pass `since`.
 - A `timeout` over 30 s (the server maximum) is split into successive long polls.
 - No match: `MailsinkError` `wait_timeout`, its message and `details` carry the filters.
 

@@ -6,6 +6,7 @@ import { type MessagesApi, messagesApi } from './capture/messages'
 import { type OverridesApi, overridesApi } from './capture/overrides'
 import { type SuppressionsApi, suppressionsApi } from './capture/suppressions'
 import { type WebhooksApi, webhooksApi } from './capture/webhooks'
+import { createServerClock, type ServerClock } from './clock'
 import { createTransport, type MailsinkOptions } from './http'
 import {
   type StreamHandler,
@@ -41,6 +42,12 @@ export interface Mailsink {
    * `mailsink.with({ key: created.workspaceKey })`.
    */
   with(patch: Partial<MailsinkOptions>): Mailsink
+  /**
+   * Current time of the server, estimated from the `Date` header of the answers received so
+   * far (one second precision, only the proven skew is applied); the client clock before
+   * the first answer. Shared with the clients made by `with` on the same URL.
+   */
+  now(): Date
 }
 
 /**
@@ -54,7 +61,11 @@ export interface Mailsink {
  * ```
  */
 export function createMailsink(options: MailsinkOptions): Mailsink {
-  const t = createTransport(options)
+  return build(options, createServerClock())
+}
+
+function build(options: MailsinkOptions, clock: ServerClock): Mailsink {
+  const t = createTransport(options, clock)
   return {
     options: t.options,
     admin: {
@@ -78,6 +89,11 @@ export function createMailsink(options: MailsinkOptions): Mailsink {
      * A client with some options changed, e.g. scoped to the workspace just created:
      * `mailsink.with({ key: created.workspaceKey })`.
      */
-    with: (patch: Partial<MailsinkOptions>) => createMailsink({ ...options, ...patch }),
+    with: (patch: Partial<MailsinkOptions>) => {
+      const next = { ...options, ...patch }
+      const sameServer = String(next.url) === String(options.url)
+      return build(next, sameServer ? clock : createServerClock())
+    },
+    now: () => clock.now(),
   }
 }

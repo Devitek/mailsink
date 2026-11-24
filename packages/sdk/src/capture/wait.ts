@@ -8,8 +8,10 @@ export interface WaitForOptions {
   /** Total wait in ms, default 10 000. Longer than 30 s is split into several long polls. */
   timeout?: number
   /**
-   * Oldest `createdAt` that counts, default: the time `waitFor` is called. Take it before
-   * the action that sends the email, or a message stored before the wait starts is missed.
+   * Oldest `createdAt` that counts, default: the time `waitFor` is called, read on the
+   * server clock as estimated by `mailsink.now()` (the client clock until a first answer).
+   * Take it before the action that sends the email (`mailsink.now()`), or a message stored
+   * before the wait starts is missed.
    */
   since?: Date | string
   signal?: AbortSignal
@@ -31,7 +33,7 @@ export async function waitForMessage(
   filters: ListMessagesParams,
   options: WaitForOptions,
 ): Promise<MessageDetail> {
-  const since = options.since ?? filters.since ?? new Date()
+  const since = options.since ?? filters.since ?? t.clock.now()
   const timeout = options.timeout ?? DEFAULT_WAIT_TIMEOUT_MS
   const deadline = Date.now() + timeout
   let last: MailsinkError | undefined

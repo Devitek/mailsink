@@ -11,7 +11,10 @@ import type { MailsinkWorkspace } from './workspace'
 
 /** The test-scoped `mailsink` fixture: the SDK client of the worker's workspace, plus helpers. */
 export interface MailsinkTestClient extends Mailsink {
-  /** Start of the test: `expectEmail` only sees emails received from then on. */
+  /**
+   * Start of the test on the server clock (`now()`): `expectEmail` only sees emails
+   * received from then on.
+   */
   since: Date
   /** The worker's workspace: ids, connections, `.env` of the application under test. */
   workspace: MailsinkWorkspace
