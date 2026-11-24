@@ -39,9 +39,10 @@ describe('endpoint form', () => {
   })
 
   it('reports the events a format cannot represent', () => {
-    expect(unsupportedEvents(catalog, 'brevo', ['email.failed', 'email.opened'])).toEqual([
-      'email.failed',
+    expect(unsupportedEvents(catalog, 'resend', ['email.suppressed', 'email.opened'])).toEqual([
+      'email.suppressed',
     ])
+    expect(unsupportedEvents(catalog, 'brevo', ['email.failed'])).toEqual([])
     expect(unsupportedEvents(catalog, 'unified', ['email.failed'])).toEqual([])
   })
 
