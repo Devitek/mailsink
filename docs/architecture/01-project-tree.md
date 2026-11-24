@@ -16,6 +16,8 @@ mailsink/
 │       │   │                             # withRuntime() (waits for the runtime, D3; leased
 │       │   │                             # during a dev restart, D148)
 │       │   ├── router.tsx                # router + QueryClient (SSR dehydrate/hydrate)
+│       │   ├── testing.ts                # test-only `@mailsink/app/testing`: runtime fixtures and
+│       │   │                             # the routes folder, for the SDK tests (D259)
 │       │   ├── runtime/
 │       │   │   ├── nitro-plugin.ts       # boots at process start (exit 1 on failure, D28),
 │       │   │   │                         # stops on Nitro `close` (D3)
@@ -389,8 +391,22 @@ mailsink/
 │   │            tabs, textarea (D200), toast (D208))  lib/cn.ts  styles/ (tokens.css, tokens-ext.css
 │   │            with the faint text override D184, theme.css, index.css, css-declarations.ts,
 │   │            contrast.ts)
-│   └── cli/                               # `mailsink` bin: migrate, mcp (stdio proxy, D14)
-│                                          # built by tsdown into dist/bin.mjs (+ migrations)
+│   ├── openapi/                           # @mailsink/openapi: OpenAPI 3.1 document from the
+│   │   └── src/                           # contracts (D230 to D234): registry.ts, routes/,
+│   │                                      # document.ts, cli.ts (`pnpm openapi [file]`)
+│   ├── sdk/                               # npm @devitek/mailsink: TypeScript SDK (D235 to D239)
+│   │   ├── src/                           # client.ts (Mailsink interface), http.ts, admin/,
+│   │   │                                  # capture/ (messages, waitFor, overrides, webhooks,
+│   │   │                                  # logs), stream/ (SSE), helpers/ (links, codes)
+│   │   ├── test/                          # Vitest on the real routes (@mailsink/app/testing)
+│   │   └── tsdown.config.ts               # dist/index.js + index.d.ts, contracts bundled
+│   ├── playwright/                        # npm @devitek/mailsink-playwright: Playwright
+│   │                                      # fixtures and matchers (workspace per worker)
+│   ├── vitest/                            # npm @devitek/mailsink-vitest: Vitest and Jest
+│   │                                      # helpers, matchers, global setup
+│   └── cli/                               # npm @devitek/mailsink-cli: `mailsink` bin (migrate,
+│                                          # mcp stdio proxy D14, CI commands), built by tsdown
+│                                          # into dist/bin.mjs (+ migrations)
 ├── docker/
 │   ├── Dockerfile                         # multi-stage: pnpm-spec (pnpm version and
 │   │                                      # version-less root manifest from package.json)
@@ -406,11 +422,20 @@ mailsink/
 │   │                                      # og/ (Open Graph images EN and FR, #36)
 │   ├── guides/e2e.md                      # E2E recipe: workspace per worker, wait=true, overrides
 │   ├── guides/mcp.md                      # MCP clients (Claude Code, Claude Desktop, Cursor), tools
+│   ├── guides/api.md                      # HTTP API, OpenAPI document, generated clients
+│   ├── guides/sdk.md                      # TypeScript SDK (@devitek/mailsink)
+│   ├── guides/vitest-jest.md  cli.md      # Vitest/Jest helpers, CLI
 │   └── contributing/translations.md       # how to add or fix a locale (D17)
-├── .github/ workflows/ci.yml             # lint, typecheck, test (PGlite + Postgres), build, e2e
+├── .github/ workflows/ci.yml             # lint, typecheck, test (PGlite + Postgres), build, e2e,
+│            │                            # npm packs (packages), SDK on Node 20/22/24 (D258)
 │            workflows/docker.yml         # image build + docker/smoke-test.sh (never pushes)
-│            workflows/release-please.yml # release PR, tag, GitHub release (D220)
+│            workflows/release-please.yml # release PR, tag, GitHub release (D220), then calls:
 │            workflows/release-image.yml  # GHCR multi-arch publication of a tag (D222)
+│            workflows/release-npm.yml    # npm publication of the @devitek packages (D255, D256)
+│            workflows/release-openapi.yml  # openapi.json attached to the release (D257)
+│            scripts/                     # public-packages.mjs (what is published),
+│            │                            # pack-public.sh + check-pack.mjs (build, pack, check),
+│            │                            # sdk-smoke.mjs (packed SDK on every Node version)
 │            pull_request_template.md  dependabot.yml  ISSUE_TEMPLATE/translation.yml
 ├── release-please-config.json  .release-please-manifest.json   # D220, D221
 ├── AGENTS.md  README.md  CONTRIBUTING.md  LICENSE  CHANGELOG.md (release-please)

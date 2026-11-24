@@ -1,0 +1,89 @@
+name: release-npm
+
+# Publishes the npm packages of a release tag (#128): every packages/* whose package.json is
+# public and named @devitek/* (.github/scripts/public-packages.mjs), at the version of the
+# server (D181), dependencies first. Called by release-please.yml once a release is
+# created; run it by hand (Actions > release-npm > Run workflow) to publish an existing tag
+# again: versions already on npm are skipped.
+#
+# Authentication (D256): npm trusted publishing first (OIDC, `id-token: write`, no secret).
+# npm validates the CALLING workflow, so each package trusts both release-please.yml (the
+# release chain) and release-npm.yml (manual runs). The NPM_TOKEN secret is the fallback,
+# needed for the very first publish of a package (its trusted publishers can only be set
+# once it exists on npm). Provenance attestations are published either way.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to publish, e.g. v0.2.0
+        required: true
+        type: string
+    secrets:
+      NPM_TOKEN:
+        required: false
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish, e.g. v0.2.0
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release-npm-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      # No dependency cache in a publishing job: the install starts from the lockfile only.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm >= 11.5.1 (Node 24 bundles a recent npm 11).
+      - name: npm supports trusted publishing
+        run: |
+          npm --version
+          node -e '
+            const [major, minor, patch] = process.argv[1].split(".").map(Number)
+            const ok = major > 11 || (major === 11 && (minor > 5 || (minor === 5 && patch >= 1)))
+            if (!ok) { console.error("npm >= 11.5.1 is required"); process.exit(1) }
+          ' "$(npm --version)"
+      - name: Tag matches package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "v${version}" = "$TAG" || { echo "package.json is ${version}, tag is ${TAG}" >&2; exit 1; }
+      - run: pnpm install --frozen-lockfile
+      # Same script as the CI `packages` job: builds, packs, checks, and fails when a
+      # package version differs from the server version.
+      - run: .github/scripts/pack-public.sh "$RUNNER_TEMP/npm"
+      - name: Publish
+        env:
+          # Empty when the secret is not set: npm then relies on trusted publishing alone.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          mapfile -t packages < <(node .github/scripts/public-packages.mjs)
+          for line in "${packages[@]}"; do
+            read -r name _ version <<<"$line"
+            if npm view "${name}@${version}" version >/dev/null 2>&1; then
+              echo "${name}@${version} is already on npm, skipped"
+              continue
+            fi
+            tarball="$RUNNER_TEMP/npm/$(echo "${name#@}" | tr / -)-${version}.tgz"
+            npm publish "$tarball" --access public --provenance
+            echo "### ${name}@${version} published" >> "$GITHUB_STEP_SUMMARY"
+          done

@@ -1,4 +1,4 @@
-import rootPackage from '../../../package.json'
+import rootPackage from '../../../package.json' with { type: 'json' }
 
 /**
  * Release version of Mailsink, read from one place: the `version` of the root
