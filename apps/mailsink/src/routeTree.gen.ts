@@ -36,7 +36,9 @@ import { Route as CaptureWebhooksIdRouteImport } from './routes/capture.webhooks
 import { Route as CaptureWebhooksDeliveriesRouteImport } from './routes/capture.webhooks.deliveries'
 import { Route as CaptureWebhooksPreviewRouteImport } from './routes/capture.webhooks.preview'
 import { Route as V1EmailsBatchRouteImport } from './routes/v1.emails.batch'
+import { Route as V3SmtpBlockedContactsRouteImport } from './routes/v3.smtp.blockedContacts'
 import { Route as V3SmtpEmailRouteImport } from './routes/v3.smtp.email'
+import { Route as V3SmtpEmailsRouteImport } from './routes/v3.smtp.emails'
 import { Route as WWorkspaceSlugIndexRouteImport } from './routes/w.$workspaceSlug.index'
 import { Route as WWorkspaceSlugConnectionsRouteImport } from './routes/w.$workspaceSlug.connections'
 import { Route as WWorkspaceSlugLogsRouteImport } from './routes/w.$workspaceSlug.logs'
@@ -51,6 +53,7 @@ import { Route as CaptureMessagesIdEventsRouteImport } from './routes/capture.me
 import { Route as CaptureMessagesIdRawRouteImport } from './routes/capture.messages.$id.raw'
 import { Route as CaptureWebhooksIdChar91testChar93RouteImport } from './routes/capture.webhooks.$id.[test]'
 import { Route as CaptureWebhooksDeliveriesIdRouteImport } from './routes/capture.webhooks.deliveries.$id'
+import { Route as V3SmtpBlockedContactsEmailRouteImport } from './routes/v3.smtp.blockedContacts.$email'
 import { Route as WWorkspaceSlugMStreamRouteImport } from './routes/w.$workspaceSlug.m.stream'
 import { Route as AdminWorkspacesIdConnectionsConnectionIdRouteImport } from './routes/admin.workspaces.$id.connections.$connectionId'
 import { Route as AdminWorkspacesIdKeyRotateRouteImport } from './routes/admin.workspaces.$id.key.rotate'
@@ -198,9 +201,19 @@ const V1EmailsBatchRoute = V1EmailsBatchRouteImport.update({
   path: '/batch',
   getParentRoute: () => V1EmailsRoute,
 } as any)
+const V3SmtpBlockedContactsRoute = V3SmtpBlockedContactsRouteImport.update({
+  id: '/v3/smtp/blockedContacts',
+  path: '/v3/smtp/blockedContacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V3SmtpEmailRoute = V3SmtpEmailRouteImport.update({
   id: '/v3/smtp/email',
   path: '/v3/smtp/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V3SmtpEmailsRoute = V3SmtpEmailsRouteImport.update({
+  id: '/v3/smtp/emails',
+  path: '/v3/smtp/emails',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WWorkspaceSlugIndexRoute = WWorkspaceSlugIndexRouteImport.update({
@@ -278,6 +291,12 @@ const CaptureWebhooksDeliveriesIdRoute =
     id: '/$id',
     path: '/$id',
     getParentRoute: () => CaptureWebhooksDeliveriesRoute,
+  } as any)
+const V3SmtpBlockedContactsEmailRoute =
+  V3SmtpBlockedContactsEmailRouteImport.update({
+    id: '/$email',
+    path: '/$email',
+    getParentRoute: () => V3SmtpBlockedContactsRoute,
   } as any)
 const WWorkspaceSlugMStreamRoute = WWorkspaceSlugMStreamRouteImport.update({
   id: '/m/stream',
@@ -367,7 +386,9 @@ export interface FileRoutesByFullPath {
   '/capture/webhooks/deliveries': typeof CaptureWebhooksDeliveriesRouteWithChildren
   '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/v3/smtp/blockedContacts': typeof V3SmtpBlockedContactsRouteWithChildren
   '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/v3/smtp/emails': typeof V3SmtpEmailsRoute
   '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
   '/w/$workspaceSlug/logs': typeof WWorkspaceSlugLogsRoute
   '/w/$workspaceSlug/settings': typeof WWorkspaceSlugSettingsRoute
@@ -382,6 +403,7 @@ export interface FileRoutesByFullPath {
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
   '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
+  '/v3/smtp/blockedContacts/$email': typeof V3SmtpBlockedContactsEmailRoute
   '/w/$workspaceSlug/m/stream': typeof WWorkspaceSlugMStreamRoute
   '/admin/workspaces/$id/connections/$connectionId': typeof AdminWorkspacesIdConnectionsConnectionIdRouteWithChildren
   '/admin/workspaces/$id/key/rotate': typeof AdminWorkspacesIdKeyRotateRoute
@@ -420,7 +442,9 @@ export interface FileRoutesByTo {
   '/capture/webhooks/deliveries': typeof CaptureWebhooksDeliveriesRouteWithChildren
   '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/v3/smtp/blockedContacts': typeof V3SmtpBlockedContactsRouteWithChildren
   '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/v3/smtp/emails': typeof V3SmtpEmailsRoute
   '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
   '/w/$workspaceSlug/logs': typeof WWorkspaceSlugLogsRoute
   '/w/$workspaceSlug/settings': typeof WWorkspaceSlugSettingsRoute
@@ -435,6 +459,7 @@ export interface FileRoutesByTo {
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
   '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
+  '/v3/smtp/blockedContacts/$email': typeof V3SmtpBlockedContactsEmailRoute
   '/w/$workspaceSlug/m/stream': typeof WWorkspaceSlugMStreamRoute
   '/admin/workspaces/$id/connections/$connectionId': typeof AdminWorkspacesIdConnectionsConnectionIdRouteWithChildren
   '/admin/workspaces/$id/key/rotate': typeof AdminWorkspacesIdKeyRotateRoute
@@ -475,7 +500,9 @@ export interface FileRoutesById {
   '/capture/webhooks/deliveries': typeof CaptureWebhooksDeliveriesRouteWithChildren
   '/capture/webhooks/preview': typeof CaptureWebhooksPreviewRoute
   '/v1/emails/batch': typeof V1EmailsBatchRoute
+  '/v3/smtp/blockedContacts': typeof V3SmtpBlockedContactsRouteWithChildren
   '/v3/smtp/email': typeof V3SmtpEmailRoute
+  '/v3/smtp/emails': typeof V3SmtpEmailsRoute
   '/w/$workspaceSlug/connections': typeof WWorkspaceSlugConnectionsRoute
   '/w/$workspaceSlug/logs': typeof WWorkspaceSlugLogsRoute
   '/w/$workspaceSlug/settings': typeof WWorkspaceSlugSettingsRoute
@@ -490,6 +517,7 @@ export interface FileRoutesById {
   '/capture/messages/$id/raw': typeof CaptureMessagesIdRawRoute
   '/capture/webhooks/$id/test': typeof CaptureWebhooksIdChar91testChar93Route
   '/capture/webhooks/deliveries/$id': typeof CaptureWebhooksDeliveriesIdRouteWithChildren
+  '/v3/smtp/blockedContacts/$email': typeof V3SmtpBlockedContactsEmailRoute
   '/w/$workspaceSlug/m/stream': typeof WWorkspaceSlugMStreamRoute
   '/admin/workspaces/$id/connections/$connectionId': typeof AdminWorkspacesIdConnectionsConnectionIdRouteWithChildren
   '/admin/workspaces/$id/key/rotate': typeof AdminWorkspacesIdKeyRotateRoute
@@ -531,7 +559,9 @@ export interface FileRouteTypes {
     | '/capture/webhooks/deliveries'
     | '/capture/webhooks/preview'
     | '/v1/emails/batch'
+    | '/v3/smtp/blockedContacts'
     | '/v3/smtp/email'
+    | '/v3/smtp/emails'
     | '/w/$workspaceSlug/connections'
     | '/w/$workspaceSlug/logs'
     | '/w/$workspaceSlug/settings'
@@ -546,6 +576,7 @@ export interface FileRouteTypes {
     | '/capture/messages/$id/raw'
     | '/capture/webhooks/$id/test'
     | '/capture/webhooks/deliveries/$id'
+    | '/v3/smtp/blockedContacts/$email'
     | '/w/$workspaceSlug/m/stream'
     | '/admin/workspaces/$id/connections/$connectionId'
     | '/admin/workspaces/$id/key/rotate'
@@ -584,7 +615,9 @@ export interface FileRouteTypes {
     | '/capture/webhooks/deliveries'
     | '/capture/webhooks/preview'
     | '/v1/emails/batch'
+    | '/v3/smtp/blockedContacts'
     | '/v3/smtp/email'
+    | '/v3/smtp/emails'
     | '/w/$workspaceSlug/connections'
     | '/w/$workspaceSlug/logs'
     | '/w/$workspaceSlug/settings'
@@ -599,6 +632,7 @@ export interface FileRouteTypes {
     | '/capture/messages/$id/raw'
     | '/capture/webhooks/$id/test'
     | '/capture/webhooks/deliveries/$id'
+    | '/v3/smtp/blockedContacts/$email'
     | '/w/$workspaceSlug/m/stream'
     | '/admin/workspaces/$id/connections/$connectionId'
     | '/admin/workspaces/$id/key/rotate'
@@ -638,7 +672,9 @@ export interface FileRouteTypes {
     | '/capture/webhooks/deliveries'
     | '/capture/webhooks/preview'
     | '/v1/emails/batch'
+    | '/v3/smtp/blockedContacts'
     | '/v3/smtp/email'
+    | '/v3/smtp/emails'
     | '/w/$workspaceSlug/connections'
     | '/w/$workspaceSlug/logs'
     | '/w/$workspaceSlug/settings'
@@ -653,6 +689,7 @@ export interface FileRouteTypes {
     | '/capture/messages/$id/raw'
     | '/capture/webhooks/$id/test'
     | '/capture/webhooks/deliveries/$id'
+    | '/v3/smtp/blockedContacts/$email'
     | '/w/$workspaceSlug/m/stream'
     | '/admin/workspaces/$id/connections/$connectionId'
     | '/admin/workspaces/$id/key/rotate'
@@ -684,7 +721,9 @@ export interface RootRouteChildren {
   AdminLogsApiRoute: typeof AdminLogsApiRouteWithChildren
   CaptureLogsApiRoute: typeof CaptureLogsApiRouteWithChildren
   CaptureLogsSmtpRoute: typeof CaptureLogsSmtpRouteWithChildren
+  V3SmtpBlockedContactsRoute: typeof V3SmtpBlockedContactsRouteWithChildren
   V3SmtpEmailRoute: typeof V3SmtpEmailRoute
+  V3SmtpEmailsRoute: typeof V3SmtpEmailsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -878,11 +917,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V1EmailsBatchRouteImport
       parentRoute: typeof V1EmailsRoute
     }
+    '/v3/smtp/blockedContacts': {
+      id: '/v3/smtp/blockedContacts'
+      path: '/v3/smtp/blockedContacts'
+      fullPath: '/v3/smtp/blockedContacts'
+      preLoaderRoute: typeof V3SmtpBlockedContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v3/smtp/email': {
       id: '/v3/smtp/email'
       path: '/v3/smtp/email'
       fullPath: '/v3/smtp/email'
       preLoaderRoute: typeof V3SmtpEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v3/smtp/emails': {
+      id: '/v3/smtp/emails'
+      path: '/v3/smtp/emails'
+      fullPath: '/v3/smtp/emails'
+      preLoaderRoute: typeof V3SmtpEmailsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/w/$workspaceSlug/': {
@@ -982,6 +1035,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/capture/webhooks/deliveries/$id'
       preLoaderRoute: typeof CaptureWebhooksDeliveriesIdRouteImport
       parentRoute: typeof CaptureWebhooksDeliveriesRoute
+    }
+    '/v3/smtp/blockedContacts/$email': {
+      id: '/v3/smtp/blockedContacts/$email'
+      path: '/$email'
+      fullPath: '/v3/smtp/blockedContacts/$email'
+      preLoaderRoute: typeof V3SmtpBlockedContactsEmailRouteImport
+      parentRoute: typeof V3SmtpBlockedContactsRoute
     }
     '/w/$workspaceSlug/m/stream': {
       id: '/w/$workspaceSlug/m/stream'
@@ -1317,6 +1377,19 @@ const CaptureLogsSmtpRouteWithChildren = CaptureLogsSmtpRoute._addFileChildren(
   CaptureLogsSmtpRouteChildren,
 )
 
+interface V3SmtpBlockedContactsRouteChildren {
+  V3SmtpBlockedContactsEmailRoute: typeof V3SmtpBlockedContactsEmailRoute
+}
+
+const V3SmtpBlockedContactsRouteChildren: V3SmtpBlockedContactsRouteChildren = {
+  V3SmtpBlockedContactsEmailRoute: V3SmtpBlockedContactsEmailRoute,
+}
+
+const V3SmtpBlockedContactsRouteWithChildren =
+  V3SmtpBlockedContactsRoute._addFileChildren(
+    V3SmtpBlockedContactsRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmailsRoute: EmailsRouteWithChildren,
@@ -1336,7 +1409,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLogsApiRoute: AdminLogsApiRouteWithChildren,
   CaptureLogsApiRoute: CaptureLogsApiRouteWithChildren,
   CaptureLogsSmtpRoute: CaptureLogsSmtpRouteWithChildren,
+  V3SmtpBlockedContactsRoute: V3SmtpBlockedContactsRouteWithChildren,
   V3SmtpEmailRoute: V3SmtpEmailRoute,
+  V3SmtpEmailsRoute: V3SmtpEmailsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

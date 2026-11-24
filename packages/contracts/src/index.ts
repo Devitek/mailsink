@@ -2,6 +2,7 @@
 export * from './address'
 export * from './admin'
 export * from './brevo'
+export * from './brevo-read'
 export * from './capture'
 export * from './common'
 export * from './demo'

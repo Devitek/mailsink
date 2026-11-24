@@ -1,5 +1,6 @@
 import type { HttpMethod, RouteSpec } from './route'
 import { ADMIN_ROUTES } from './routes/admin'
+import { BREVO_READ_ROUTES } from './routes/brevo-read'
 import { CAPTURE_ROUTES } from './routes/capture'
 import { INGESTION_ROUTES } from './routes/ingestion'
 import { LOG_ROUTES } from './routes/logs'
@@ -10,6 +11,7 @@ import { WEBHOOK_ROUTES } from './routes/webhooks'
 /** Every documented server route: the single registry the document is built from. */
 export const ROUTES: readonly RouteSpec[] = [
   ...INGESTION_ROUTES,
+  ...BREVO_READ_ROUTES,
   ...ADMIN_ROUTES,
   ...TEMPLATE_ROUTES,
   ...CAPTURE_ROUTES,

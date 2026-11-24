@@ -641,8 +641,12 @@ Behaviour (#29, D125 to D127):
   stored, `url` attachments are never fetched and are listed in
   `metadata.brevo.attachmentUrls` with `scheduledAt` and `batchId`; header values are
   stringified and kept.
-- Idempotency: the `Idempotency-Key` HTTP header, else an `IdempotencyKey` (or
-  `Idempotency-Key`) entry of the `headers` body field, with the native semantics (D53).
+- Idempotency: the `Idempotency-Key` HTTP header, else an `idempotencyKey` entry of the
+  `headers` body field (any case, `Idempotency-Key` too), with the native semantics (D53):
+  the same body replays the stored response; another body answers
+  `400 duplicate_parameter`, the error Brevo documents for a reused key (D279).
+- `X-Mailin-custom` in `headers` is kept with the message headers and returned in every
+  Brevo format webhook of the message (`X-Mailin-custom` payload field, #149).
 - Rate limit headers: `X-RateLimit-*` (D91) plus Brevo's `x-sib-ratelimit-limit`,
   `x-sib-ratelimit-remaining`, `x-sib-ratelimit-reset` with the same values.
 
@@ -657,15 +661,68 @@ absent`).
 | `unauthorized` | 401 | `unauthorized` |
 | `forbidden` | 403 | `permission_denied` |
 | `not_found` | 404 | `document_not_found` |
-| `conflict` / `idempotency_mismatch` | 409 | `duplicate_parameter` / `duplicate_request` |
+| `conflict` | 409 | `duplicate_parameter` |
+| `idempotency_mismatch` | 400 | `duplicate_parameter` (D279) |
 | `payload_too_large` | 413 | `out_of_range` |
 | `rate_limited` | 429 | `too_many_requests` (Brevo documents the status, not the code) |
 | `chaos_injected` | drawn | `chaos_injected` (D93) |
 | `internal_error`, `wait_timeout` | 500, 408 | `internal_error` |
 
-The official SDK only types `400` (`Brevo.BadRequestError`); every other status reaches the
-caller as a `BrevoError` with `statusCode` and this `body`. Contract tests:
-`apps/mailsink/src/http/dialects/brevo/sdk.contract.test.ts`.
+The official SDK only types `400` (`Brevo.BadRequestError`, and `404 Brevo.NotFoundError` on
+`DELETE /v3/smtp/blockedContacts/{email}`); every other status reaches the caller as a
+`BrevoError` with `statusCode` and this `body`. Contract tests:
+`apps/mailsink/src/http/dialects/brevo/sdk.contract.test.ts` and
+`sdk-read.contract.test.ts` (read routes).
+
+### Brevo read routes (`brevo-read.ts`, #149, propositions D275, D276)
+
+Checked against developers.brevo.com and `@getbrevo/brevo` 6.2 on 24/11/2026
+(`getTransacEmailsList`, `getTransacBlockedContacts`,
+`unblockOrResubscribeATransactionalContact`). Same auth, kind check (403
+`permission_denied`), rate limit, chaos and `x-sib-ratelimit-*` headers as the send route;
+every invalid query or path answers 400 with the Brevo codes above. Days are `YYYY-MM-DD`
+calendar days in UTC.
+
+```ts
+export const BrevoListEmailsQuery = z.object({ email: Email.optional(),
+  templateId: TemplateExternalId.optional(), messageId: z.string().optional(),
+  startDate: BrevoDay.optional(), endDate: BrevoDay.optional(),
+  sort: z.enum(['asc', 'desc']).default('desc'),
+  limit: z.coerce.number().int().min(0).max(500).default(500),
+  offset: z.coerce.number().int().min(0).default(0) })
+  // filter_required (one of email, templateId, messageId: missing_parameter),
+  // date_range_required (both dates or none: missing_parameter), date_range_order,
+  // date_range_too_long (end after start plus one calendar month: out_of_range)
+export const BrevoListEmailsResponse = z.object({ count: z.number().int(),
+  transactionalEmails: z.array(z.object({ email: z.string(), subject: z.string(),
+    templateId: z.number().int().optional(), messageId: z.string(), uuid: z.string(),
+    date: z.string(), from: z.string().optional(), tags: z.array(z.string()).optional() })) })
+export const BrevoBlockedContactsQuery = z.object({ startDate, endDate, // both or none,
+  // never in the future (date_in_future)
+  limit: z.coerce.number().int().min(0).max(100).default(50), offset, sort,
+  senders: z.string() | z.array(z.string()) })   // comma separated and/or repeated
+export const BrevoBlockedContactsResponse = z.object({ count: z.number().int(),
+  contacts: z.array(z.object({ email: z.string(), senderEmail: z.string().nullable(),
+    reason: z.object({ code: BrevoBlockReasonCode, message: z.string() }),
+    blockedAt: z.string() })) })
+```
+
+- `GET /v3/smtp/emails` (D275): one item per message and recipient (`to`, `cc`, `bcc`)
+  sent through the **calling connection** only, a Brevo account being one connection.
+  `email` is the recipient, `messageId` the id `POST /v3/smtp/email` answered (angle
+  brackets optional in the filter), `uuid` the recipient row id (UUIDv7, without `rcp_`),
+  `date` the creation time (`2026-11-24T10:00:00Z`), `from` the sender address, `tags`
+  the tag values (omitted when empty, as `templateId` without a template). Without dates
+  the window is the past 30 days, as Brevo; `count` counts every item of the filters.
+- `GET /v3/smtp/blockedContacts` (D276): the workspace suppression list (D75), newest first
+  unless `sort=asc`, by offset. `senderEmail` is the sender of the message that listed the
+  address (null for a manual entry or a purged message); `senders` keeps the rows listed by
+  one of them. Reasons: `hard_bounce` -> `hardBounce` « Hard bounce », `complained` ->
+  `contactFlaggedAsSpam` « Contact flagged as spam », `manual` -> `adminBlocked` « Admin
+  blocked »; the unsubscription codes are never produced.
+- `DELETE /v3/smtp/blockedContacts/{email}` (D276): removes the address (URL-encoded, case
+  insensitive) from the workspace list, `204`; an address not listed is
+  `404 document_not_found`, an invalid one `400 invalid_parameter`.
 
 ## Brevo templates (`templates.ts`, Admin API)
 
@@ -1212,7 +1269,11 @@ Behaviour (#32, #33, #34, D135 to D144, D150 to D155):
   format is refused (`brevo_auth_requires_brevo`); custom headers may not use
   `content-type`, `content-length`, `host`, `authorization`, `svix-*` or `x-mailsink-*`
   (`reserved_webhook_header`) and are sent on every format, under the format's own
-  headers. `DELETE` answers `{ id }` (its deliveries cascade). With
+  headers. Basic auth written in a brevo `url` (`https://user:pass@host/…`, create or
+  `PATCH`, D278) is taken out of the URL and stored as `brevoAuth` basic (percent-decoded),
+  so neither the endpoint view, the delivery log nor the attempts show it in the URL;
+  another format answers `url_credentials_require_brevo`, URL credentials next to a bearer
+  or basic `brevoAuth` answer `conflicting_webhook_auth` (both 422 on `url`). `DELETE` answers `{ id }` (its deliveries cascade). With
   `MAILSINK_WEBHOOK_BLOCK_PRIVATE=true`, a `url` (create or `PATCH`) whose host is, or
   resolves to, a private, loopback or link-local address is a 422 on `url` with
   `params.code = private_webhook_url` (D150, D155).
@@ -1276,7 +1337,7 @@ emitted name or `null` (not emitted).
 | `email.opened` | `email.opened` | `email.opened` | `opened` / `opened` |
 | `email.clicked` | `email.clicked` | `email.clicked` | `click` / `click` |
 | `email.suppressed` | `email.suppressed` | not emitted | `blocked` / `blocked` |
-| `email.failed` | `email.failed` | `email.failed` | not emitted |
+| `email.failed` | `email.failed` | `email.failed` | `invalid` / `invalid_email` |
 
 Facts behind the non-obvious lines (checked against provider docs on 22/11/2026):
 Resend `email.bounced` means a *permanent* rejection and `email.delivery_delayed` a
@@ -1284,7 +1345,11 @@ Resend `email.bounced` means a *permanent* rejection and `email.delivery_delayed
 suppression event (`suppression.added` describes the list, not a send). Brevo subscription
 names (`hardBounce`, `softBounce`) differ from the payload `event` values (`hard_bounce`,
 `soft_bounce`): both directions are mapped. `email.failed` is a canonical addition for the
-simulated `failed` status (Resend parity). Owner-approved on 22/11 (D22).
+simulated `failed` status (Resend parity). Owner-approved on 22/11 (D22). Brevo's only
+send failure event is `invalid_email` (an invalid address, subscription name `invalid`),
+so `email.failed` maps to it (D277): a simulated `failed` status, drawn or forced by a
+recipient rule, reaches a Brevo endpoint as `invalid_email` and a Resend one as
+`email.failed`; `invalid_email` is also accepted as a subscription alias.
 
 Reverse mapping is many-to-one on purpose: subscribing to Resend
 `email.delivery_delayed` stores `email.deferred` + `email.soft_bounced`.
@@ -1388,7 +1453,7 @@ svix-signature: v1,<base64 hmac_sha256(base64decode(secret minus "whsec_"),
 ```ts
 export const BrevoWebhookPayload = z.object({
   event: z.enum(['request', 'delivered', 'soft_bounce', 'hard_bounce', 'spam', 'opened',
-    'click', 'deferred', 'blocked']),
+    'click', 'deferred', 'blocked', 'invalid_email']),     // invalid_email: email.failed
   email: z.string(),                                 // the recipient
   id: z.number().int(),                              // webhook id = endpoint numericId
   date: z.string(),                                  // "YYYY-MM-DD HH:mm:ss", workspace tz
@@ -1398,7 +1463,7 @@ export const BrevoWebhookPayload = z.object({
   tag: z.string().optional(),                        // first tag
   tags: z.array(z.string()).optional(),
   template_id: z.number().int().optional(),
-  'X-Mailin-custom': z.string().optional(),
+  'X-Mailin-custom': z.string().optional(),       // the message header (any case, #149)
   link: z.string().optional(),                       // click
   reason: z.string().optional(),                     // bounces, deferred, blocked
   source: z.enum(['API', 'SMTP']).optional(),

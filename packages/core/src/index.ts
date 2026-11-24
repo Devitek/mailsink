@@ -47,6 +47,12 @@ export {
   brevoFieldError,
   fromBrevoRequest,
 } from './dialects/brevo/normalize'
+export {
+  brevoTimestamp,
+  listBrevoBlockedContacts,
+  listBrevoEmails,
+  unblockBrevoContact,
+} from './dialects/brevo/read'
 export { sendBrevoEmail } from './dialects/brevo/send'
 export { fromNativeRequest } from './dialects/native'
 export {
