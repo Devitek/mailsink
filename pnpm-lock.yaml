@@ -310,6 +310,9 @@ importers:
       '@mailsink/db':
         specifier: workspace:*
         version: link:../db
+      '@mailsink/openapi':
+        specifier: workspace:*
+        version: link:../openapi
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(tsx@4.23.15)(typescript@7.0.2)
