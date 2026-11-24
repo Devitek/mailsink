@@ -15,6 +15,7 @@ Two usages share one engine:
 3. [Contracts and critical routes (Zod)](03-contracts.md)
 4. [End-to-end sequence](04-sequence.md)
 5. [Incremental roadmap](05-roadmap.md)
+6. [Provider fidelity analysis (Resend, Brevo)](06-provider-fidelity.md)
 
 ## Key architecture decisions
 
