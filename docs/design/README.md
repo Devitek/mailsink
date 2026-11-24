@@ -11,6 +11,11 @@ are binding for the UI issues.
 | [`brief-2/`](brief-2/README.md) | Admin-key sign-in screen (L1a to L1e, desktop and 390) and the header « Language and session » menu (H2a to H2d), light and dark, FR and EN copy | #63 |
 | `og/` | Open Graph images provided by the owner on 23/11 (1200 x 630, EN and FR): the app serves them per page locale (`og:image`, fr gets FR, any other locale EN); the EN one is the GitHub social preview of the repository | #36 |
 
+The deliveries are kept verbatim except for one change: their sample data named private
+projects of the owner, replaced by a fictional brand (« Acme Studio », `acme.test`), and
+the PNG screenshots that showed those names were removed (`brand-1/mockups/screenshots/app-light.png`,
+`brief-2/screens/`). The interactive prototypes (`*.dc.html`) render every screen.
+
 ## brand-1: contents
 
 - `docs/IMPLEMENTATION.md`: migration checklist (tokens, theme, logo, fonts, density).
