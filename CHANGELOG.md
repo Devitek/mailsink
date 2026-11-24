@@ -9,6 +9,14 @@
 * **ingestion:** complète le dialecte Brevo, lecture des envois, contacts bloqués et webhooks ([#149](https://github.com/Devitek/mailsink/issues/149)) ([#152](https://github.com/Devitek/mailsink/issues/152)) ([27b9617](https://github.com/Devitek/mailsink/commit/27b961726ad08cdc520ad08caa6d78e042b4cdb1))
 * **simulation:** ajoute l'adresse invalide email.invalid et solde les suivis de la vague 0.3 ([#153](https://github.com/Devitek/mailsink/issues/153)) ([#158](https://github.com/Devitek/mailsink/issues/158)) ([da6f15a](https://github.com/Devitek/mailsink/commit/da6f15a6f1b86a1e9de8c62132064cf60e8e5ddd))
 
+### Changements de comportement et migrations
+
+* **Nouveau statut simulé `invalid` et événement `email.invalid`** (adresse de destinataire invalide) : utilisable dans les taux, les règles par destinataire (`*+invalid@*`), le statut forcé (API, MCP, bouton « Invalid » de l'interface) et la CLI (`--invalid`). Émis en `invalid_email` vers Brevo (abonnement `invalid`), en `email.failed` vers Resend, en `email.invalid` en unified. Une adresse invalide n'entre pas dans la suppression list.
+* **Brevo : un envoi en échec (`failed`) est émis en `error`** (abonnement `error`), comme chez Brevo, et non plus ignoré.
+* **Brevo, `POST /v3/smtp/email`** : l'en-tête HTTP `Idempotency-Key` est désormais ignoré ; la clé d'idempotence est l'entrée `idempotencyKey` du champ `headers`, qui doit être un UUID (sinon `400 invalid_parameter`) ; toute réutilisation dans les 30 minutes répond `400 duplicate_parameter` sans traitement (D279).
+* Brevo, routes de lecture : `startDate` et `endDate` sont des jours du fuseau du workspace.
+* Les endpoints Resend abonnés à `email.failed` reçoivent aussi les adresses invalides (migration automatique) ; les identifiants écrits dans l'URL d'un endpoint Brevo avant la 0.3.0 sont déplacés en authentification basic (migration automatique).
+
 ## [0.2.0](https://github.com/Devitek/mailsink/compare/v0.1.0...v0.2.0) (2026-11-24)
 
 
