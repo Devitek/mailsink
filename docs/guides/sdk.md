@@ -40,7 +40,13 @@ credential it needs fails with `unauthorized` before any request.
 Types: request bodies are the `z.input` of their contract, answers the `z.output`. List
 queries take the output type with every key optional; `since`, `until` and `before` also
 take a `Date`, arrays are sent comma-separated. Every type is exported (`MessageDetail`,
-`StreamEvent`, `CreateWorkspaceInput`…).
+`StreamEvent`, `CreateWorkspaceInput`, `ErrorCode`…) as a plain object type: the package
+declarations carry no Zod schema (D260). In this repository, they are generated from the
+contracts by `pnpm --filter @devitek/mailsink generate:types`; `pnpm typecheck` fails when
+a contract changed without a regeneration.
+
+`client.now()` is the current time of the server, estimated from the `Date` header of the
+answers received so far (see « Waiting for a message »).
 
 ## Namespaces
 
