@@ -1361,7 +1361,9 @@ Invalid recipient address (D277, owner 24/11, #153; checked against the provider
 both exist. `email.invalid` is the simulated `invalid` status (rates, recipient rules such
 as `*+invalid@*`, forced status): Brevo `invalid_email` (subscription `invalid`, alias
 `invalid_email`). `email.failed` is Brevo `error`, whose payload Brevo documents but whose
-subscription name its webhook API does not list: Mailsink accepts `error` (D280). Resend
+subscription name its webhook API does not list: Mailsink accepts `error` (D280). The
+official SDK (`@getbrevo/brevo`) does not type `error` among the `createWebhook` events, so a
+TypeScript client casts the value to subscribe to it. Resend
 has no invalid-address event and documents invalid recipients under `email.failed`, so
 both canonical events are emitted as `email.failed` (reason `Invalid recipient address`
 for `email.invalid` when none is given), and subscribing to Resend `email.failed` stores
