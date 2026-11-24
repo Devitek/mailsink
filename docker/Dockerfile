@@ -43,9 +43,12 @@ COPY --from=pnpm-spec /manifest/package.json ./package.json
 RUN pnpm fetch --frozen-lockfile
 
 # Build: the app (Nitro output, self-contained with its traced node_modules) and the CLI.
+# The documentation site (apps/docs, D265) is not part of the image: only its manifest is in
+# the context (.dockerignore), so the workspace still matches the lockfile, and the install
+# leaves it out (D272).
 FROM deps AS build
 COPY . .
-RUN pnpm install --offline --frozen-lockfile && pnpm build
+RUN pnpm install --offline --frozen-lockfile --filter '!@mailsink/docs' && pnpm build
 # The CLI bin keeps its dependencies external (packages/cli/tsdown.config.ts): deploy it
 # with its production dependencies next to dist/, plus @mailsink/db for the drivers of
 # `migrate` (optional peers of the npm CLI, D251). Not --offline: pnpm
