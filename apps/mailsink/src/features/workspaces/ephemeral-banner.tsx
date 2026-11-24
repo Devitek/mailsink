@@ -1,17 +1,18 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { WorkspaceSummary } from '../../server-fns/workspace-types'
-import { useNow } from '../inbox/relative-time'
 import { formatCountdown, formatTtl } from './format-ttl'
+import { useServerNow } from './use-server-now'
 
 // Ephemeral banner of the prototype, under the header of an ephemeral workspace: what it
 // is and who created it (`metadata.createdBy`, when the Admin API caller gave one), then
 // the live countdown to the GC purge and how much of its idle TTL is left. Stream frames
 // of ingestion and API calls push the expiry back to the server time of the call plus the
 // idle TTL, which is the purge time (realtime/apply-stream-event.ts, #118). The
-// countdown depends on the clock, so server and browser differ by a second at hydration.
+// countdown runs on the server clock (`useServerNow`, D261), so a skewed browser clock does
+// not shift it; server and browser still differ by a second at hydration.
 export function EphemeralBanner({ workspace }: Readonly<{ workspace: WorkspaceSummary }>) {
   const { t, i18n } = useLingui()
-  const now = useNow(1000)
+  const now = useServerNow(1000)
   const { expiresAt, idleTtlSeconds: ttl } = workspace
   if (!workspace.ephemeral || !expiresAt) return null
   const left = Math.max(0, Date.parse(expiresAt) - now)
