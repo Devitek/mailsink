@@ -45,7 +45,7 @@ RUN pnpm fetch --frozen-lockfile
 # Build: the app (Nitro output, self-contained with its traced node_modules) and the CLI.
 # The documentation site (apps/docs, D265) is not part of the image: only its manifest is in
 # the context (.dockerignore), so the workspace still matches the lockfile, and the install
-# leaves it out (D272).
+# leaves it out (D273).
 FROM deps AS build
 COPY . .
 RUN pnpm install --offline --frozen-lockfile --filter '!@mailsink/docs' && pnpm build

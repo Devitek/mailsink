@@ -31,11 +31,19 @@ pnpm dev          # http://localhost:3000, health check at /healthz
 | `pnpm test` | Vitest, every package and app as a project |
 | `pnpm build` / `pnpm start` | Build every package that has a build (the app with Nitro to `apps/mailsink/.output/`, the CLI to `packages/cli/dist/`) and run the app |
 | `pnpm docs:dev` / `pnpm docs:build` | Documentation website (`apps/docs`, http://localhost:4321): renders `README.md`, `CONTRIBUTING.md` and `docs/` (guides, architecture, contributing) plus the OpenAPI reference; the build fails on a broken link |
+| `pnpm --filter @mailsink/docs check:external` | After `docs:build`: checks the external links of the site (a 404 or 410 fails, an unreachable site only warns, `--strict` fails on both; successes cached a week) |
 
 The website has no copy of the documentation: edit the Markdown files of the repository,
 with relative links between them as usual (they work on GitHub and are rewritten for the
 site). A new page is declared in `apps/docs/scripts/pages.ts`. Pushes to `main` publish the
 site to https://mailsink.devitek.fr.
+
+Mermaid diagrams (```` ```mermaid ```` blocks) render on GitHub as usual and as SVG on the
+site: `docs:build` runs Mermaid in the Playwright Chromium, so install it once with
+`pnpm --filter @mailsink/docs exec playwright install chromium`, or build in the Playwright
+image on a host without its system libraries. `docs:dev` works without the browser and
+leaves the diagrams as code. The build fails on a diagram that does not parse: a `;` inside
+a message ends the statement for Mermaid, write `,` instead.
 
 `pnpm install` builds native helpers only for the packages listed under `allowBuilds` in
 `pnpm-workspace.yaml` (today `esbuild`, needed by Vite and drizzle-kit): pnpm 11 refuses

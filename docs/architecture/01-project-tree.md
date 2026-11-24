@@ -282,15 +282,28 @@ mailsink/
 │   └── docs/                              # documentation website (D265), Astro Starlight,
 │       │                                  # GitHub Pages at mailsink.devitek.fr (D268)
 │       ├── astro.config.ts                # Starlight, sidebar, starlight-openapi (D266),
-│       │                                  # starlight-links-validator (D269)
+│       │                                  # starlight-links-validator (D269), checked by
+│       │                                  # tsconfig.config.json (D273)
 │       ├── scripts/                       # sync.ts (repository Markdown -> content collection,
-│       │                                  # quick start, openapi.json), pages.ts (what renders
-│       │                                  # where), links.ts, markdown.ts (D266)
-│       ├── src/content/docs/index.mdx     # landing page (the rest of the collection and
-│       │                                  # src/generated/ are synced at build, git-ignored)
-│       ├── src/styles/brand.css           # Starlight colors and fonts on the --ms-* tokens (D267)
-│       ├── public/                        # favicon.svg, CNAME (mailsink.devitek.fr)
-│       └── test/                          # links, markdown
+│       │                                  # quick start, openapi.json, diagram counts, release,
+│       │                                  # favicon), pages.ts (what renders where), links.ts,
+│       │                                  # markdown.ts (D266), check-external.ts (D272)
+│       │   └── checks/                    # dist.ts (built site: raw diagrams, internal links,
+│       │                                  # D270, D272), external.ts (D272)
+│       ├── src/content/docs/              # index.mdx (landing), 404.md (the rest of the
+│       │                                  # collection and src/generated/ are synced at build,
+│       │                                  # git-ignored)
+│       ├── src/content/i18n/en.json       # Starlight UI string overrides
+│       ├── src/mermaid/                   # plugin.ts (Sätteri mdast plugin), render.ts
+│       │                                  # (mermaid-isomorphic), theme.ts (tokens) (D270)
+│       ├── src/integrations/              # mermaid.ts (registers the plugin), build-checks.ts
+│       │                                  # (fails the build on dist problems) (D270, D272)
+│       ├── src/route-data.ts              # version banner on every page (D271)
+│       ├── src/styles/                    # brand.css (Starlight on the --ms-* tokens, D267),
+│       │                                  # mermaid.css (one SVG per theme, D270)
+│       ├── public/                        # CNAME (mailsink.devitek.fr); favicon.svg copied
+│       │                                  # from the brand folder by the sync (D274)
+│       └── test/                          # links, markdown, mermaid, dist, external
 ├── packages/
 │   ├── contracts/                         # Zod, shared end to end (doc 03)
 │   │   └── src/
