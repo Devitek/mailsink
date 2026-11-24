@@ -1,10 +1,11 @@
 name: release-please
 
 # Releases from Conventional Commits (#45). Every push to main updates one release PR
-# (version bump of the root package.json, CHANGELOG.md). Merging that PR tags vX.Y.Z,
-# creates the GitHub release, then publishes the image to GHCR (release-image.yml).
-# The image job is chained here rather than triggered by the tag or the release: events
-# created with GITHUB_TOKEN start no other workflow.
+# (version bump of the root package.json and of the npm packages, CHANGELOG.md). Merging
+# that PR tags vX.Y.Z, creates the GitHub release, then publishes the image to GHCR
+# (release-image.yml), the npm packages (release-npm.yml, #128) and attaches openapi.json
+# to the release (release-openapi.yml). These jobs are chained here rather than triggered
+# by the tag or the release: events created with GITHUB_TOKEN start no other workflow.
 on:
   push:
     branches: [main]
@@ -39,5 +40,28 @@ jobs:
       contents: read
       packages: write
     uses: ./.github/workflows/release-image.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+
+  # npm trusted publishing validates this file (the caller), not release-npm.yml: each
+  # package trusts release-please.yml and release-npm.yml (CONTRIBUTING.md, Releasing).
+  npm:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/release-npm.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  openapi:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-openapi.yml
     with:
       tag: ${{ needs.release-please.outputs.tag_name }}

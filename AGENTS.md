@@ -59,7 +59,10 @@ When relevant, before considering an issue done:
 
 ## Stack
 - pnpm monorepo: `apps/mailsink` (TanStack Start: UI and every HTTP surface),
-  `packages/{contracts,db,core,smtp,mcp,ui,cli}`.
+  private `packages/{contracts,db,core,smtp,mcp,ui,openapi}` (`@mailsink/*`) and the npm
+  packages `packages/{sdk,playwright,vitest,cli}` (`@devitek/mailsink`,
+  `@devitek/mailsink-playwright`, `@devitek/mailsink-vitest`, `@devitek/mailsink-cli`,
+  published at release, D226, D255).
 - TanStack Start / Router / Query / Form / Table / Virtual, Zod 4, Drizzle (Postgres and
   PGlite), smtp-server + mailparser, MCP TypeScript SDK, Tailwind CSS, shadcn/ui on Base UI
   (`@base-ui/react`), Lingui, Biome, Vitest, Playwright.

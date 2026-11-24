@@ -107,18 +107,57 @@ Releases are cut by [release-please](https://github.com/googleapis/release-pleas
 the Conventional Commits on `main` (French descriptions are fine, the types stay English).
 
 1. Every push to `main` opens or updates the release PR `chore(main): release X.Y.Z`. It
-   bumps `version` in the root `package.json` (the only version, read by the app and the
-   MCP server) and `.release-please-manifest.json`, and prepends the release notes to
-   `CHANGELOG.md`. `feat` bumps the minor version and `fix` the patch while the version
-   is below 1.0.0; a breaking change (`!` or `BREAKING CHANGE:`) also bumps the minor.
-2. Merging the release PR tags `vX.Y.Z`, creates the GitHub release and publishes
-   `ghcr.io/devitek/mailsink` for `linux/amd64` and `linux/arm64`, tagged `X.Y.Z`, `X.Y`
-   and `latest` (`release-image` workflow, with provenance and SBOM attestations).
-3. Nothing is published before that merge. To publish an existing tag again, run the
-   `release-image` workflow by hand with the tag (`v0.1.0`).
+   bumps `version` in the root `package.json` (the server version, read by the app and
+   the MCP server), in the `package.json` of every npm package (`extra-files`) and in
+   `.release-please-manifest.json`, and prepends the release notes to `CHANGELOG.md`.
+   `feat` bumps the minor version and `fix` the patch while the version is below 1.0.0;
+   a breaking change (`!` or `BREAKING CHANGE:`) also bumps the minor.
+2. Merging the release PR tags `vX.Y.Z` and creates the GitHub release, then three jobs
+   of the `release-please` workflow run:
+   - `image` (`release-image` workflow): `ghcr.io/devitek/mailsink` for `linux/amd64`
+     and `linux/arm64`, tagged `X.Y.Z`, `X.Y` and `latest`, with provenance and SBOM
+     attestations;
+   - `npm` (`release-npm` workflow): every public `@devitek/*` package of `packages/*`,
+     dependencies first, with npm provenance; versions already on npm are skipped;
+   - `openapi` (`release-openapi` workflow): `openapi.json` (`pnpm openapi`) attached to
+     the GitHub release.
+3. Nothing is published before that merge. To publish an existing tag again, run
+   `release-image`, `release-npm` or `release-openapi` by hand with the tag (`v0.2.0`).
 
 Configuration: `release-please-config.json` and `.release-please-manifest.json`. Never
 edit the version, the manifest or `CHANGELOG.md` by hand outside the release PR.
+
+### npm packages
+
+A package is published when its `packages/*/package.json` is not private and is named
+`@devitek/*` (`.github/scripts/public-packages.mjs`): a new package joins the release
+without editing the workflows, but its `package.json` must be added to `extra-files` in
+`release-please-config.json`, since the CI rejects a version different from the server.
+It needs `publishConfig.access: public`, `license: MIT`, `repository.url`
+`git+https://github.com/Devitek/mailsink.git` (npm checks it for provenance) and a
+`README.md`; the root `LICENSE` is copied in at pack time. The CI `packages` job builds,
+packs and checks every public package exactly as the release does:
+
+```sh
+.github/scripts/pack-public.sh /tmp/mailsink-packs   # build, pnpm pack, checks
+npm publish --dry-run --provenance=false /tmp/mailsink-packs/devitek-mailsink-*.tgz
+```
+
+`release-npm` authenticates with npm trusted publishing (OIDC, no secret), and falls back
+to the `NPM_TOKEN` repository secret when it is set. One-time setup on npmjs.com, by an
+owner of the `@devitek` npm organization:
+
+1. The `@devitek` organization (or user scope) exists on npm.
+2. First publish of a new package: a trusted publisher can only be added once the package
+   exists, so create a granular access token (read and write on the `@devitek` scope,
+   allowed to bypass 2FA, short expiry) and save it as the `NPM_TOKEN` secret of the
+   repository before the release (or run `release-npm` by hand for an existing tag).
+3. In the settings of each package, add two trusted publishers (GitHub Actions,
+   organization `Devitek`, repository `mailsink`, no environment): workflow
+   `release-please.yml` (releases: npm checks the calling workflow) and workflow
+   `release-npm.yml` (manual runs).
+4. Then delete the `NPM_TOKEN` secret, revoke the token and set each package to
+   « Require two-factor authentication and disallow tokens ».
 
 ## Translations
 

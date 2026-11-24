@@ -62,6 +62,74 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  # The npm packages as they would be published (#128): every public @devitek/* package
+  # built, packed with pnpm and checked (entry points, no workspace: range, README and
+  # LICENSE, version of the server), then a dry run of `npm publish`.
+  packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: .github/scripts/pack-public.sh "$RUNNER_TEMP/npm"
+      - name: npm publish --dry-run
+        run: |
+          for tarball in "$RUNNER_TEMP"/npm/*.tgz; do
+            npm publish --dry-run --provenance=false "$tarball"
+          done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-packages
+          path: ${{ runner.temp }}/npm/*.tgz
+          if-no-files-found: error
+          retention-days: 1
+
+  # The SDK declares Node >= 20. Its Vitest suite (real routes, PGlite) runs on every Node
+  # Vitest supports (22, 24); the packed SDK, installed in an empty project, runs a smoke
+  # test on each version, Node 20 included. Install and tooling stay on .node-version.
+  sdk-node:
+    needs: packages
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - if: matrix.node != 20
+        run: pnpm install --frozen-lockfile
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+      - if: matrix.node != 20
+        name: SDK tests on Node ${{ matrix.node }}
+        run: node node_modules/vitest/vitest.mjs run --project @devitek/mailsink
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-packages
+          path: ${{ runner.temp }}/npm
+      - name: Packed SDK smoke test on Node ${{ matrix.node }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          mkdir consumer && cd consumer
+          npm init --yes >/dev/null
+          npm install --no-audit --no-fund "$RUNNER_TEMP"/npm/devitek-mailsink-*.tgz
+          cp "$GITHUB_WORKSPACE/.github/scripts/sdk-smoke.mjs" .
+          node sdk-smoke.mjs
+
   e2e:
     needs: check
     runs-on: ubuntu-latest

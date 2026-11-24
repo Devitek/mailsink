@@ -1,0 +1,63 @@
+{
+  "name": "@devitek/mailsink-playwright",
+  "version": "0.1.0",
+  "description": "Playwright fixtures and matchers for Mailsink: one ephemeral workspace per worker, expectEmail, links, one-time codes and overrides",
+  "keywords": [
+    "mailsink",
+    "playwright",
+    "email",
+    "testing",
+    "e2e",
+    "fixtures",
+    "magic-link",
+    "otp"
+  ],
+  "license": "MIT",
+  "author": "Devitek",
+  "homepage": "https://github.com/Devitek/mailsink/tree/main/packages/playwright#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Devitek/mailsink.git",
+    "directory": "packages/playwright"
+  },
+  "bugs": "https://github.com/Devitek/mailsink/issues",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./package.json": "./package.json"
+    },
+    "types": "./dist/index.d.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "@devitek/mailsink": "workspace:*"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.47.0"
+  },
+  "devDependencies": {
+    "@mailsink/core": "workspace:*",
+    "@mailsink/db": "workspace:*",
+    "@playwright/test": "^1.65.1",
+    "tsdown": "^0.23.7"
+  }
+}

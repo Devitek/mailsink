@@ -44,6 +44,7 @@ contracts and are tested against the official SDKs (`resend`, `@getbrevo/brevo`,
 | `POST /capture/demo` | workspace scope | capture | Seed the workspace with demo messages through the ingestion pipeline (#62) |
 | `GET /capture/stream` | workspace scope | capture | SSE |
 | `POST|GET|DELETE /mcp` | workspace scope | mcp | MCP Streamable HTTP |
+| `GET /openapi.json` | none (D231) | openapi | OpenAPI 3.1 document of every HTTP surface (« OpenAPI », D230 to D234) |
 | `GET /login` · `POST /login` | none (admin key in the body) | not logged | Web UI sign-in page and key exchange for the session cookie (D162, « Web UI auth ») |
 
 Workspace scope = `Authorization: Bearer msk_…|mskw_…`, or Admin key +
