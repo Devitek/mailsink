@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/Devitek/mailsink/compare/v0.1.0...v0.2.0) (2026-11-24)
+
+
+### Features
+
+* **api:** génère la spécification OpenAPI 3.1 depuis les contrats et la sert sur /openapi.json ([#124](https://github.com/Devitek/mailsink/issues/124)) ([#129](https://github.com/Devitek/mailsink/issues/129)) ([174858c](https://github.com/Devitek/mailsink/commit/174858c7aa3b97970bcc942eed10765ed9d8bd13))
+* **capture:** ajoute les helpers Vitest et Jest @devitek/mailsink-vitest ([#127](https://github.com/Devitek/mailsink/issues/127)) ([#139](https://github.com/Devitek/mailsink/issues/139)) ([74fcf42](https://github.com/Devitek/mailsink/commit/74fcf4223c4b07c85696425025cf43078bfefbdb))
+* **cli:** ajoute les commandes de pilotage workspace, wait, override et purge ([#50](https://github.com/Devitek/mailsink/issues/50)) ([#138](https://github.com/Devitek/mailsink/issues/138)) ([109ff59](https://github.com/Devitek/mailsink/commit/109ff59820d24bdfae82b2298c09f655e2f41ca1))
+* **playwright:** ajoute les helpers Playwright @devitek/mailsink-playwright ([#126](https://github.com/Devitek/mailsink/issues/126)) ([#137](https://github.com/Devitek/mailsink/issues/137)) ([cca294a](https://github.com/Devitek/mailsink/commit/cca294a6f452a4571b62463052219d0e95d8a10d))
+* **sdk:** ajoute le SDK TypeScript @devitek/mailsink ([#125](https://github.com/Devitek/mailsink/issues/125)) ([#130](https://github.com/Devitek/mailsink/issues/130)) ([d5ec902](https://github.com/Devitek/mailsink/commit/d5ec902d8bf840f122c8d837c6f05bf00994cc35))
+
 ## 0.1.0 (2026-11-23)
 
 Première version publique : Mailsink capture les emails transactionnels sans jamais les délivrer, pour les tests E2E et les environnements de staging. Image `ghcr.io/devitek/mailsink` (amd64, arm64), stockage PGlite embarqué ou PostgreSQL.
