@@ -28,6 +28,7 @@ test('sends the welcome email', async ({ mailsink }) => {
 
 Set `MAILSINK_URL` and `MAILSINK_ADMIN_KEY` (or pass `url` and `adminKey`). Jest, the
 worker scope, the global setup and every option: the
-[guide](https://github.com/Devitek/mailsink/blob/main/docs/guides/vitest-jest.md).
+[guide](https://mailsink.devitek.fr/guides/vitest-jest/) of the
+[Mailsink documentation](https://mailsink.devitek.fr).
 
 Versioned with the Mailsink server. MIT license.

@@ -127,7 +127,8 @@ try {
 ## Reference
 
 The full API (every namespace, options, the stream and the helpers) is described in the
-[SDK guide](https://github.com/Devitek/mailsink/blob/main/docs/guides/sdk.md).
+[SDK guide](https://mailsink.devitek.fr/guides/sdk/) of the
+[Mailsink documentation](https://mailsink.devitek.fr).
 
 ## License
 

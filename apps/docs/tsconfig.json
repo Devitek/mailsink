@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve"
+  },
+  // astro.config.ts is left out: it imports starlight-openapi, which ships TypeScript
+  // sources that do not pass the strict base config (Astro checks the config at build).
+  "include": [".astro/types.d.ts", "src", "scripts", "test"],
+  "exclude": ["dist"]
+}

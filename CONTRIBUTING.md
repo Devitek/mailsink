@@ -30,6 +30,12 @@ pnpm dev          # http://localhost:3000, health check at /healthz
 | `pnpm typecheck` | `tsc --noEmit` in every workspace package |
 | `pnpm test` | Vitest, every package and app as a project |
 | `pnpm build` / `pnpm start` | Build every package that has a build (the app with Nitro to `apps/mailsink/.output/`, the CLI to `packages/cli/dist/`) and run the app |
+| `pnpm docs:dev` / `pnpm docs:build` | Documentation website (`apps/docs`, http://localhost:4321): renders `README.md`, `CONTRIBUTING.md` and `docs/` (guides, architecture, contributing) plus the OpenAPI reference; the build fails on a broken link |
+
+The website has no copy of the documentation: edit the Markdown files of the repository,
+with relative links between them as usual (they work on GitHub and are rewritten for the
+site). A new page is declared in `apps/docs/scripts/pages.ts`. Pushes to `main` publish the
+site to https://mailsink.devitek.fr.
 
 `pnpm install` builds native helpers only for the packages listed under `allowBuilds` in
 `pnpm-workspace.yaml` (today `esbuild`, needed by Vite and drizzle-kit): pnpm 11 refuses
